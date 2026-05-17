@@ -222,12 +222,51 @@ const NP_CONFIG = {
   '3x4':   { price: 7,   mult: 18, min: 90 },
   '4x6':   { price: 10,  mult: 9,  min: 45 },
   '5x7':   { price: 20,  mult: 5,  min: 25 },
-  '6x8':   { price: 30,  mult: 4,  min: 30 },
+  '6x8':   { price: 30,  mult: 4,  min: 20 },
   '8x10':  { price: 50,  mult: 2,  min: 10 },
   '8x12':  { price: 60,  mult: 2,  min: 10 },
   '12x18': { price: 100, mult: 1,  min: 5  },
   '13x19': { price: 125, mult: 1,  min: 5  }
 };
+
+// ── HDR Finishing Options (only for 10x12 and above, OPTIONAL) ──
+// All ADDED on top of print cost. Cost = rate × sq.in × qty
+const HDR_FINISH = {
+  'lam':    { label: 'HDR Print with Lamination only', rate: 0.25 },
+  'sun3':   { label: 'Sun Board 3mm',                  rate: 0.50 },
+  'sun5':   { label: 'Sun Board 5mm',                  rate: 1.00 },
+  'mdf3':   { label: 'MDF 3mm',                        rate: 0.60 },
+  'mdf8':   { label: 'MDF 8mm',                        rate: 1.50 }
+};
+
+// ── Vinyl Backing Options (REPLACE the Vinyl print cost) ─────
+const VINYL_BACKING = {
+  'lam':    { label: 'Vinyl Print with Lamination only', rate: 0.60 },
+  'sun3':   { label: 'Sun Board 3mm',                    rate: 1.20 },
+  'sun5':   { label: 'Sun Board 5mm',                    rate: 1.40 },
+  'mdf3':   { label: 'MDF 3mm',                          rate: 1.00 },
+  'mdf8':   { label: 'MDF 8mm',                          rate: 1.50 }
+};
+
+// ── Canvas Stretcher (OPTIONAL, added per print) ──────────────
+const STRETCHER_RATE_PER_FT = 100;
+
+function calcStretcherCostPerPrint(sizeKey) {
+  const s = SIZE_DIMS[sizeKey];
+  if (!s) return 0;
+  const perimeter = (s.w + s.h) * 2;             // inches
+  const runningFt = Math.ceil(perimeter / 12);    // round up
+  return runningFt * STRETCHER_RATE_PER_FT;
+}
+
+// ── NP Lamination (₹20 per multiple-of-N) ────────────────────
+const NP_LAM_PER_MULT = 20;
+function calcNPLamCost(sizeKey, qty) {
+  const cfg = NP_CONFIG[sizeKey];
+  if (!cfg) return 0;
+  const multiples = Math.ceil(qty / cfg.mult);
+  return multiples * NP_LAM_PER_MULT;
+}
 
 // ── Vinyl Quality ─────────────────────────────────────────────
 const VINYL_RATE = 0.60;       // ₹ per sq inch

@@ -45,10 +45,8 @@ function getFormHTML(existing, role) {
       <label class="check-btn"><input type="checkbox" name="groupA" value="Photo Editing" onchange="onGroupA()"><span>🎨 Photo Editing</span></label>
       <label class="check-btn"><input type="checkbox" name="groupA" value="Printing" onchange="onGroupA()"><span>🖨️ Printing</span></label>
       <label class="check-btn"><input type="checkbox" name="groupA" value="Framing" onchange="onGroupA()"><span>🖼️ Framing</span></label>
-      <label class="check-btn"><input type="checkbox" name="groupA" value="Sunboard" onchange="onGroupA()"><span>🟫 Sunboard</span></label>
-      <label class="check-btn"><input type="checkbox" name="groupA" value="MDF Board" onchange="onGroupA()"><span>🪵 MDF Board</span></label>
     </div>
-    <div class="warn-box" id="svc-warn-ab">⚠️ Sunboard and MDF Board cannot be selected together.</div>
+    <div class="warn-box" id="svc-warn-ab"></div>
 
     <div style="font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.07em;margin:16px 0 10px;">💼 Jobs — Individual items</div>
     <div class="pill-group">
@@ -220,14 +218,50 @@ function getSvcPanelHTML(svcs) {
 
       <div id="print-price-tag" class="price-info hidden"></div>
 
-      <!-- STEP 4: Photo Lamination (only HDR + 10x12+) -->
-      <div id="pr-lam-section" class="hidden" style="margin-top:14px;">
-        <label class="form-label" style="display:block;margin-bottom:8px;">4. Photo Lamination</label>
-        <div class="toggle-group">
-          <label class="toggle-option"><input type="radio" name="lam" value="Yes" onchange="calcPrint()"><span>✅ Yes (+₹0.25/sq in)</span></label>
-          <label class="toggle-option"><input type="radio" name="lam" value="No" checked onchange="calcPrint()"><span>❌ No</span></label>
+      <!-- STEP 4a: HDR Finishing Options (10x12+ only, OPTIONAL) -->
+      <div id="pr-hdr-finish" class="hidden" style="margin-top:14px;">
+        <label class="form-label" style="display:block;margin-bottom:8px;">4. Finishing (Optional)</label>
+        <div class="pill-group">
+          <label class="pill-option"><input type="radio" name="hdrFin" value="" checked onchange="calcPrint()"><span>None</span></label>
+          <label class="pill-option"><input type="radio" name="hdrFin" value="lam" onchange="calcPrint()"><span>✨ Lamination (₹0.25/sq.in)</span></label>
+          <label class="pill-option"><input type="radio" name="hdrFin" value="sun3" onchange="calcPrint()"><span>🟫 Sun Board 3mm (₹0.50/sq.in)</span></label>
+          <label class="pill-option"><input type="radio" name="hdrFin" value="sun5" onchange="calcPrint()"><span>🟫 Sun Board 5mm (₹1.00/sq.in)</span></label>
+          <label class="pill-option"><input type="radio" name="hdrFin" value="mdf3" onchange="calcPrint()"><span>🪵 MDF 3mm (₹0.60/sq.in)</span></label>
+          <label class="pill-option"><input type="radio" name="hdrFin" value="mdf8" onchange="calcPrint()"><span>🪵 MDF 8mm (₹1.50/sq.in)</span></label>
         </div>
-        <div id="lam-price-tag" class="price-info hidden" style="margin-top:8px;"></div>
+        <div id="hdr-fin-price-tag" class="price-info hidden" style="margin-top:8px;"></div>
+      </div>
+
+      <!-- STEP 4b: Vinyl Backing Options (REPLACES Vinyl print cost) -->
+      <div id="pr-vinyl-backing" class="hidden" style="margin-top:14px;">
+        <label class="form-label" style="display:block;margin-bottom:8px;">4. Choose Type</label>
+        <div class="pill-group">
+          <label class="pill-option"><input type="radio" name="vinBack" value="lam" checked onchange="calcPrint()"><span>✨ Vinyl Print with Lamination only (₹0.60/sq.in)</span></label>
+          <label class="pill-option"><input type="radio" name="vinBack" value="sun3" onchange="calcPrint()"><span>🟫 Sun Board 3mm (₹1.20/sq.in)</span></label>
+          <label class="pill-option"><input type="radio" name="vinBack" value="sun5" onchange="calcPrint()"><span>🟫 Sun Board 5mm (₹1.40/sq.in)</span></label>
+          <label class="pill-option"><input type="radio" name="vinBack" value="mdf3" onchange="calcPrint()"><span>🪵 MDF 3mm (₹1.00/sq.in)</span></label>
+          <label class="pill-option"><input type="radio" name="vinBack" value="mdf8" onchange="calcPrint()"><span>🪵 MDF 8mm (₹1.50/sq.in)</span></label>
+        </div>
+      </div>
+
+      <!-- STEP 4c: Canvas Stretcher Option (OPTIONAL) -->
+      <div id="pr-canvas-stretch" class="hidden" style="margin-top:14px;">
+        <label class="form-label" style="display:block;margin-bottom:8px;">4. Add Stretcher? (Optional)</label>
+        <div class="toggle-group">
+          <label class="toggle-option"><input type="radio" name="stretch" value="No" checked onchange="calcPrint()"><span>❌ No Stretcher</span></label>
+          <label class="toggle-option"><input type="radio" name="stretch" value="Yes" onchange="calcPrint()"><span>✅ Add Stretcher (₹100/ft)</span></label>
+        </div>
+        <div id="stretch-price-tag" class="price-info hidden" style="margin-top:8px;"></div>
+      </div>
+
+      <!-- STEP 4d: NP Lamination Option (OPTIONAL) -->
+      <div id="pr-np-lam" class="hidden" style="margin-top:14px;">
+        <label class="form-label" style="display:block;margin-bottom:8px;">4. Add Lamination? (Optional)</label>
+        <div class="toggle-group">
+          <label class="toggle-option"><input type="radio" name="npLam" value="No" checked onchange="calcPrint()"><span>❌ No Lamination</span></label>
+          <label class="toggle-option"><input type="radio" name="npLam" value="Yes" onchange="calcPrint()"><span>✅ Add Lamination (₹20/multiple)</span></label>
+        </div>
+        <div id="np-lam-price-tag" class="price-info hidden" style="margin-top:8px;"></div>
       </div>
 
       <div id="print-total-tag" class="price-tag hidden" style="margin-top:10px;"></div>
@@ -263,40 +297,6 @@ function getSvcPanelHTML(svcs) {
       <div class="form-group" style="margin-top:14px;max-width:220px;">
         <label class="form-label">Framing Charge (₹)</label>
         <input class="form-input" id="frm-charge" type="number" min="0" placeholder="Enter price">
-      </div>
-    </div>`;
-
-  if(svcs.includes('Sunboard')) html += `
-    <div class="svc-panel" id="panel-sunboard">
-      <div class="section-head" style="font-size:15px;">🟫 Sunboard Details</div>
-      <label class="form-label" style="display:block;margin-bottom:8px;">Thickness</label>
-      <div class="pill-group" style="margin-bottom:12px;">
-        <label class="pill-option"><input type="radio" name="sun" value="1mm"><span>1mm</span></label>
-        <label class="pill-option"><input type="radio" name="sun" value="2mm"><span>2mm</span></label>
-        <label class="pill-option"><input type="radio" name="sun" value="3mm"><span>3mm</span></label>
-        <label class="pill-option"><input type="radio" name="sun" value="4mm"><span>4mm</span></label>
-        <label class="pill-option"><input type="radio" name="sun" value="5mm"><span>5mm</span></label>
-      </div>
-      <div class="form-group" style="max-width:220px;">
-        <label class="form-label">Sunboard Charge (₹)</label>
-        <input class="form-input" id="sun-charge" type="number" min="0" placeholder="Enter price">
-      </div>
-    </div>`;
-
-  if(svcs.includes('MDF Board')) html += `
-    <div class="svc-panel" id="panel-mdf">
-      <div class="section-head" style="font-size:15px;">🪵 MDF Board Details</div>
-      <label class="form-label" style="display:block;margin-bottom:8px;">Thickness</label>
-      <div class="pill-group" style="margin-bottom:12px;">
-        <label class="pill-option"><input type="radio" name="mdf" value="1mm"><span>1mm</span></label>
-        <label class="pill-option"><input type="radio" name="mdf" value="2mm"><span>2mm</span></label>
-        <label class="pill-option"><input type="radio" name="mdf" value="3mm"><span>3mm</span></label>
-        <label class="pill-option"><input type="radio" name="mdf" value="4mm"><span>4mm</span></label>
-        <label class="pill-option"><input type="radio" name="mdf" value="5mm"><span>5mm</span></label>
-      </div>
-      <div class="form-group" style="max-width:220px;">
-        <label class="form-label">MDF Charge (₹)</label>
-        <input class="form-input" id="mdf-charge" type="number" min="0" placeholder="Enter price">
       </div>
     </div>`;
 
@@ -395,8 +395,6 @@ function initFormJS(existing, role) {
 // ── Service panel toggle ──────────────────────────────────────
 window.onGroupA = function() {
   const sel = [...document.querySelectorAll('input[name="groupA"]:checked')].map(c=>c.value);
-  const w = document.getElementById('svc-warn-ab');
-  w.style.display = (sel.includes('Sunboard')&&sel.includes('MDF Board')) ? 'block':'none';
   document.querySelectorAll('input[name="groupB"]').forEach(r=>r.checked=false);
   document.getElementById('panel-b')?.remove();
   document.getElementById('svc-panel-area').innerHTML = getSvcPanelHTML(sel);
@@ -405,7 +403,6 @@ window.onGroupA = function() {
 
 window.onGroupB = function(el) {
   document.querySelectorAll('input[name="groupA"]').forEach(c=>c.checked=false);
-  document.getElementById('svc-warn-ab').style.display='none';
   document.getElementById('svc-panel-area').innerHTML = getBPanelHTML(el.value);
   if(el.value==='Passport Photos') calcPassport();
   if(el.value==='Visa Photos')     calcVisa();
@@ -453,14 +450,18 @@ window.onPrintQualityChange = function() {
   const sizeSection = document.getElementById('pr-size-section');
   const qtySection  = document.getElementById('pr-qty-section');
   const qtyNPSection= document.getElementById('pr-qty-np-section');
-  const lamSection  = document.getElementById('pr-lam-section');
   const sizeSelect  = document.getElementById('pr-size');
+
+  // Hide all finishing sections
+  document.getElementById('pr-hdr-finish')?.classList.add('hidden');
+  document.getElementById('pr-vinyl-backing')?.classList.add('hidden');
+  document.getElementById('pr-canvas-stretch')?.classList.add('hidden');
+  document.getElementById('pr-np-lam')?.classList.add('hidden');
 
   if (!qual) {
     sizeSection?.classList.add('hidden');
     qtySection?.classList.add('hidden');
     qtyNPSection?.classList.add('hidden');
-    lamSection?.classList.add('hidden');
     return;
   }
 
@@ -493,10 +494,9 @@ window.onPrintQualityChange = function() {
   sizeSelect.innerHTML = opts;
   sizeSection.classList.remove('hidden');
 
-  // Hide quantity and lamination until size is selected
+  // Hide quantity until size is selected
   qtySection?.classList.add('hidden');
   qtyNPSection?.classList.add('hidden');
-  lamSection?.classList.add('hidden');
   document.getElementById('print-price-tag')?.classList.add('hidden');
   document.getElementById('print-total-tag')?.classList.add('hidden');
 };
@@ -506,12 +506,20 @@ window.onPrintSizeChange = function() {
   const size = document.getElementById('pr-size')?.value;
   const qtySection   = document.getElementById('pr-qty-section');
   const qtyNPSection = document.getElementById('pr-qty-np-section');
-  const lamSection   = document.getElementById('pr-lam-section');
+  const hdrFinish    = document.getElementById('pr-hdr-finish');
+  const vinBacking   = document.getElementById('pr-vinyl-backing');
+  const canStretch   = document.getElementById('pr-canvas-stretch');
+  const npLam        = document.getElementById('pr-np-lam');
+
+  // Hide all finishing sections by default
+  hdrFinish?.classList.add('hidden');
+  vinBacking?.classList.add('hidden');
+  canStretch?.classList.add('hidden');
+  npLam?.classList.add('hidden');
 
   if (!size) {
     qtySection?.classList.add('hidden');
     qtyNPSection?.classList.add('hidden');
-    lamSection?.classList.add('hidden');
     return;
   }
 
@@ -527,6 +535,8 @@ window.onPrintSizeChange = function() {
         `<b>NP ${SIZE_LABELS[size]}</b>: ₹${cfg.price}/photo · Min ${cfg.min} prints · Multiples of ${cfg.mult}`;
       qtyNPSection.classList.remove('hidden');
       qtySection.classList.add('hidden');
+      // NP Lamination — show for all NP sizes
+      npLam?.classList.remove('hidden');
     }
   } else {
     // For HDR/Vinyl/Canvas — regular number input
@@ -534,14 +544,31 @@ window.onPrintSizeChange = function() {
     qtyNPSection.classList.add('hidden');
   }
 
-  // Lamination — only for HDR + size 10x12 or above
-  if (isLaminationAllowed(qual, size)) {
-    lamSection.classList.remove('hidden');
+  // Show HDR finishing options only for 10x12+
+  if (qual === 'HDR' && isLargeSize(size)) {
+    hdrFinish?.classList.remove('hidden');
+    // Default to "None"
+    const none = document.querySelector('input[name="hdrFin"][value=""]');
+    if (none && !document.querySelector('input[name="hdrFin"]:checked')) none.checked = true;
   } else {
-    lamSection.classList.add('hidden');
-    // Reset lamination choice
-    const lamNo = document.querySelector('input[name="lam"][value="No"]');
-    if (lamNo) lamNo.checked = true;
+    // Reset HDR finishing
+    const none = document.querySelector('input[name="hdrFin"][value=""]');
+    if (none) none.checked = true;
+  }
+
+  // Show Vinyl backing options (always when Vinyl selected with valid size)
+  if (qual === 'Vinyl') {
+    vinBacking?.classList.remove('hidden');
+    // Default to "Lamination"
+    const lam = document.querySelector('input[name="vinBack"][value="lam"]');
+    if (lam && !document.querySelector('input[name="vinBack"]:checked')) lam.checked = true;
+  }
+
+  // Show Canvas stretcher option
+  if (qual === 'Canvas') {
+    canStretch?.classList.remove('hidden');
+    const no = document.querySelector('input[name="stretch"][value="No"]');
+    if (no && !document.querySelector('input[name="stretch"]:checked')) no.checked = true;
   }
 
   calcPrint();
@@ -561,16 +588,19 @@ window.calcEditing = function() {
 window.calcPrint = function() {
   const qual = document.querySelector('input[name="pq"]:checked')?.value;
   const size = document.getElementById('pr-size')?.value;
-  const lam  = document.querySelector('input[name="lam"]:checked')?.value;
   const pTag = document.getElementById('print-price-tag');
-  const lTag = document.getElementById('lam-price-tag');
   const tTag = document.getElementById('print-total-tag');
+  const hdrFinTag = document.getElementById('hdr-fin-price-tag');
+  const stretchTag = document.getElementById('stretch-price-tag');
+  const npLamTag = document.getElementById('np-lam-price-tag');
 
   if (!pTag) return;
   if (!qual || !size) {
     pTag.classList.add('hidden');
-    lTag?.classList.add('hidden');
     tTag?.classList.add('hidden');
+    hdrFinTag?.classList.add('hidden');
+    stretchTag?.classList.add('hidden');
+    npLamTag?.classList.add('hidden');
     return;
   }
 
@@ -584,50 +614,81 @@ window.calcPrint = function() {
 
   if (!qty || qty < 1) {
     pTag.classList.add('hidden');
-    lTag?.classList.add('hidden');
     tTag?.classList.add('hidden');
+    hdrFinTag?.classList.add('hidden');
+    stretchTag?.classList.add('hidden');
+    npLamTag?.classList.add('hidden');
     return;
   }
 
-  // Calculate per-print and total
-  let perPrint = 0;
-  let priceLabel = '';
   const { w, h } = SIZE_DIMS[size];
+  let printTotal = 0;
+  let priceLabel = '';
+  let extraTotal = 0;
 
   if (qual === 'HDR') {
-    perPrint = getHDRPricePerPrint(size, qty);
+    const perPrint = getHDRPricePerPrint(size, qty);
+    printTotal = Math.round(perPrint * qty);
     if (HDR_FLAT_PRICES[size]) {
       priceLabel = `HDR ${SIZE_LABELS[size]} (flat) ₹${perPrint}/print × ${qty}`;
     } else {
       const tier = qty >= 100 ? '100+ prints' : qty >= 50 ? '50–99 prints' : qty >= 20 ? '20–49 prints' : '1–19 prints';
       priceLabel = `HDR ${SIZE_LABELS[size]} (${tier}) ₹${perPrint}/print × ${qty}`;
     }
+    // HDR Finishing — only for 10x12+, ADDED on top
+    const hdrFin = document.querySelector('input[name="hdrFin"]:checked')?.value || '';
+    if (isLargeSize(size) && hdrFin && HDR_FINISH[hdrFin]) {
+      const fin = HDR_FINISH[hdrFin];
+      extraTotal = Math.round(w * h * fin.rate * qty);
+      hdrFinTag?.classList.remove('hidden');
+      if (hdrFinTag) hdrFinTag.innerHTML = `${fin.label}: ${w}×${h}" × ₹${fin.rate}/sq.in × ${qty} = <b>₹${extraTotal}</b>`;
+    } else {
+      hdrFinTag?.classList.add('hidden');
+    }
   } else if (qual === 'Vinyl') {
-    perPrint = w * h * VINYL_RATE;
-    priceLabel = `Vinyl ${SIZE_LABELS[size]} (${w}×${h} × ₹${VINYL_RATE}) ₹${perPrint.toFixed(2)}/print × ${qty}`;
+    // Vinyl backing REPLACES the print cost
+    const vinBack = document.querySelector('input[name="vinBack"]:checked')?.value || 'lam';
+    const back = VINYL_BACKING[vinBack];
+    const perPrint = w * h * back.rate;
+    printTotal = Math.round(perPrint * qty);
+    priceLabel = `${back.label}: ${w}×${h}" × ₹${back.rate}/sq.in × ${qty}`;
   } else if (qual === 'Canvas') {
-    perPrint = w * h * CANVAS_RATE;
+    const perPrint = w * h * CANVAS_RATE;
+    printTotal = Math.round(perPrint * qty);
     priceLabel = `Canvas ${SIZE_LABELS[size]} (${w}×${h} × ₹${CANVAS_RATE}) ₹${perPrint.toFixed(2)}/print × ${qty}`;
+    // Stretcher — optional, per print
+    const stretch = document.querySelector('input[name="stretch"]:checked')?.value || 'No';
+    if (stretch === 'Yes') {
+      const perPrintStretch = calcStretcherCostPerPrint(size);
+      extraTotal = perPrintStretch * qty;
+      const perim = (w + h) * 2;
+      const runFt = Math.ceil(perim / 12);
+      stretchTag?.classList.remove('hidden');
+      if (stretchTag) stretchTag.innerHTML = `Stretcher: (${w}+${h})×2 = ${perim}" → ${runFt} ft × ₹100 × ${qty} = <b>₹${extraTotal}</b>`;
+    } else {
+      stretchTag?.classList.add('hidden');
+    }
   } else if (qual === 'NP') {
-    perPrint = NP_CONFIG[size]?.price || 0;
+    const perPrint = NP_CONFIG[size]?.price || 0;
+    printTotal = Math.round(perPrint * qty);
     priceLabel = `NP ${SIZE_LABELS[size]} ₹${perPrint}/photo × ${qty}`;
+    // NP Lamination — optional, ₹20 × multiples
+    const npLam = document.querySelector('input[name="npLam"]:checked')?.value || 'No';
+    if (npLam === 'Yes') {
+      extraTotal = calcNPLamCost(size, qty);
+      const cfg = NP_CONFIG[size];
+      const multiples = Math.ceil(qty / cfg.mult);
+      npLamTag?.classList.remove('hidden');
+      if (npLamTag) npLamTag.innerHTML = `Lamination: ${multiples} multiples × ₹${NP_LAM_PER_MULT} = <b>₹${extraTotal}</b>`;
+    } else {
+      npLamTag?.classList.add('hidden');
+    }
   }
 
-  const printTotal = Math.round(perPrint * qty);
   pTag.classList.remove('hidden');
   pTag.innerHTML = `${priceLabel} = <b>₹${printTotal}</b>`;
 
-  // Lamination (HDR + large only)
-  let lamTotal = 0;
-  if (qual === 'HDR' && isLargeSize(size) && lam === 'Yes') {
-    lamTotal = Math.round(w * h * LAM_RATE * qty);
-    lTag.classList.remove('hidden');
-    lTag.innerHTML = `Lamination: ${w}×${h}" × ₹${LAM_RATE}/sq.in × ${qty} = <b>₹${lamTotal}</b>`;
-  } else {
-    lTag?.classList.add('hidden');
-  }
-
-  const grand = printTotal + lamTotal;
+  const grand = printTotal + extraTotal;
   tTag.classList.remove('hidden');
   tTag.textContent = `Total Print Cost: ₹${grand}`;
 };
@@ -641,8 +702,6 @@ window.calcDoorVisa     = ()=>{ const c=+(document.getElementById('dvp-copies')?
 window.addToCart = function() {
   const groupAsel = [...document.querySelectorAll('input[name="groupA"]:checked')].map(c=>c.value);
   const groupBsel = document.querySelector('input[name="groupB"]:checked')?.value;
-
-  if(groupAsel.includes('Sunboard')&&groupAsel.includes('MDF Board')){toast('⚠️ Sunboard + MDF cannot be together','error');return;}
 
   let svcs=[], price=0, label='', details={};
 
@@ -667,25 +726,49 @@ window.addToCart = function() {
           return;
         }
       }
-      const lam = document.querySelector('input[name="lam"]:checked')?.value || 'No';
       const { w, h } = SIZE_DIMS[size];
-      let perPrint = 0;
-      if (qual === 'HDR')    perPrint = getHDRPricePerPrint(size, qty);
-      else if (qual === 'Vinyl')  perPrint = w * h * VINYL_RATE;
-      else if (qual === 'Canvas') perPrint = w * h * CANVAS_RATE;
-      else if (qual === 'NP')     perPrint = NP_CONFIG[size]?.price || 0;
-      const printP = Math.round(perPrint * qty);
-      let lamP = 0;
-      if (qual === 'HDR' && isLargeSize(size) && lam === 'Yes') {
-        lamP = Math.round(w * h * LAM_RATE * qty);
+      let printP = 0;
+      let extraP = 0;
+      let extraLabel = '';
+
+      if (qual === 'HDR') {
+        printP = Math.round(getHDRPricePerPrint(size, qty) * qty);
+        // Optional HDR finishing (only for 10x12+)
+        const hdrFin = document.querySelector('input[name="hdrFin"]:checked')?.value || '';
+        if (isLargeSize(size) && hdrFin && HDR_FINISH[hdrFin]) {
+          const fin = HDR_FINISH[hdrFin];
+          extraP = Math.round(w * h * fin.rate * qty);
+          extraLabel = '+' + fin.label;
+        }
+      } else if (qual === 'Vinyl') {
+        // Vinyl backing REPLACES print cost
+        const vinBack = document.querySelector('input[name="vinBack"]:checked')?.value || 'lam';
+        const back = VINYL_BACKING[vinBack];
+        printP = Math.round(w * h * back.rate * qty);
+        extraLabel = '(' + back.label + ')';
+      } else if (qual === 'Canvas') {
+        printP = Math.round(w * h * CANVAS_RATE * qty);
+        // Optional Stretcher (per print)
+        const stretch = document.querySelector('input[name="stretch"]:checked')?.value || 'No';
+        if (stretch === 'Yes') {
+          extraP = calcStretcherCostPerPrint(size) * qty;
+          extraLabel = '+Stretcher';
+        }
+      } else if (qual === 'NP') {
+        printP = Math.round((NP_CONFIG[size]?.price || 0) * qty);
+        // Optional NP Lamination
+        const npLam = document.querySelector('input[name="npLam"]:checked')?.value || 'No';
+        if (npLam === 'Yes') {
+          extraP = calcNPLamCost(size, qty);
+          extraLabel = '+Lam';
+        }
       }
-      const pT = printP + lamP;
-      parts.push(`Print ${SIZE_LABELS[size]||size} ${qual} ×${qty}${lamP>0?'+Lam':''} ₹${pT}`);
+
+      const pT = printP + extraP;
+      parts.push(`Print ${SIZE_LABELS[size]||size} ${qual} ×${qty}${extraLabel} ₹${pT}`);
       totalP += pT;
     }
     if(groupAsel.includes('Framing')){const ms=document.querySelector('input[name="ms"]:checked')?.value||'';const mt=document.querySelector('input[name="mt"]:checked')?.value||'';const mnt=document.querySelector('input[name="mnt"]:checked')?.value||'No';const fch=+(document.getElementById('frm-charge')?.value)||0;parts.push(`Frame${ms?' '+ms:''}${mt?' '+mt:''}${mnt==='Yes'?' +Mount':''} ₹${fch}`);totalP+=fch;}
-    if(groupAsel.includes('Sunboard')){const ss=document.querySelector('input[name="sun"]:checked')?.value||'';const sc=+(document.getElementById('sun-charge')?.value)||0;parts.push(`Sunboard ${ss} ₹${sc}`);totalP+=sc;}
-    if(groupAsel.includes('MDF Board')){const ms=document.querySelector('input[name="mdf"]:checked')?.value||'';const mc=+(document.getElementById('mdf-charge')?.value)||0;parts.push(`MDF ${ms} ₹${mc}`);totalP+=mc;}
     price=totalP; label=parts.join(' · ');
   } else if(groupBsel) {
     svcs=[groupBsel];
