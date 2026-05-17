@@ -163,24 +163,143 @@ function onDiscountSelect(pct, cartTotal, role, applyFn, cancelFn) {
   });
 }
 
-// ── Print Prices ──────────────────────────────────────────────
-const PRINT_PRICES = {
-  '2x3':{HDR:12,Vinyl:18,Canvas:25,NP:8},'3x4':{HDR:18,Vinyl:25,Canvas:35,NP:12},
-  '3.5x5':{HDR:25,Vinyl:35,Canvas:48,NP:18},'4x6':{HDR:30,Vinyl:45,Canvas:60,NP:22},
-  '5x7':{HDR:50,Vinyl:70,Canvas:95,NP:38},'6x8':{HDR:70,Vinyl:95,Canvas:130,NP:52},
-  '6x9':{HDR:80,Vinyl:110,Canvas:148,NP:58},'8x10':{HDR:110,Vinyl:150,Canvas:200,NP:80},
-  '8x12':{HDR:130,Vinyl:180,Canvas:240,NP:95},'10x12':{HDR:160,Vinyl:220,Canvas:295,NP:118},
-  '10x14':{HDR:190,Vinyl:260,Canvas:348,NP:138},'10x15':{HDR:200,Vinyl:275,Canvas:370,NP:148},
-  '12x15':{HDR:240,Vinyl:330,Canvas:440,NP:178},'12x16':{HDR:260,Vinyl:355,Canvas:475,NP:192},
-  '12x18':{HDR:290,Vinyl:398,Canvas:530,NP:215},'14x18':{HDR:340,Vinyl:465,Canvas:620,NP:252},
-  '16x20':{HDR:430,Vinyl:590,Canvas:788,NP:320},'16x24':{HDR:515,Vinyl:708,Canvas:945,NP:384},
-  '18x24':{HDR:580,Vinyl:795,Canvas:1060,NP:432},'20x24':{HDR:645,Vinyl:885,Canvas:1180,NP:480},
-  '20x30':{HDR:800,Vinyl:1100,Canvas:1470,NP:600}
-};
+// ── Print Sizes & Dimensions ─────────────────────────────────
 const SIZE_DIMS = {
-  '2x3':{w:2,h:3},'3x4':{w:3,h:4},'3.5x5':{w:3.5,h:5},'4x6':{w:4,h:6},
-  '5x7':{w:5,h:7},'6x8':{w:6,h:8},'6x9':{w:6,h:9},'8x10':{w:8,h:10},
-  '8x12':{w:8,h:12},'10x12':{w:10,h:12},'10x14':{w:10,h:14},'10x15':{w:10,h:15},
-  '12x15':{w:12,h:15},'12x16':{w:12,h:16},'12x18':{w:12,h:18},'14x18':{w:14,h:18},
-  '16x20':{w:16,h:20},'16x24':{w:16,h:24},'18x24':{w:18,h:24},'20x24':{w:20,h:24},'20x30':{w:20,h:30}
+  '2x3':   {w:2,  h:3},
+  '3x4':   {w:3,  h:4},
+  '3.5x5': {w:3.5,h:5},
+  '4x6':   {w:4,  h:6},
+  '5x7':   {w:5,  h:7},
+  '6x8':   {w:6,  h:8},
+  '6x9':   {w:6,  h:9},
+  '8x10':  {w:8,  h:10},
+  '8x12':  {w:8,  h:12},
+  '10x12': {w:10, h:12},
+  '12x15': {w:12, h:15},
+  '12x18': {w:12, h:18},
+  '13x19': {w:13, h:19},
+  '16x20': {w:16, h:20},
+  '16x24': {w:16, h:24},
+  '20x24': {w:20, h:24},
+  '20x30': {w:20, h:30},
+  '24x36': {w:24, h:36},
+  '36x54': {w:36, h:54},
+  '44x66': {w:44, h:66}
 };
+
+// ── HDR Quantity-based pricing for sizes UP TO 8x12 ───────────
+// Format: [price for 1-19, 20-49, 50-99, 100+]
+const HDR_QTY_PRICES = {
+  '2x3':   [30, 25, 20, 18],
+  '3x4':   [30, 25, 20, 18],
+  '3.5x5': [30, 25, 20, 18],
+  '4x6':   [30, 25, 20, 18],
+  '5x7':   [50, 45, 40, 35],
+  '6x8':   [60, 55, 50, 45],
+  '6x9':   [75, 55, 50, 45],
+  '8x10':  [150, 125, 100, 75],
+  '8x12':  [200, 150, 125, 100]
+};
+
+// ── HDR Flat per-print pricing for sizes 10x12 and above ──────
+const HDR_FLAT_PRICES = {
+  '10x12': 250,
+  '12x15': 300,
+  '12x18': 300,
+  '13x19': 350,
+  '16x20': 400,
+  '16x24': 500,
+  '20x24': 600,
+  '20x30': 700,
+  '24x36': 1300,
+  '36x54': 2900,
+  '44x66': 4400
+};
+
+// ── NP Quality Configuration ──────────────────────────────────
+// Each size: pricePerPhoto, multipleOf, minQty
+const NP_CONFIG = {
+  '3x4':   { price: 7,   mult: 18, min: 90 },
+  '4x6':   { price: 10,  mult: 9,  min: 45 },
+  '5x7':   { price: 20,  mult: 5,  min: 25 },
+  '6x8':   { price: 30,  mult: 4,  min: 30 },
+  '8x10':  { price: 50,  mult: 2,  min: 10 },
+  '8x12':  { price: 60,  mult: 2,  min: 10 },
+  '12x18': { price: 100, mult: 1,  min: 5  },
+  '13x19': { price: 125, mult: 1,  min: 5  }
+};
+
+// ── Vinyl Quality ─────────────────────────────────────────────
+const VINYL_RATE = 0.60;       // ₹ per sq inch
+const VINYL_MIN_SIZE = '12x15'; // smallest allowed
+
+// ── Canvas Quality ────────────────────────────────────────────
+const CANVAS_RATE = 2.75;      // ₹ per sq inch
+const CANVAS_MIN_SIZE = '12x15';
+
+// ── Photo Lamination ──────────────────────────────────────────
+const LAM_RATE = 0.25;          // ₹ per sq inch
+// Only available for HDR + sizes 10x12 and above
+
+// ── Helpers ───────────────────────────────────────────────────
+function getSizeArea(sizeKey) {
+  const s = SIZE_DIMS[sizeKey];
+  return s ? s.w * s.h : 0;
+}
+
+function isLargeSize(sizeKey) {
+  // 10x12 and above
+  return sizeKey in HDR_FLAT_PRICES;
+}
+
+function isSmallHDRSize(sizeKey) {
+  return sizeKey in HDR_QTY_PRICES;
+}
+
+function getHDRPricePerPrint(sizeKey, qty) {
+  if (HDR_FLAT_PRICES[sizeKey]) {
+    return HDR_FLAT_PRICES[sizeKey];
+  }
+  if (HDR_QTY_PRICES[sizeKey]) {
+    const tier = qty >= 100 ? 3 : qty >= 50 ? 2 : qty >= 20 ? 1 : 0;
+    return HDR_QTY_PRICES[sizeKey][tier];
+  }
+  return 0;
+}
+
+function isVinylSizeAllowed(sizeKey) {
+  // 12x15 and above
+  const order = Object.keys(SIZE_DIMS);
+  return order.indexOf(sizeKey) >= order.indexOf(VINYL_MIN_SIZE);
+}
+
+function isCanvasSizeAllowed(sizeKey) {
+  const order = Object.keys(SIZE_DIMS);
+  return order.indexOf(sizeKey) >= order.indexOf(CANVAS_MIN_SIZE);
+}
+
+function isNPSizeAllowed(sizeKey) {
+  return sizeKey in NP_CONFIG;
+}
+
+function isLaminationAllowed(quality, sizeKey) {
+  return quality === 'HDR' && isLargeSize(sizeKey);
+}
+
+function generateNPOptions(sizeKey, count = 20) {
+  const cfg = NP_CONFIG[sizeKey];
+  if (!cfg) return [];
+  const opts = [];
+  for (let i = 0; i < count; i++) {
+    opts.push(cfg.min + i * cfg.mult);
+  }
+  return opts;
+}
+
+function isSizeAllowedForQuality(sizeKey, quality) {
+  if (quality === 'HDR')    return isSmallHDRSize(sizeKey) || isLargeSize(sizeKey);
+  if (quality === 'Vinyl')  return isVinylSizeAllowed(sizeKey);
+  if (quality === 'Canvas') return isCanvasSizeAllowed(sizeKey);
+  if (quality === 'NP')     return isNPSizeAllowed(sizeKey);
+  return false;
+}

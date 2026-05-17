@@ -185,37 +185,51 @@ function getSvcPanelHTML(svcs) {
   if(svcs.includes('Printing')) html += `
     <div class="svc-panel" id="panel-printing">
       <div class="section-head" style="font-size:15px;">🖨️ Printing Details</div>
-      <div class="form-grid-2" style="margin-bottom:12px;">
-        <div class="form-group">
-          <label class="form-label">Print Size</label>
-          <select class="form-input" id="pr-size" onchange="calcPrint()">
-            <option value="">— Select Size —</option>
-            <optgroup label="Wallet/Mini"><option value="2x3">2×3"</option><option value="3x4">3×4"</option><option value="3.5x5">3.5×5"</option></optgroup>
-            <optgroup label="Standard"><option value="4x6">4×6"</option><option value="5x7">5×7"</option><option value="6x8">6×8"</option><option value="6x9">6×9"</option><option value="8x10">8×10"</option><option value="8x12">8×12"</option></optgroup>
-            <optgroup label="Large"><option value="10x12">10×12"</option><option value="10x14">10×14"</option><option value="10x15">10×15"</option><option value="12x15">12×15"</option><option value="12x16">12×16"</option><option value="12x18">12×18"</option><option value="14x18">14×18"</option><option value="16x20">16×20"</option><option value="16x24">16×24"</option><option value="18x24">18×24"</option><option value="20x24">20×24"</option><option value="20x30">20×30"</option></optgroup>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Number of Prints</label>
-          <input class="form-input" id="pr-qty" type="number" min="1" value="1" inputmode="numeric" oninput="calcPrint()">
-        </div>
+
+      <!-- STEP 1: Print Quality (first) -->
+      <label class="form-label" style="display:block;margin-bottom:8px;">1. Print Quality</label>
+      <div class="pill-group" style="margin-bottom:14px;">
+        <label class="pill-option"><input type="radio" name="pq" value="HDR" onchange="onPrintQualityChange()"><span>🌟 HDR</span></label>
+        <label class="pill-option"><input type="radio" name="pq" value="Vinyl" onchange="onPrintQualityChange()"><span>🎨 Vinyl</span></label>
+        <label class="pill-option"><input type="radio" name="pq" value="Canvas" onchange="onPrintQualityChange()"><span>🖼️ Canvas</span></label>
+        <label class="pill-option"><input type="radio" name="pq" value="NP" onchange="onPrintQualityChange()"><span>📄 NP</span></label>
       </div>
-      <label class="form-label" style="display:block;margin-bottom:8px;">Print Quality</label>
-      <div class="pill-group" style="margin-bottom:10px;">
-        <label class="pill-option"><input type="radio" name="pq" value="HDR" onchange="calcPrint()"><span>🌟 HDR</span></label>
-        <label class="pill-option"><input type="radio" name="pq" value="Vinyl" onchange="calcPrint()"><span>🎨 Vinyl</span></label>
-        <label class="pill-option"><input type="radio" name="pq" value="Canvas" onchange="calcPrint()"><span>🖼️ Canvas</span></label>
-        <label class="pill-option"><input type="radio" name="pq" value="NP" onchange="calcPrint()"><span>📄 NP</span></label>
+
+      <!-- STEP 2: Size (filtered by quality) -->
+      <div id="pr-size-section" class="hidden">
+        <label class="form-label" style="display:block;margin-bottom:8px;">2. Print Size</label>
+        <select class="form-input" id="pr-size" onchange="onPrintSizeChange()" style="margin-bottom:14px;">
+          <option value="">— Select Size —</option>
+        </select>
       </div>
+
+      <!-- STEP 3a: Number of Prints (regular for HDR/Vinyl/Canvas) -->
+      <div id="pr-qty-section" class="hidden">
+        <label class="form-label" style="display:block;margin-bottom:8px;">3. Number of Prints</label>
+        <input class="form-input" id="pr-qty" type="number" min="1" value="1" inputmode="numeric" oninput="calcPrint()" style="margin-bottom:14px;">
+      </div>
+
+      <!-- STEP 3b: Quantity dropdown for NP -->
+      <div id="pr-qty-np-section" class="hidden">
+        <label class="form-label" style="display:block;margin-bottom:8px;">3. Number of Prints</label>
+        <select class="form-input" id="pr-qty-np" onchange="calcPrint()" style="margin-bottom:14px;">
+          <option value="">— Select Quantity —</option>
+        </select>
+        <div id="np-info" class="price-info" style="margin-bottom:10px;font-size:12px;"></div>
+      </div>
+
       <div id="print-price-tag" class="price-info hidden"></div>
-      <div style="margin-top:12px;">
-        <label class="form-label" style="display:block;margin-bottom:8px;">Photo Lamination</label>
+
+      <!-- STEP 4: Photo Lamination (only HDR + 10x12+) -->
+      <div id="pr-lam-section" class="hidden" style="margin-top:14px;">
+        <label class="form-label" style="display:block;margin-bottom:8px;">4. Photo Lamination</label>
         <div class="toggle-group">
-          <label class="toggle-option"><input type="radio" name="lam" value="Yes" onchange="calcPrint()"><span>✅ Yes (+₹10/sq in)</span></label>
+          <label class="toggle-option"><input type="radio" name="lam" value="Yes" onchange="calcPrint()"><span>✅ Yes (+₹0.25/sq in)</span></label>
           <label class="toggle-option"><input type="radio" name="lam" value="No" checked onchange="calcPrint()"><span>❌ No</span></label>
         </div>
         <div id="lam-price-tag" class="price-info hidden" style="margin-top:8px;"></div>
       </div>
+
       <div id="print-total-tag" class="price-tag hidden" style="margin-top:10px;"></div>
     </div>`;
 
@@ -423,6 +437,116 @@ function updatePaymentSection() {
   document.getElementById('booking-advance-box').classList.toggle('hidden', otype!=='Booking');
 }
 
+// ── Print Quality / Size / Quantity Logic ─────────────────────
+
+// Display labels for sizes
+const SIZE_LABELS = {
+  '2x3':'2×3"','3x4':'3×4"','3.5x5':'3.5×5"','4x6':'4×6"',
+  '5x7':'5×7"','6x8':'6×8"','6x9':'6×9"','8x10':'8×10"','8x12':'8×12"',
+  '10x12':'10×12"','12x15':'12×15"','12x18':'12×18"','13x19':'13×19"',
+  '16x20':'16×20"','16x24':'16×24"','20x24':'20×24"','20x30':'20×30"',
+  '24x36':'24×36"','36x54':'36×54"','44x66':'44×66"'
+};
+
+window.onPrintQualityChange = function() {
+  const qual = document.querySelector('input[name="pq"]:checked')?.value;
+  const sizeSection = document.getElementById('pr-size-section');
+  const qtySection  = document.getElementById('pr-qty-section');
+  const qtyNPSection= document.getElementById('pr-qty-np-section');
+  const lamSection  = document.getElementById('pr-lam-section');
+  const sizeSelect  = document.getElementById('pr-size');
+
+  if (!qual) {
+    sizeSection?.classList.add('hidden');
+    qtySection?.classList.add('hidden');
+    qtyNPSection?.classList.add('hidden');
+    lamSection?.classList.add('hidden');
+    return;
+  }
+
+  // Build size dropdown filtered by quality
+  let opts = '<option value="">— Select Size —</option>';
+  const smallSizes = ['2x3','3x4','3.5x5','4x6','5x7','6x8','6x9','8x10','8x12'];
+  const largeSizes = ['10x12','12x15','12x18','13x19','16x20','16x24','20x24','20x30'];
+  const xlSizes    = ['24x36','36x54','44x66'];
+
+  const smallAllowed  = smallSizes.filter(s => isSizeAllowedForQuality(s, qual));
+  const largeAllowed  = largeSizes.filter(s => isSizeAllowedForQuality(s, qual));
+  const xlAllowed     = xlSizes.filter(s => isSizeAllowedForQuality(s, qual));
+
+  if (smallAllowed.length) {
+    opts += '<optgroup label="Wallet/Mini & Standard">';
+    smallAllowed.forEach(s => opts += `<option value="${s}">${SIZE_LABELS[s]}</option>`);
+    opts += '</optgroup>';
+  }
+  if (largeAllowed.length) {
+    opts += '<optgroup label="Large">';
+    largeAllowed.forEach(s => opts += `<option value="${s}">${SIZE_LABELS[s]}</option>`);
+    opts += '</optgroup>';
+  }
+  if (xlAllowed.length) {
+    opts += '<optgroup label="Extra Large">';
+    xlAllowed.forEach(s => opts += `<option value="${s}">${SIZE_LABELS[s]}</option>`);
+    opts += '</optgroup>';
+  }
+
+  sizeSelect.innerHTML = opts;
+  sizeSection.classList.remove('hidden');
+
+  // Hide quantity and lamination until size is selected
+  qtySection?.classList.add('hidden');
+  qtyNPSection?.classList.add('hidden');
+  lamSection?.classList.add('hidden');
+  document.getElementById('print-price-tag')?.classList.add('hidden');
+  document.getElementById('print-total-tag')?.classList.add('hidden');
+};
+
+window.onPrintSizeChange = function() {
+  const qual = document.querySelector('input[name="pq"]:checked')?.value;
+  const size = document.getElementById('pr-size')?.value;
+  const qtySection   = document.getElementById('pr-qty-section');
+  const qtyNPSection = document.getElementById('pr-qty-np-section');
+  const lamSection   = document.getElementById('pr-lam-section');
+
+  if (!size) {
+    qtySection?.classList.add('hidden');
+    qtyNPSection?.classList.add('hidden');
+    lamSection?.classList.add('hidden');
+    return;
+  }
+
+  // For NP — show dropdown with valid quantities
+  if (qual === 'NP') {
+    const cfg = NP_CONFIG[size];
+    if (cfg) {
+      const opts = generateNPOptions(size, 20);
+      let html = '<option value="">— Select Quantity —</option>';
+      opts.forEach(n => html += `<option value="${n}">${n} prints</option>`);
+      document.getElementById('pr-qty-np').innerHTML = html;
+      document.getElementById('np-info').innerHTML =
+        `<b>NP ${SIZE_LABELS[size]}</b>: ₹${cfg.price}/photo · Min ${cfg.min} prints · Multiples of ${cfg.mult}`;
+      qtyNPSection.classList.remove('hidden');
+      qtySection.classList.add('hidden');
+    }
+  } else {
+    // For HDR/Vinyl/Canvas — regular number input
+    qtySection.classList.remove('hidden');
+    qtyNPSection.classList.add('hidden');
+  }
+
+  // Lamination — only for HDR + size 10x12 or above
+  if (isLaminationAllowed(qual, size)) {
+    lamSection.classList.remove('hidden');
+  } else {
+    lamSection.classList.add('hidden');
+    // Reset lamination choice
+    const lamNo = document.querySelector('input[name="lam"][value="No"]');
+    if (lamNo) lamNo.checked = true;
+  }
+
+  calcPrint();
+};
+
 // ── Pricing calcs ─────────────────────────────────────────────
 window.calcEditing = function() {
   const v = document.querySelector('input[name="ep"]:checked')?.value;
@@ -435,24 +559,77 @@ window.calcEditing = function() {
 };
 
 window.calcPrint = function() {
-  const size=document.getElementById('pr-size')?.value;
-  const qty=+(document.getElementById('pr-qty')?.value)||1;
-  const qual=document.querySelector('input[name="pq"]:checked')?.value;
-  const lam=document.querySelector('input[name="lam"]:checked')?.value;
-  const pTag=document.getElementById('print-price-tag');
-  const lTag=document.getElementById('lam-price-tag');
-  const tTag=document.getElementById('print-total-tag');
-  if(!pTag) return;
-  if(!size||!qual){pTag.classList.add('hidden');lTag?.classList.add('hidden');tTag?.classList.add('hidden');return;}
-  const pp=PRINT_PRICES[size]; if(!pp) return;
-  const perPrint=pp[qual]; const printTotal=perPrint*qty;
+  const qual = document.querySelector('input[name="pq"]:checked')?.value;
+  const size = document.getElementById('pr-size')?.value;
+  const lam  = document.querySelector('input[name="lam"]:checked')?.value;
+  const pTag = document.getElementById('print-price-tag');
+  const lTag = document.getElementById('lam-price-tag');
+  const tTag = document.getElementById('print-total-tag');
+
+  if (!pTag) return;
+  if (!qual || !size) {
+    pTag.classList.add('hidden');
+    lTag?.classList.add('hidden');
+    tTag?.classList.add('hidden');
+    return;
+  }
+
+  // Get quantity based on quality
+  let qty;
+  if (qual === 'NP') {
+    qty = +(document.getElementById('pr-qty-np')?.value) || 0;
+  } else {
+    qty = +(document.getElementById('pr-qty')?.value) || 0;
+  }
+
+  if (!qty || qty < 1) {
+    pTag.classList.add('hidden');
+    lTag?.classList.add('hidden');
+    tTag?.classList.add('hidden');
+    return;
+  }
+
+  // Calculate per-print and total
+  let perPrint = 0;
+  let priceLabel = '';
+  const { w, h } = SIZE_DIMS[size];
+
+  if (qual === 'HDR') {
+    perPrint = getHDRPricePerPrint(size, qty);
+    if (HDR_FLAT_PRICES[size]) {
+      priceLabel = `HDR ${SIZE_LABELS[size]} (flat) ₹${perPrint}/print × ${qty}`;
+    } else {
+      const tier = qty >= 100 ? '100+ prints' : qty >= 50 ? '50–99 prints' : qty >= 20 ? '20–49 prints' : '1–19 prints';
+      priceLabel = `HDR ${SIZE_LABELS[size]} (${tier}) ₹${perPrint}/print × ${qty}`;
+    }
+  } else if (qual === 'Vinyl') {
+    perPrint = w * h * VINYL_RATE;
+    priceLabel = `Vinyl ${SIZE_LABELS[size]} (${w}×${h} × ₹${VINYL_RATE}) ₹${perPrint.toFixed(2)}/print × ${qty}`;
+  } else if (qual === 'Canvas') {
+    perPrint = w * h * CANVAS_RATE;
+    priceLabel = `Canvas ${SIZE_LABELS[size]} (${w}×${h} × ₹${CANVAS_RATE}) ₹${perPrint.toFixed(2)}/print × ${qty}`;
+  } else if (qual === 'NP') {
+    perPrint = NP_CONFIG[size]?.price || 0;
+    priceLabel = `NP ${SIZE_LABELS[size]} ₹${perPrint}/photo × ${qty}`;
+  }
+
+  const printTotal = Math.round(perPrint * qty);
   pTag.classList.remove('hidden');
-  pTag.innerHTML=`₹${perPrint}/print × ${qty} = <b>₹${printTotal}</b>`;
-  let lamTotal=0;
-  if(lam==='Yes'&&SIZE_DIMS[size]){const{w,h}=SIZE_DIMS[size];const sq=w*h;lamTotal=sq*10*qty;lTag.classList.remove('hidden');lTag.innerHTML=`Lamination: ${w}×${h}" = ${sq} sq.in × ₹10 × ${qty} = <b>₹${lamTotal}</b>`;}
-  else lTag?.classList.add('hidden');
-  const grand=printTotal+lamTotal;
-  tTag.classList.remove('hidden');tTag.textContent=`Total Print Cost: ₹${grand}`;
+  pTag.innerHTML = `${priceLabel} = <b>₹${printTotal}</b>`;
+
+  // Lamination (HDR + large only)
+  let lamTotal = 0;
+  if (qual === 'HDR' && isLargeSize(size) && lam === 'Yes') {
+    lamTotal = Math.round(w * h * LAM_RATE * qty);
+    lTag.classList.remove('hidden');
+    lTag.innerHTML = `Lamination: ${w}×${h}" × ₹${LAM_RATE}/sq.in × ${qty} = <b>₹${lamTotal}</b>`;
+  } else {
+    lTag?.classList.add('hidden');
+  }
+
+  const grand = printTotal + lamTotal;
+  tTag.classList.remove('hidden');
+  tTag.textContent = `Total Print Cost: ₹${grand}`;
 };
 
 window.calcPassport     = ()=>{ const c=+(document.getElementById('pp-copies')?.value)||8;const s=Math.ceil(c/8);const el=document.getElementById('pp-total');if(el)el.value='₹'+(200+Math.max(0,s-1)*100);};
@@ -472,7 +649,40 @@ window.addToCart = function() {
   if(groupAsel.length>0) {
     svcs=groupAsel; let parts=[],totalP=0;
     if(groupAsel.includes('Photo Editing')){const ep=document.querySelector('input[name="ep"]:checked')?.value;const epv=ep==='custom'?(+(document.getElementById('ep-val')?.value)||0):(+ep||0);if(!ep){toast('⚠️ Select editing charge','error');return;}parts.push(`Edit ₹${epv}`);totalP+=epv;}
-    if(groupAsel.includes('Printing')){const size=document.getElementById('pr-size')?.value;const qty=+(document.getElementById('pr-qty')?.value)||1;const qual=document.querySelector('input[name="pq"]:checked')?.value;const lam=document.querySelector('input[name="lam"]:checked')?.value||'No';if(!size||!qual){toast('⚠️ Select print size and quality','error');return;}const pp=PRINT_PRICES[size];const printP=pp[qual]*qty;let lamP=0;if(lam==='Yes'&&SIZE_DIMS[size]){const{w,h}=SIZE_DIMS[size];lamP=w*h*10*qty;}const pT=printP+lamP;parts.push(`Print ${size}" ${qual} ×${qty}${lam==='Yes'?'+Lam':''} ₹${pT}`);totalP+=pT;}
+    if(groupAsel.includes('Printing')){
+      const qual = document.querySelector('input[name="pq"]:checked')?.value;
+      const size = document.getElementById('pr-size')?.value;
+      if (!qual) { toast('⚠️ Select print quality','error'); return; }
+      if (!size) { toast('⚠️ Select print size','error'); return; }
+      const qty = qual === 'NP'
+        ? +(document.getElementById('pr-qty-np')?.value) || 0
+        : +(document.getElementById('pr-qty')?.value) || 0;
+      if (qty < 1) { toast('⚠️ Select number of prints','error'); return; }
+      // Validate NP min/multiple
+      if (qual === 'NP') {
+        const cfg = NP_CONFIG[size];
+        if (!cfg) { toast('⚠️ NP not available for this size','error'); return; }
+        if (qty < cfg.min || (qty - cfg.min) % cfg.mult !== 0) {
+          toast(`⚠️ NP ${size}: min ${cfg.min}, multiples of ${cfg.mult}`,'error');
+          return;
+        }
+      }
+      const lam = document.querySelector('input[name="lam"]:checked')?.value || 'No';
+      const { w, h } = SIZE_DIMS[size];
+      let perPrint = 0;
+      if (qual === 'HDR')    perPrint = getHDRPricePerPrint(size, qty);
+      else if (qual === 'Vinyl')  perPrint = w * h * VINYL_RATE;
+      else if (qual === 'Canvas') perPrint = w * h * CANVAS_RATE;
+      else if (qual === 'NP')     perPrint = NP_CONFIG[size]?.price || 0;
+      const printP = Math.round(perPrint * qty);
+      let lamP = 0;
+      if (qual === 'HDR' && isLargeSize(size) && lam === 'Yes') {
+        lamP = Math.round(w * h * LAM_RATE * qty);
+      }
+      const pT = printP + lamP;
+      parts.push(`Print ${SIZE_LABELS[size]||size} ${qual} ×${qty}${lamP>0?'+Lam':''} ₹${pT}`);
+      totalP += pT;
+    }
     if(groupAsel.includes('Framing')){const ms=document.querySelector('input[name="ms"]:checked')?.value||'';const mt=document.querySelector('input[name="mt"]:checked')?.value||'';const mnt=document.querySelector('input[name="mnt"]:checked')?.value||'No';const fch=+(document.getElementById('frm-charge')?.value)||0;parts.push(`Frame${ms?' '+ms:''}${mt?' '+mt:''}${mnt==='Yes'?' +Mount':''} ₹${fch}`);totalP+=fch;}
     if(groupAsel.includes('Sunboard')){const ss=document.querySelector('input[name="sun"]:checked')?.value||'';const sc=+(document.getElementById('sun-charge')?.value)||0;parts.push(`Sunboard ${ss} ₹${sc}`);totalP+=sc;}
     if(groupAsel.includes('MDF Board')){const ms=document.querySelector('input[name="mdf"]:checked')?.value||'';const mc=+(document.getElementById('mdf-charge')?.value)||0;parts.push(`MDF ${ms} ₹${mc}`);totalP+=mc;}
