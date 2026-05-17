@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0F0F0F">
+<title>Fotovision Studio Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;}
+body{background:#0F0F0F;color:#fff;min-height:100vh;display:flex;flex-direction:column;}
+
+/* BG */
+.bg{position:fixed;inset:0;z-index:0;overflow:hidden;}
+.bg-grad{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%, rgba(201,151,58,.18) 0%, transparent 70%), radial-gradient(ellipse 60% 40% at 80% 100%, rgba(201,151,58,.08) 0%, transparent 60%), #0F0F0F;}
+.bg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);background-size:60px 60px;}
+.bg-glow{position:absolute;top:20%;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle, rgba(201,151,58,.08) 0%, transparent 70%);pointer-events:none;}
+
+/* LAYOUT */
+.page{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;}
+
+/* LOGO */
+.logo-area{text-align:center;margin-bottom:56px;}
+.logo-mark{width:72px;height:72px;background:linear-gradient(135deg,#9A6E1E,#C9973A,#E8C06A);border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;box-shadow:0 8px 32px rgba(201,151,58,.35);}
+.logo-mark svg{width:48px;height:48px;}
+.logo-name{font-family:'DM Serif Display',serif;font-size:clamp(28px,5vw,42px);color:#fff;letter-spacing:-.02em;line-height:1.1;margin-bottom:8px;}
+.logo-sub{font-size:12px;font-weight:600;color:#C9973A;letter-spacing:.14em;text-transform:uppercase;}
+
+/* ROLE CARDS */
+.roles-label{font-size:11px;font-weight:600;color:rgba(255,255,255,.35);letter-spacing:.1em;text-transform:uppercase;text-align:center;margin-bottom:20px;}
+.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%;max-width:540px;margin:0 auto 36px;}
+.role-card{
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;
+  padding:28px 16px;
+  text-align:center;
+  cursor:pointer;
+  transition:all .25s;
+  background:rgba(255,255,255,.03);
+  backdrop-filter:blur(10px);
+  text-decoration:none;
+  display:block;
+  position:relative;
+  overflow:hidden;
+}
+.role-card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(201,151,58,.12),rgba(201,151,58,0));
+  opacity:0;transition:opacity .25s;border-radius:16px;
+}
+.role-card:hover{border-color:rgba(201,151,58,.4);transform:translateY(-3px);}
+.role-card:hover::before{opacity:1;}
+.role-card.selected{border-color:#C9973A;background:rgba(201,151,58,.1);}
+.role-card.selected::before{opacity:1;}
+.role-icon{font-size:36px;margin-bottom:12px;display:block;}
+.role-name{font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;}
+.role-desc{font-size:11px;color:rgba(255,255,255,.4);line-height:1.5;}
+.role-arrow{position:absolute;top:14px;right:14px;font-size:12px;color:rgba(201,151,58,.5);transition:all .2s;}
+.role-card:hover .role-arrow{color:#C9973A;transform:translateX(2px);}
+
+/* LOGIN FORM */
+.login-card{
+  width:100%;max-width:400px;margin:0 auto;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:20px;padding:32px 28px;
+  backdrop-filter:blur(20px);
+  display:none;
+  animation:slideUp .3s ease;
+}
+.login-card.show{display:block;}
+.login-for{font-size:12px;font-weight:600;color:rgba(255,255,255,.4);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;}
+.login-title{font-family:'DM Serif Display',serif;font-size:24px;color:#fff;margin-bottom:22px;}
+.li{
+  width:100%;padding:13px 16px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:10px;
+  font-family:'DM Sans',sans-serif;font-size:14px;color:#fff;
+  outline:none;transition:all .2s;
+  -webkit-appearance:none;
+}
+.li:focus{border-color:#C9973A;background:rgba(201,151,58,.07);box-shadow:0 0 0 3px rgba(201,151,58,.12);}
+.li::placeholder{color:rgba(255,255,255,.25);}
+.login-err{font-size:12px;color:#E57373;padding:10px 14px;background:rgba(229,115,115,.1);border-radius:8px;border:1px solid rgba(229,115,115,.2);display:none;margin-bottom:12px;}
+.btn-login{
+  width:100%;padding:14px;border-radius:10px;
+  background:linear-gradient(135deg,#9A6E1E,#C9973A);
+  color:#fff;font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;
+  border:none;cursor:pointer;
+  box-shadow:0 4px 20px rgba(201,151,58,.35);
+  transition:all .2s;
+  margin-top:4px;
+}
+.btn-login:hover{transform:translateY(-1px);box-shadow:0 6px 28px rgba(201,151,58,.45);}
+.back-btn{background:none;border:none;color:rgba(255,255,255,.4);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;padding:8px 0;text-decoration:underline;width:100%;text-align:center;margin-top:12px;transition:color .2s;}
+.back-btn:hover{color:#fff;}
+
+/* HINT */
+.hint{
+  margin-top:8px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:8px;
+  padding:10px 14px;
+  font-size:11px;color:rgba(255,255,255,.3);
+  text-align:center;
+  line-height:1.8;
+}
+
+/* FOOTER */
+.footer{position:relative;z-index:1;text-align:center;padding:20px;font-size:11px;color:rgba(255,255,255,.2);margin-top:auto;}
+
+@keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+@media(max-width:480px){
+  .roles{grid-template-columns:1fr;max-width:320px;}
+  .role-card{padding:20px 16px;display:flex;align-items:center;gap:16px;text-align:left;}
+  .role-icon{font-size:28px;margin-bottom:0;}
+  .role-desc{display:none;}
+}
+</style>
+</head>
+<body>
+
+<div class="bg">
+  <div class="bg-grad"></div>
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+</div>
+
+<div class="page">
+
+  <div class="logo-area">
+    <div class="logo-mark">
+      <svg viewBox="0 0 48 48" fill="none">
+        <text x="24" y="34" text-anchor="middle" font-family="DM Serif Display,serif" font-size="26" font-weight="700" fill="white">FV</text>
+        <circle cx="39" cy="10" r="2.5" fill="white" opacity=".7"/>
+        <circle cx="43" cy="7"  r="1.5" fill="white" opacity=".5"/>
+        <circle cx="43" cy="14" r="1.5" fill="white" opacity=".5"/>
+      </svg>
+    </div>
+    <div class="logo-name">Fotovision Studio</div>
+    <div class="logo-sub">Professional Studio Management</div>
+  </div>
+
+  <!-- Step 1: Role Selection -->
+  <div id="step-roles">
+    <div class="roles-label">Select your role to continue</div>
+    <div class="roles">
+      <div class="role-card" onclick="selectRole('owner')" id="rc-owner">
+        <span class="role-icon">👑</span>
+        <div class="role-name">Owner</div>
+        <div class="role-desc">Full access · Sales · Analytics</div>
+        <span class="role-arrow">›</span>
+      </div>
+      <div class="role-card" onclick="selectRole('staff')" id="rc-staff">
+        <span class="role-icon">🧑‍💼</span>
+        <div class="role-name">Staff</div>
+        <div class="role-desc">Orders · Bookings · Billing</div>
+        <span class="role-arrow">›</span>
+      </div>
+      <div class="role-card" onclick="selectRole('framer')" id="rc-framer">
+        <span class="role-icon">🖼️</span>
+        <div class="role-name">Framer</div>
+        <div class="role-desc">Framing · Finishing jobs</div>
+        <span class="role-arrow">›</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Password -->
+  <div class="login-card" id="login-card">
+    <div class="login-for" id="login-for-label">Signing in as</div>
+    <div class="login-title" id="login-title">Owner</div>
+    <div class="login-err" id="login-err">❌ Incorrect password. Please try again.</div>
+    <input class="li" id="login-pass" type="password" placeholder="Enter your password…" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn-login" style="margin-top:14px;" onclick="doLogin()">Continue →</button>
+    <button class="back-btn" onclick="goBack()">← Change Role</button>
+    <div class="hint" id="login-hint"></div>
+  </div>
+
+</div>
+
+<div class="footer">© 2025 Fotovision Studio Pro &nbsp;·&nbsp; All rights reserved</div>
+
+<script>
+const ROLE_CONFIG = {
+  owner:  { name:'Owner',  icon:'👑',  pass:'owner123',  page:'owner/index.html',  hint:'Default: owner123' },
+  staff:  { name:'Staff',  icon:'🧑‍💼', pass:'staff123',  page:'staff/index.html',  hint:'Default: staff123'  },
+  framer: { name:'Framer', icon:'🖼️', pass:'framer123', page:'framer/index.html', hint:'Default: framer123' },
+};
+let selectedRole = null;
+
+function selectRole(r) {
+  selectedRole = r;
+  const cfg = ROLE_CONFIG[r];
+  document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('rc-'+r).classList.add('selected');
+  document.getElementById('login-for-label').textContent = 'Signing in as';
+  document.getElementById('login-title').textContent = cfg.icon + ' ' + cfg.name;
+  document.getElementById('login-hint').textContent = '🔑 ' + cfg.hint;
+  document.getElementById('login-err').style.display = 'none';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-card').classList.add('show');
+  document.getElementById('step-roles').style.opacity = '.5';
+  setTimeout(()=>document.getElementById('login-pass').focus(), 100);
+}
+
+function goBack() {
+  selectedRole = null;
+  document.getElementById('login-card').classList.remove('show');
+  document.getElementById('step-roles').style.opacity = '1';
+  document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('selected'));
+}
+
+function doLogin() {
+  if (!selectedRole) return;
+  const pass = document.getElementById('login-pass').value;
+  const cfg  = ROLE_CONFIG[selectedRole];
+  if (pass !== cfg.pass) {
+    const err = document.getElementById('login-err');
+    err.style.display = 'block';
+    document.getElementById('login-pass').value = '';
+    document.getElementById('login-pass').focus();
+    setTimeout(()=>err.style.display='none', 3000);
+    return;
+  }
+  // Store session
+  sessionStorage.setItem('fv_role', selectedRole);
+  sessionStorage.setItem('fv_name', cfg.name);
+  sessionStorage.setItem('fv_icon', cfg.icon);
+  window.location.href = cfg.page;
+}
+</script>
+</body>
+</html>
+<!-- v2 -->

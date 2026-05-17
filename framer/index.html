@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0F0F0F">
+<title>Framer View — Fotovision Studio Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+.framer-hero{
+  background:linear-gradient(135deg,#0F0F0F,#1C1410);
+  border-radius:var(--r-xl);
+  padding:32px 28px;
+  margin-bottom:20px;
+  color:#fff;
+  position:relative;
+  overflow:hidden;
+}
+.framer-hero::before{
+  content:'🖼️';font-size:120px;position:absolute;right:-10px;top:50%;transform:translateY(-50%);opacity:.06;pointer-events:none;
+}
+.framer-hero-title{font-family:'DM Serif Display',serif;font-size:28px;color:#E8C06A;margin-bottom:6px;}
+.framer-hero-sub{font-size:13px;color:rgba(255,255,255,.5);}
+.framer-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:20px;}
+.framer-stat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);padding:14px;text-align:center;}
+.framer-stat-val{font-family:'DM Serif Display',serif;font-size:28px;color:#E8C06A;line-height:1;}
+.framer-stat-lbl{font-size:10px;font-weight:600;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.07em;margin-top:4px;}
+.job-card{
+  background:#fff;
+  border:1px solid var(--paper3);
+  border-radius:var(--r-lg);
+  padding:20px;
+  margin-bottom:10px;
+  box-shadow:var(--sh-sm);
+  transition:all .2s;
+  position:relative;
+  overflow:hidden;
+}
+.job-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(to bottom,var(--gold-dk),var(--gold));}
+.job-card.delivered::before{background:var(--ink3);}
+.job-card:hover{box-shadow:var(--sh-md);}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <a href="../index.html" class="hdr-logo">
+    <div class="hdr-logo-mark">
+      <svg viewBox="0 0 48 48" fill="none"><text x="24" y="34" text-anchor="middle" font-family="DM Serif Display,serif" font-size="26" font-weight="700" fill="white">FV</text></svg>
+    </div>
+    <div class="hdr-logo-text">
+      <span class="hdr-logo-name">Fotovision</span>
+      <span class="hdr-logo-sub">Framer View</span>
+    </div>
+  </a>
+  <div class="hdr-right">
+    <div class="role-pill">🖼️ Framer</div>
+    <button class="btn-logout" onclick="doLogout()">Sign Out</button>
+  </div>
+</header>
+
+<div class="main" style="max-width:800px;">
+
+  <!-- Hero -->
+  <div class="framer-hero">
+    <div class="framer-hero-title">Framing Workshop</div>
+    <div class="framer-hero-sub">Live view of all framing, sunboard & MDF jobs assigned to your station</div>
+    <div class="framer-stats">
+      <div class="framer-stat"><div class="framer-stat-val" id="fs-active">0</div><div class="framer-stat-lbl">Active Jobs</div></div>
+      <div class="framer-stat"><div class="framer-stat-val" id="fs-total">0</div><div class="framer-stat-lbl">Total Jobs</div></div>
+      <div class="framer-stat"><div class="framer-stat-val" id="fs-done">0</div><div class="framer-stat-lbl">Completed</div></div>
+    </div>
+  </div>
+
+  <!-- Active Alerts -->
+  <div class="framer-panel" id="active-panel">
+    <div class="framer-panel-title">🔔 Active Job Alerts</div>
+    <div id="framer-notifs"><div style="font-size:13px;color:#9C8060;">Loading jobs…</div></div>
+  </div>
+
+  <!-- All Framing Orders -->
+  <div style="margin-bottom:12px;">
+    <div class="page-title" style="font-size:20px;">All Framing Orders</div>
+  </div>
+  <div id="framer-orders"><div class="loader"></div></div>
+
+</div>
+
+<script src="../shared.js"></script>
+<script type="module">
+import { initializeApp }    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, doc, updateDoc,
+         onSnapshot, query, orderBy }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAerxTK5t5tYqDJ-AZg5_BMZJEk3pRD0uI",
+  projectId: "foto-vision-studio-pro",
+  messagingSenderId: "1055550886532",
+};
+
+let db, orders=[], useLocal=false;
+
+async function initDB(){
+  if(FIREBASE_CONFIG.apiKey==='YOUR_API_KEY'){
+    useLocal=true;orders=JSON.parse(localStorage.getItem('fv_orders')||'[]');render();return;
+  }
+  try{
+    const app=initializeApp(FIREBASE_CONFIG);
+    db=getFirestore(app);
+    const q=query(collection(db,'orders'),orderBy('created','desc'));
+    onSnapshot(q,snap=>{orders=snap.docs.map(d=>({id:d.id,...d.data()}));render();});
+  }catch(e){useLocal=true;orders=JSON.parse(localStorage.getItem('fv_orders')||'[]');render();}
+}
+
+if(!requireRole('framer')) throw new Error('Not authorized');
+window.doLogout=doLogout;
+
+function render(){
+  const fo=orders.filter(o=>(o.cartItems||[]).some(i=>(i.svcs||[i.svc]).some(s=>FRAMING_SVCS.includes(s))));
+  const active=fo.filter(o=>o.status!=='Delivered');
+  const done=fo.filter(o=>o.status==='Delivered');
+
+  document.getElementById('fs-active').textContent=active.length;
+  document.getElementById('fs-total').textContent=fo.length;
+  document.getElementById('fs-done').textContent=done.length;
+
+  // Active alerts
+  document.getElementById('framer-notifs').innerHTML=active.length
+    ?active.map(o=>{
+        const fi=(o.cartItems||[]).filter(i=>(i.svcs||[i.svc]).some(s=>FRAMING_SVCS.includes(s)));
+        return `<div class="job-notif">
+          <div class="job-dot"></div>
+          <div>
+            <div class="job-text"><b>${o.name}</b> — ${fi.map(i=>i.label||((i.svcs||[i.svc]).join('+'))).join(' | ')} — <b>${o.status}</b></div>
+            <div class="job-time">${o.id} · ${o.date} · 👤 ${o.staff}${o.delivery?' · ⏰ '+formatDatetime(o.delivery):''}</div>
+          </div>
+        </div>`;
+      }).join('')
+    :'<div style="font-size:13px;color:#9C8060;">No active framing jobs 🎉</div>';
+
+  // All jobs
+  document.getElementById('framer-orders').innerHTML=fo.length
+    ?fo.map(o=>{
+        const sc=STATUS_CFG[o.status]||STATUS_CFG['Pending'];
+        const isDelivered=o.status==='Delivered';
+        const framingItems=(o.cartItems||[]).filter(i=>(i.svcs||[i.svc]).some(s=>FRAMING_SVCS.includes(s)));
+        return `<div class="job-card${isDelivered?' delivered':''}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;">
+            <div>
+              <div style="font-size:16px;font-weight:700;margin-bottom:2px;">${o.name}</div>
+              <div style="font-size:11px;color:var(--ink3);">${o.id} · ${o.date} · 👤 ${o.staff}</div>
+            </div>
+            <select class="status-select ${sc.cls}" style="background:${sc.bg};color:${sc.cl};flex-shrink:0;" onchange="updateStatus('${o.id}',this.value)">
+              ${['Pending','In Progress','Ready','Delivered'].map(s=>`<option${s===o.status?' selected':''}>${s}</option>`).join('')}
+            </select>
+          </div>
+          <div style="background:var(--paper);border-radius:var(--r-sm);padding:12px 14px;font-size:13px;color:var(--ink2);line-height:1.8;">
+            ${framingItems.map(i=>`<div>🖼️ <b>${(i.svcs||[i.svc]).join(' + ')}</b>: ${i.label||'No details'}</div>`).join('')}
+          </div>
+          ${o.notes?`<div style="margin-top:8px;font-size:12px;color:var(--ink3);background:var(--paper);padding:8px 12px;border-radius:var(--r-sm);">📝 ${o.notes}</div>`:''}
+          ${o.delivery?`<div style="margin-top:8px;font-size:12px;font-weight:600;color:var(--red);">⏰ Due: ${formatDatetime(o.delivery)}</div>`:''}
+          ${o.phone?`<div style="margin-top:8px;font-size:12px;color:var(--ink3);">📞 ${o.phone}</div>`:''}
+        </div>`;
+      }).join('')
+    :`<div class="empty-state"><div class="empty-icon">🖼️</div><div class="empty-title">No framing orders yet</div><div class="empty-sub">New jobs will appear here automatically</div></div>`;
+}
+
+window.updateStatus=async function(id,val){
+  if(useLocal){orders=orders.map(o=>o.id===id?{...o,status:val}:o);localStorage.setItem('fv_orders',JSON.stringify(orders));render();}
+  else await updateDoc(doc(db,'orders',id),{status:val});
+  toast(`Status → ${val}`,'info');
+};
+
+initDB();
+</script>
+</body>
+</html>

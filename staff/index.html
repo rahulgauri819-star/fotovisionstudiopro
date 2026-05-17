@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#FAFAF8">
+<title>Staff Portal — Fotovision Studio Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<header class="hdr">
+  <a href="../index.html" class="hdr-logo">
+    <div class="hdr-logo-mark">
+      <svg viewBox="0 0 48 48" fill="none"><text x="24" y="34" text-anchor="middle" font-family="DM Serif Display,serif" font-size="26" font-weight="700" fill="white">FV</text></svg>
+    </div>
+    <div class="hdr-logo-text">
+      <span class="hdr-logo-name">Fotovision</span>
+      <span class="hdr-logo-sub">Staff Portal</span>
+    </div>
+  </a>
+  <nav class="hdr-nav" id="desktop-nav"></nav>
+  <div class="hdr-right">
+    <div class="role-pill">🧑‍💼 Staff</div>
+    <button class="btn-logout" onclick="doLogout()">Sign Out</button>
+    <button class="btn-new-order" onclick="openForm()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg> New Order</button>
+  </div>
+</header>
+
+<div class="tab-nav" id="tab-nav">
+  <div class="tab-nav-inner" id="tab-nav-inner"></div>
+</div>
+
+<!-- Owner approval banner (same-session simulation) -->
+<div id="owner-banner" class="owner-banner hidden" onclick="handleOwnerBannerClick()">
+  <span class="pulse"></span>
+  <span id="owner-banner-text">Staff needs approval</span>
+</div>
+
+<div class="main">
+
+<!-- DASHBOARD -->
+<div id="pg-dashboard">
+  <div class="page-header">
+    <div class="page-title">Staff Dashboard 🧑‍💼</div>
+    <div class="page-sub" id="dashdate"></div>
+  </div>
+  <div class="stat-grid" style="grid-template-columns:repeat(4,1fr);">
+    <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-value" id="s-tot">0</div><div class="stat-label">Total</div></div>
+    <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-value" id="s-pnd">0</div><div class="stat-label">Pending</div></div>
+    <div class="stat-card"><div class="stat-icon">⚙️</div><div class="stat-value" id="s-prg">0</div><div class="stat-label">In Progress</div></div>
+    <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value" id="s-rdy">0</div><div class="stat-label">Ready</div></div>
+  </div>
+  <div class="card" style="margin-top:16px;">
+    <div class="card-header"><div class="card-title">📋 Recent Orders</div></div>
+    <div class="card-body" style="padding:0;">
+      <div id="recent-list"><div class="loader"></div></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px;">
+    <div class="card-header"><div class="card-title">⏰ Due Today</div></div>
+    <div class="card-body"><div id="due-today"></div></div>
+  </div>
+</div>
+
+<!-- ORDERS -->
+<div id="pg-orders" class="hidden">
+  <div class="page-header"><div class="page-title">Orders</div><div class="page-sub">View and manage orders</div></div>
+  <div class="filter-bar">
+    <input class="filter-input" id="srch" placeholder="Search name or order ID…" oninput="renderOrders()">
+    <select class="filter-select" id="fst" onchange="renderOrders()">
+      <option value="">All Status</option><option>Pending</option><option>In Progress</option><option>Ready</option><option>Delivered</option>
+    </select>
+  </div>
+  <div id="order-list"><div class="loader"></div></div>
+</div>
+
+<!-- FRAMER -->
+<div id="pg-framer" class="hidden">
+  <div class="page-header"><div class="page-title">🖼️ Framing Jobs</div></div>
+  <div class="framer-panel">
+    <div class="framer-panel-title">🔔 Active Framing Jobs</div>
+    <div id="framer-notifs"></div>
+  </div>
+  <div id="framer-orders"></div>
+</div>
+
+<!-- NEW ORDER FORM -->
+<div id="pg-form" class="hidden">
+  <div class="page-header"><div class="page-title" id="ftit">+ New Order</div><div class="page-sub" id="fsubt">Fill in customer & service details</div></div>
+  <div id="form-content"></div>
+</div>
+
+</div>
+
+<!-- APPROVAL MODAL -->
+<div id="approval-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="appr-title">🔐 Approval Required</div>
+      <div class="modal-sub" id="appr-sub">This action requires Owner approval.</div>
+    </div>
+    <div class="modal-body">
+      <div class="appr-tabs">
+        <button class="appr-tab act" id="appr-tab-pw" onclick="switchApprTab('pw')">🔑 Password</button>
+        <button class="appr-tab" id="appr-tab-req" onclick="switchApprTab('req')">📨 Request Owner</button>
+      </div>
+      <div id="appr-pw-sec">
+        <div class="form-group" style="margin-bottom:12px;">
+          <label class="form-label">Owner Password</label>
+          <input class="form-input" id="appr-pw-input" type="password" placeholder="Enter owner password…" onkeydown="if(event.key==='Enter')submitApproval()">
+        </div>
+        <div class="warn-box hidden" id="appr-err">❌ Incorrect password. Try again.</div>
+      </div>
+      <div id="appr-req-sec" class="hidden">
+        <div style="text-align:center;padding:20px 0;">
+          <div style="font-size:32px;margin-bottom:10px;">📨</div>
+          <div style="font-size:14px;color:var(--ink2);font-weight:600;">Approval request sent to Owner</div>
+          <div style="font-size:12px;color:var(--ink3);margin-top:6px;">Waiting for response…</div>
+          <div id="appr-req-status" style="margin-top:12px;font-size:13px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeApproval()">Cancel</button>
+      <button class="btn btn-primary" id="appr-ok-btn" onclick="submitApproval()">✅ Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- BILL MODAL -->
+<div id="bill-modal" class="modal-overlay hidden">
+  <div class="modal-box bill-modal-box">
+    <div class="receipt" id="bill-content"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeBill()">✕ Close</button>
+      <button class="btn btn-primary" onclick="printBill()">🖨️ Print Bill</button>
+    </div>
+  </div>
+</div>
+
+<script src="../shared.js"></script>
+<script type="module">
+import { initializeApp }    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, doc, addDoc, updateDoc,
+         onSnapshot, query, orderBy, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAerxTK5t5tYqDJ-AZg5_BMZJEk3pRD0uI",
+  projectId: "foto-vision-studio-pro",
+  messagingSenderId: "1055550886532",
+};
+
+let db, orders=[], useLocal=false;
+
+async function initDB() {
+  if(FIREBASE_CONFIG.apiKey==='YOUR_API_KEY'){
+    useLocal=true;
+    orders=JSON.parse(localStorage.getItem('fv_orders')||'[]');
+    return;
+  }
+  try {
+    const app=initializeApp(FIREBASE_CONFIG);
+    db=getFirestore(app);
+    const q=query(collection(db,'orders'),orderBy('created','desc'));
+    onSnapshot(q,snap=>{orders=snap.docs.map(d=>({id:d.id,...d.data()}));refreshCurrentPage();});
+  } catch(e) { useLocal=true; orders=JSON.parse(localStorage.getItem('fv_orders')||'[]'); }
+}
+function saveLocal(){if(useLocal)localStorage.setItem('fv_orders',JSON.stringify(orders));}
+
+if(!requireRole('staff')) throw new Error('Not authorized');
+
+const TABS=[
+  {id:'dashboard',label:'Dashboard',icon:'📊',name:'Dash'},
+  {id:'orders',label:'Orders',icon:'📋',name:'Orders'},
+  {id:'framer',label:'Framing',icon:'🖼️',name:'Framing'},
+];
+
+function buildNav(){
+  const dn=document.getElementById('desktop-nav');
+  dn.innerHTML=TABS.map(t=>`<button class="hdr-nav-btn" id="nav-${t.id}" onclick="showPage('${t.id}')">${t.icon} ${t.label}</button>`).join('');
+  const ti=document.getElementById('tab-nav-inner');
+  const half=Math.floor(TABS.length/2);
+  let html='';
+  TABS.slice(0,half).forEach(t=>html+=`<button class="tab-btn" id="tnb-${t.id}" onclick="showPage('${t.id}')"><span class="tab-icon">${t.icon}</span>${t.name}</button>`);
+  html+=`<button class="tab-btn-fab" onclick="openForm()">+</button>`;
+  TABS.slice(half).forEach(t=>html+=`<button class="tab-btn" id="tnb-${t.id}" onclick="showPage('${t.id}')"><span class="tab-icon">${t.icon}</span>${t.name}</button>`);
+  ti.innerHTML=html;
+}
+
+let currentPage='dashboard';
+window.showPage=function(p){
+  ['dashboard','orders','framer','form'].forEach(x=>document.getElementById('pg-'+x)?.classList.add('hidden'));
+  document.getElementById('pg-'+p)?.classList.remove('hidden');
+  document.querySelectorAll('.hdr-nav-btn').forEach(b=>b.classList.remove('act'));
+  document.getElementById('nav-'+p)?.classList.add('act');
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('act'));
+  document.getElementById('tnb-'+p)?.classList.add('act');
+  window.scrollTo(0,0); currentPage=p;
+  if(p==='dashboard') renderDash();
+  if(p==='orders')    renderOrders();
+  if(p==='framer')    renderFramer();
+};
+function refreshCurrentPage(){if(currentPage==='dashboard')renderDash();else if(currentPage==='orders')renderOrders();else if(currentPage==='framer')renderFramer();}
+
+function renderDash(){
+  document.getElementById('dashdate').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('s-tot').textContent=orders.length;
+  ['Pending','In Progress','Ready'].forEach((s,i)=>document.getElementById(['s-pnd','s-prg','s-rdy'][i]).textContent=orders.filter(o=>o.status===s).length);
+  const rec=[...orders].slice(0,6);
+  document.getElementById('recent-list').innerHTML=rec.length
+    ?rec.map(o=>{const sc=STATUS_CFG[o.status]||STATUS_CFG['Pending'];const svcs=[...new Set((o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]))];
+      return `<div style="display:flex;align-items:center;gap:12px;padding:10px 20px;border-bottom:1px solid var(--paper2);">
+        <div style="font-size:22px;width:30px;">${svcs.slice(0,2).map(s=>SVC_ICONS[s]||'').join('')||'📦'}</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;">${o.name}</div><div style="font-size:11px;color:var(--ink3);">${o.id} · ${o.date}</div></div>
+        <span class="${sc.cls}" style="padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;">${o.status}</span>
+      </div>`;}).join('')
+    :'<div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px;">No orders yet</div>';
+  const today=new Date().toISOString().slice(0,10);
+  const due=orders.filter(o=>o.delivery&&o.delivery.startsWith(today)&&o.status!=='Delivered');
+  document.getElementById('due-today').innerHTML=due.length
+    ?due.map(o=>`<div style="padding:8px 0;border-bottom:1px solid var(--paper2);"><div style="font-size:13px;font-weight:600;">${o.name}</div><div style="font-size:11px;color:var(--red);margin-top:2px;">⏰ ${formatDatetime(o.delivery)}</div></div>`).join('')
+    :'<div style="font-size:12px;color:var(--ink3);padding:8px 0;">None due today 🎉</div>';
+}
+
+function renderOrders(){
+  const q=(document.getElementById('srch').value||'').toLowerCase();
+  const fs=document.getElementById('fst').value;
+  const fil=orders.filter(o=>{
+    if(fs&&o.status!==fs)return false;
+    if(q&&!o.name?.toLowerCase().includes(q)&&!(o.id||'').toLowerCase().includes(q))return false;
+    return true;
+  });
+  document.getElementById('order-list').innerHTML=fil.length
+    ?fil.map(o=>staffOrderCard(o)).join('')
+    :`<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No orders found</div></div>`;
+}
+
+function staffOrderCard(o){
+  const sc=STATUS_CFG[o.status]||STATUS_CFG['Pending'];
+  const bal=(+(o.total||0))-(+(o.advance||0));
+  const svcs=[...new Set((o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]))];
+  const payIcon=o.payMode==='UPI'?'📱':o.payMode==='Credit Card'?'💳':'💵';
+  return `<div class="order-card fade-in">
+    <div class="order-card-head">
+      <div class="order-avatar">${svcs.slice(0,2).map(s=>SVC_ICONS[s]||'').join('')||'📦'}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="order-name">${o.name}</div>
+        <div class="order-id">${o.id}</div>
+        <div class="order-meta">📞 ${o.phone||'—'} · 📅 ${o.date}${o.orderType?` · ${o.orderType==='Instant'?'⚡ Instant':'📅 Booking'}`:''}${o.payMode?` · ${payIcon} ${o.payMode}`:''}${o.delivery?`<br>⏰ ${formatDatetime(o.delivery)}`:''}</div>
+      </div>
+    </div>
+    <div class="order-tags">
+      ${(o.cartItems||[]).map(i=>`<span class="tag">${(i.svcs||[i.svc]).map(s=>SVC_ICONS[s]||'').join('')} ${(i.svcs||[i.svc]).join('+')}${i.price?' '+inr(i.price):''}</span>`).join('')}
+      ${o.discountPct&&+o.discountPct>0?`<span class="tag green">🏷️ ${o.discountPct}% OFF</span>`:''}
+      ${o.total?`<span class="tag gold">Total ${inr(o.total)}</span>`:''}
+    </div>
+    <div class="order-actions">
+      <select class="status-select ${sc.cls}" onchange="chgStatus('${o.id}',this.value)" style="background:${sc.bg};color:${sc.cl};">
+        ${['Pending','In Progress','Ready','Delivered'].map(s=>`<option${s===o.status?' selected':''}>${s}</option>`).join('')}
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="editOrd('${o.id}')">✏️ Edit</button>
+      <button class="btn btn-ghost btn-sm" onclick="billOrd('${o.id}')">🧾 Bill</button>
+      <button class="btn btn-danger btn-sm" onclick="requestDelete('${o.id}')">🗑️</button>
+    </div>
+  </div>`;
+}
+
+function renderFramer(){
+  const fo=orders.filter(o=>(o.cartItems||[]).some(i=>(i.svcs||[i.svc]).some(s=>FRAMING_SVCS.includes(s))));
+  const active=fo.filter(o=>o.status!=='Delivered');
+  document.getElementById('framer-notifs').innerHTML=active.length
+    ?active.map(o=>{const fi=(o.cartItems||[]).filter(i=>(i.svcs||[i.svc]).some(s=>FRAMING_SVCS.includes(s)));
+      return `<div class="job-notif"><div class="job-dot"></div><div><div class="job-text"><b>${o.name}</b> — ${fi.map(i=>i.label||((i.svcs||[i.svc]).join('+'))).join(' | ')} — <b>${o.status}</b></div><div class="job-time">${o.id} · ${o.date}</div></div></div>`;}).join('')
+    :'<div style="font-size:13px;color:#9C8060;padding:6px 0;">No active framing jobs 🎉</div>';
+  document.getElementById('framer-orders').innerHTML=fo.length
+    ?fo.map(o=>{const sc=STATUS_CFG[o.status]||STATUS_CFG['Pending'];return `<div class="card" style="margin-bottom:10px;"><div class="card-body"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-size:15px;font-weight:600;">${o.name}</div><span class="${sc.cls}" style="padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;">${o.status}</span></div><div style="font-size:12px;color:var(--ink2);line-height:1.8;">${(o.cartItems||[]).filter(i=>(i.svcs||[i.svc]).some(s=>FRAMING_SVCS.includes(s))).map(i=>`<b>${(i.svcs||[i.svc]).join('+')}</b>: ${i.label||''}`).join('<br>')}</div>${o.delivery?`<div style="font-size:11px;color:var(--red);margin-top:6px;font-weight:600;">⏰ Due: ${formatDatetime(o.delivery)}</div>`:''}</div></div>`;}).join('')
+    :'<div class="empty-state"><div class="empty-icon">🖼️</div><div class="empty-title">No framing orders</div></div>';
+}
+
+async function chgStatus(id,val){
+  if(useLocal){orders=orders.map(o=>o.id===id?{...o,status:val}:o);saveLocal();refreshCurrentPage();}
+  else await updateDoc(doc(db,'orders',id),{status:val});
+}
+
+function requestDelete(id){
+  openApproval({title:'🗑️ Delete Order',sub:`Deleting order <b>${id}</b> requires Owner approval.`,
+    onApprove:async()=>{
+      if(useLocal){orders=orders.filter(o=>o.id!==id);saveLocal();renderOrders();}
+      toast('Order deleted','error');
+    },onCancel:()=>{}});
+}
+
+window.cart=[];window.editId=null;
+window.openForm=function(){window.editId=null;window.cart=[];document.getElementById('ftit').textContent='+ New Order';document.getElementById('fsubt').textContent='Fill in customer & service details';renderFormContent();showPage('form');};
+function editOrd(id){const o=orders.find(x=>x.id===id);if(!o)return;window.editId=id;window.cart=JSON.parse(JSON.stringify(o.cartItems||[]));document.getElementById('ftit').textContent='Edit Order · '+id;renderFormContent(o);showPage('form');}
+function renderFormContent(existing){document.getElementById('form-content').innerHTML=getFormHTML(existing,'staff');initFormJS(existing,'staff');}
+
+function billOrd(id){const o=orders.find(x=>x.id===id);if(!o)return;document.getElementById('bill-content').innerHTML=buildReceiptHTML(o);document.getElementById('bill-modal').classList.remove('hidden');}
+window.closeBill=()=>document.getElementById('bill-modal').classList.add('hidden');
+window.printBill=function(){const c=document.getElementById('bill-content').innerHTML;const w=window.open('','_blank','width=400,height=700');w.document.write(`<!DOCTYPE html><html><head><title>Bill</title><style>body{font-family:'Courier New',monospace;padding:8px;max-width:360px;margin:0 auto;font-size:11px;}.receipt-row{display:flex;justify-content:space-between;padding:1.5px 0;font-size:10.5px;}.receipt-total{font-weight:700;font-size:12px;border-top:2px solid #000;padding-top:4px;display:flex;justify-content:space-between;margin-top:3px;}.receipt-div{border-top:1px dashed #bbb;margin:7px 0;}.receipt-header{text-align:center;margin-bottom:10px;}</style></head><body>${c}<script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1200);}<\/script></body></html>`);w.document.close();};
+
+function buildReceiptHTML(o){
+  const total=+(o.total||0),cartT=+(o.cartTotal||total),discAmt=+(o.discountAmt||0),adv=+(o.advance||0),bal=total-adv;
+  const payIcon=o.payMode==='UPI'?'📱':o.payMode==='Credit Card'?'💳':'💵';
+  let rows=(o.cartItems||[]).map(item=>`<div class="receipt-row" style="font-weight:600;"><span>${(item.svcs||[item.svc]).map(s=>SVC_ICONS[s]||'').join('')} ${(item.svcs||[item.svc]).join('+')}</span><span>Rs.${item.price||0}</span></div>${item.label?`<div class="receipt-row"><span style="padding-left:8px;font-size:10px;color:#555;">${item.label}</span></div>`:''}`).join('');
+  return `<div class="receipt-header"><div style="width:50px;height:50px;background:linear-gradient(135deg,#9A6E1E,#C9973A);border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;"><svg width="34" height="34" viewBox="0 0 34 34"><text x="17" y="24" text-anchor="middle" font-family="serif" font-size="20" font-weight="700" fill="white">FV</text></svg></div><div style="font-size:14px;font-weight:700;letter-spacing:.1em;">FOTOVISION STUDIO</div><div style="font-size:9px;color:#555;">━━━━━━━━━━━━━━━━━</div></div>
+  <div class="receipt-div"></div>
+  <div class="receipt-row"><span><b>Bill:</b> ${o.id}</span><span>${o.date}</span></div>
+  <div class="receipt-row"><span><b>Customer:</b> ${o.name}</span><span>${o.phone||''}</span></div>
+  <div class="receipt-row"><span><b>Staff:</b> ${o.staff}</span><span><b>${o.orderType||'Instant'}</b></span></div>
+  <div class="receipt-row"><span><b>Payment:</b> ${payIcon} ${o.payMode||'Cash'}</span></div>
+  ${o.delivery?`<div class="receipt-row"><span><b>Due:</b> ${formatDatetime(o.delivery)}</span></div>`:''}
+  <div class="receipt-div"></div>
+  ${rows}
+  <div class="receipt-div"></div>
+  ${discAmt>0?`<div class="receipt-row"><span>Sub-Total</span><span>Rs.${cartT}</span></div><div class="receipt-row" style="color:#2D8A5E;"><span>Discount (${o.discountPct}%)</span><span>- Rs.${discAmt}</span></div>`:''}
+  <div class="receipt-row"><span><b>Total</b></span><span><b>Rs.${total}</b></span></div>
+  ${o.orderType==='Instant'?`<div class="receipt-total"><span>PAID (${o.payMode||'Cash'})</span><span>Rs.${total}</span></div>`:`<div class="receipt-row"><span>Advance Paid</span><span>Rs.${adv}</span></div><div class="receipt-total"><span>BALANCE DUE</span><span>Rs.${bal}</span></div>`}
+  <div class="receipt-footer" style="text-align:center;font-size:10px;color:#555;margin-top:12px;line-height:1.8;"><div class="receipt-div"></div>✨ Thank you for choosing Fotovision Studio! ✨</div>`;
+}
+
+window.saveOrder=async function(){
+  const name=document.getElementById('f-name')?.value.trim();
+  if(!name){toast('⚠️ Customer name required','error');return;}
+  if(cart.length===0){toast('⚠️ Add at least one service','error');return;}
+  const otype=document.querySelector('input[name="otype"]:checked')?.value||'Instant';
+  const delivery=document.getElementById('f-delivery')?.value;
+  if(otype==='Booking'&&!delivery){toast('⚠️ Select delivery date & time','error');return;}
+  const cartTotal=cart.reduce((s,i)=>s+(+i.price||0),0);
+  const discPct=+(document.querySelector('input[name="disc"]:checked')?.value||0);
+  const discAmt=Math.round(cartTotal*discPct/100);
+  const finalTotal=cartTotal-discAmt;
+  const payMode=document.querySelector('input[name="paymode"]:checked')?.value||'Cash';
+  const advance=otype==='Instant'?finalTotal:(+(document.getElementById('f-advance')?.value)||0);
+  const data={name,phone:document.getElementById('f-phone')?.value||'',address:document.getElementById('f-address')?.value||'',staff:document.getElementById('f-staff')?.value||'',status:window.editId?(orders.find(x=>x.id===window.editId)?.status||'Pending'):'Pending',orderType:otype,delivery:otype==='Booking'?delivery:'',date:window.editId?(orders.find(x=>x.id===window.editId)?.date||todayStr()):todayStr(),notes:document.getElementById('f-notes')?.value||'',cartItems:JSON.parse(JSON.stringify(window.cart)),cartTotal,discountPct:discPct,discountAmt:discAmt,total:finalTotal,advance,payMode,bookedBy:'staff'};
+  if(useLocal){if(window.editId){orders=orders.map(o=>o.id===window.editId?{...o,...data}:o);}else{data.id='FV-'+String(Date.now()).slice(-6);data.created=Date.now();orders=[data,...orders];}saveLocal();}
+  else{if(window.editId)await updateDoc(doc(db,'orders',window.editId),data);else{data.created=serverTimestamp();await addDoc(collection(db,'orders'),data);}}
+  const isF=cart.some(i=>(i.svcs||[]).some(s=>FRAMING_SVCS.includes(s)));
+  toast(isF?'✅ Saved! 🖼️ Framer notified':window.editId?'✅ Updated!':'✅ Order created!','success');
+  window.cart=[];window.editId=null;showPage('orders');
+};
+
+window.cancelForm=()=>{window.cart=[];window.editId=null;showPage('orders');};
+window.chgStatus=chgStatus;window.editOrd=editOrd;window.billOrd=billOrd;window.requestDelete=requestDelete;window.doLogout=doLogout;
+
+buildNav();
+initDB().then(()=>showPage('dashboard'));
+</script>
+<script src="../form.js"></script>
+</body>
+</html>
