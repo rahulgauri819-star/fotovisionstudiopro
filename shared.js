@@ -183,6 +183,8 @@ const SIZE_DIMS = {
   '20x24': {w:20, h:24},
   '20x30': {w:20, h:30},
   '24x36': {w:24, h:36},
+  '30x40': {w:30, h:40},
+  '30x45': {w:30, h:45},
   '36x54': {w:36, h:54},
   '44x66': {w:44, h:66}
 };
@@ -212,6 +214,8 @@ const HDR_FLAT_PRICES = {
   '20x24': 600,
   '20x30': 700,
   '24x36': 1300,
+  '30x40': 1800,
+  '30x45': 1800,
   '36x54': 2900,
   '44x66': 4400
 };
@@ -341,4 +345,103 @@ function isSizeAllowedForQuality(sizeKey, quality) {
   if (quality === 'Canvas') return isCanvasSizeAllowed(sizeKey);
   if (quality === 'NP')     return isNPSizeAllowed(sizeKey);
   return false;
+}
+
+// ── Framing Constants ─────────────────────────────────────────
+const MOULDING_SIZES = ['0.5','0.75','1','1.5','2','2.5','3','3.5','4','5'];
+const MOUNT_SIZES    = [1, 1.5, 2, 2.5, 3, 3.5, 4];
+const FRAME_PRICE_PER_FT = 10;
+
+// Round moulding size UP to nearest whole inch
+function mouldRound(size) {
+  return Math.ceil(parseFloat(size));
+}
+
+// Frame cost without mount
+// Cost = [(L+B)×2] + [mouldRound(size) × 8 × FRAME_PRICE_PER_FT]
+function calcFrameCost(l, b, mouldSize) {
+  const perim = (l + b) * 2;
+  const mouldCost = mouldRound(mouldSize) * 8 * FRAME_PRICE_PER_FT;
+  return perim + mouldCost;
+}
+
+// Frame cost with mount
+// NewL = L + mountSize×2, NewB = B + mountSize×2
+function calcFrameCostWithMount(l, b, mouldSize, mountSize) {
+  const newL = l + mountSize * 2;
+  const newB = b + mountSize * 2;
+  return calcFrameCost(newL, newB, mouldSize);
+}
+
+// Sleeve pricing
+// Above 16×20 means area > 320 sq.in
+function sleevePriceAbove(l, b) {
+  return (l * b) > 320;
+}
+const SLEEVE_PRICES = {
+  plain:  { small: 100, large: 200 },
+  stripe: { small: 200, large: 350 }
+};
+function calcSleeveCost(type, l, b) {
+  const above = sleevePriceAbove(l, b);
+  return SLEEVE_PRICES[type][above ? 'large' : 'small'];
+}
+
+// Default mouldings per size (used on first load if Firebase empty)
+const DEFAULT_MOULDINGS = {
+  '0.5':  [{code:'M1',name:'Golden Oak'},{code:'M2',name:'Matte Black'},{code:'M3',name:'Walnut Brown'},{code:'M4',name:'Silver Chrome'},{code:'M5',name:'Ivory White'}],
+  '0.75': [{code:'M1',name:'Golden Oak'},{code:'M2',name:'Matte Black'},{code:'M3',name:'Walnut Brown'},{code:'M4',name:'Silver Chrome'},{code:'M5',name:'Ivory White'}],
+  '1':    [{code:'M1',name:'Classic Gold'},{code:'M2',name:'Classic Silver'},{code:'M3',name:'Matt Black'},{code:'M4',name:'Rustic Wood'},{code:'M5',name:'White Gloss'}],
+  '1.5':  [{code:'M1',name:'Antique Bronze'},{code:'M2',name:'Dark Walnut'},{code:'M3',name:'Champagne Gold'},{code:'M4',name:'Rose Gold'},{code:'M5',name:'Ivory Matte'}],
+  '2':    [{code:'M1',name:'Ornate Gold'},{code:'M2',name:'Ebony Black'},{code:'M3',name:'Mahogany'},{code:'M4',name:'Teak Brown'},{code:'M5',name:'Gunmetal Grey'}],
+  '2.5':  [{code:'M1',name:'Fluted Gold'},{code:'M2',name:'Wide Walnut'},{code:'M3',name:'Distressed White'},{code:'M4',name:'Natural Oak'},{code:'M5',name:'Metallic Silver'}],
+  '3':    [{code:'M1',name:'Golden Oak'},{code:'M2',name:'Matte Black'},{code:'M3',name:'Walnut Brown'},{code:'M4',name:'Silver Chrome'},{code:'M5',name:'Ivory White'}],
+  '3.5':  [{code:'M1',name:'Golden Oak'},{code:'M2',name:'Matte Black'},{code:'M3',name:'Walnut Brown'},{code:'M4',name:'Silver Chrome'},{code:'M5',name:'Ivory White'}],
+  '4':    [{code:'M1',name:'Golden Oak'},{code:'M2',name:'Matte Black'},{code:'M3',name:'Walnut Brown'},{code:'M4',name:'Silver Chrome'},{code:'M5',name:'Ivory White'}],
+  '5':    [{code:'M1',name:'Golden Oak'},{code:'M2',name:'Matte Black'},{code:'M3',name:'Walnut Brown'},{code:'M4',name:'Silver Chrome'},{code:'M5',name:'Ivory White'}],
+};
+
+// In-memory moulding cache (loaded from Firebase)
+window.mouldingsCache = {};
+
+// Load mouldings from Firebase into cache
+async function loadMouldings() {
+  if (!window.db) return;
+  try {
+    const snap = await window.db.collection('mouldings').get();
+    if (snap.empty) {
+      // Seed defaults
+      for (const size of MOULDING_SIZES) {
+        await window.db.collection('mouldings').doc(size + 'inch').set({ items: DEFAULT_MOULDINGS[size] || [] });
+        window.mouldingsCache[size] = DEFAULT_MOULDINGS[size] || [];
+      }
+    } else {
+      snap.forEach(doc => {
+        const key = doc.id.replace('inch','');
+        window.mouldingsCache[key] = doc.data().items || [];
+      });
+    }
+  } catch(e) { console.error('loadMouldings:', e); }
+}
+
+// Save mouldings for a size back to Firebase
+async function saveMouldings(size) {
+  if (!window.db) return;
+  try {
+    await window.db.collection('mouldings').doc(size + 'inch').set({ items: window.mouldingsCache[size] || [] });
+  } catch(e) { console.error('saveMouldings:', e); }
+}
+
+// Add a moulding to a size
+async function addMoulding(size, code, name) {
+  if (!window.mouldingsCache[size]) window.mouldingsCache[size] = [];
+  window.mouldingsCache[size].push({ code, name });
+  await saveMouldings(size);
+}
+
+// Delete a moulding from a size (owner only)
+async function deleteMoulding(size, index) {
+  if (!window.mouldingsCache[size]) return;
+  window.mouldingsCache[size].splice(index, 1);
+  await saveMouldings(size);
 }

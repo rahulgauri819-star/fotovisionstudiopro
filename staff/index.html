@@ -13,13 +13,7 @@
 
 <header class="hdr">
   <a href="../index.html" class="hdr-logo">
-    <div class="hdr-logo-mark">
-      <svg viewBox="0 0 48 48" fill="none"><text x="24" y="34" text-anchor="middle" font-family="DM Serif Display,serif" font-size="26" font-weight="700" fill="white">FV</text></svg>
-    </div>
-    <div class="hdr-logo-text">
-      <span class="hdr-logo-name">Fotovision</span>
-      <span class="hdr-logo-sub">Staff Portal</span>
-    </div>
+    <div style="background:#111;border-radius:10px;padding:4px 12px;"><img src="../logo.png" alt="FV" style="height:38px;display:block;"></div>
   </a>
   <nav class="hdr-nav" id="desktop-nav"></nav>
   <div class="hdr-right">
@@ -348,7 +342,7 @@ window.cancelForm=()=>{window.cart=[];window.editId=null;showPage('orders');};
 window.chgStatus=chgStatus;window.editOrd=editOrd;window.billOrd=billOrd;window.requestDelete=requestDelete;window.doLogout=doLogout;
 
 buildNav();
-initDB().then(()=>showPage('dashboard'));
+initDB().then(async ()=>{ await loadMouldings(); showPage('dashboard'); });
 </script>
 <script src="../form.js"></script>
 </body>

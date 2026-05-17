@@ -267,38 +267,112 @@ function getSvcPanelHTML(svcs) {
       <div id="print-total-tag" class="price-tag hidden" style="margin-top:10px;"></div>
     </div>`;
 
-  if(svcs.includes('Framing')) html += `
+  if(svcs.includes('Framing')) {
+    // Check if Printing is also selected — if so, take size from there
+    const hasPrinting = svcs.includes('Printing');
+    html += `
     <div class="svc-panel" id="panel-framing">
       <div class="section-head" style="font-size:15px;">🖼️ Framing Details</div>
-      <label class="form-label" style="display:block;margin-bottom:8px;">Frame Moulding Size</label>
-      <div class="pill-group" style="margin-bottom:8px;">
-        <label class="pill-option"><input type="radio" name="ms" value='0.5"' onchange="onMouldSize(this)"><span>0.5"</span></label>
-        <label class="pill-option"><input type="radio" name="ms" value='1"' onchange="onMouldSize(this)"><span>1"</span></label>
-        <label class="pill-option"><input type="radio" name="ms" value='1.5"' onchange="onMouldSize(this)"><span>1.5"</span></label>
-        <label class="pill-option"><input type="radio" name="ms" value='2"' onchange="onMouldSize(this)"><span>2"</span></label>
-        <label class="pill-option"><input type="radio" name="ms" value='2.5"' onchange="onMouldSize(this)"><span>2.5"</span></label>
-      </div>
-      <div id="mt-05" class="hidden" style="background:var(--paper);border-radius:var(--r-sm);padding:12px;margin-bottom:8px;"><label class="form-label" style="display:block;margin-bottom:7px;">Type — 0.5"</label><div class="pill-group"><label class="pill-option"><input type="radio" name="mt" value="Thin Gold"><span>Thin Gold</span></label><label class="pill-option"><input type="radio" name="mt" value="Thin Silver"><span>Thin Silver</span></label><label class="pill-option"><input type="radio" name="mt" value="Thin Black"><span>Thin Black</span></label><label class="pill-option"><input type="radio" name="mt" value="Thin White"><span>Thin White</span></label><label class="pill-option"><input type="radio" name="mt" value="Slim Natural Wood"><span>Slim Natural Wood</span></label></div></div>
-      <div id="mt-1"  class="hidden" style="background:var(--paper);border-radius:var(--r-sm);padding:12px;margin-bottom:8px;"><label class="form-label" style="display:block;margin-bottom:7px;">Type — 1"</label><div class="pill-group"><label class="pill-option"><input type="radio" name="mt" value="Classic Gold"><span>Classic Gold</span></label><label class="pill-option"><input type="radio" name="mt" value="Classic Silver"><span>Classic Silver</span></label><label class="pill-option"><input type="radio" name="mt" value="Matt Black"><span>Matt Black</span></label><label class="pill-option"><input type="radio" name="mt" value="Rustic Wood"><span>Rustic Wood</span></label><label class="pill-option"><input type="radio" name="mt" value="White Gloss"><span>White Gloss</span></label></div></div>
-      <div id="mt-15" class="hidden" style="background:var(--paper);border-radius:var(--r-sm);padding:12px;margin-bottom:8px;"><label class="form-label" style="display:block;margin-bottom:7px;">Type — 1.5"</label><div class="pill-group"><label class="pill-option"><input type="radio" name="mt" value="Antique Bronze"><span>Antique Bronze</span></label><label class="pill-option"><input type="radio" name="mt" value="Dark Walnut"><span>Dark Walnut</span></label><label class="pill-option"><input type="radio" name="mt" value="Champagne Gold"><span>Champagne Gold</span></label><label class="pill-option"><input type="radio" name="mt" value="Rose Gold"><span>Rose Gold</span></label><label class="pill-option"><input type="radio" name="mt" value="Ivory Matte"><span>Ivory Matte</span></label></div></div>
-      <div id="mt-2"  class="hidden" style="background:var(--paper);border-radius:var(--r-sm);padding:12px;margin-bottom:8px;"><label class="form-label" style="display:block;margin-bottom:7px;">Type — 2"</label><div class="pill-group"><label class="pill-option"><input type="radio" name="mt" value="Ornate Baroque Gold"><span>Ornate Baroque Gold</span></label><label class="pill-option"><input type="radio" name="mt" value="Ebony Black"><span>Ebony Black</span></label><label class="pill-option"><input type="radio" name="mt" value="Mahogany"><span>Mahogany</span></label><label class="pill-option"><input type="radio" name="mt" value="Teak Brown"><span>Teak Brown</span></label><label class="pill-option"><input type="radio" name="mt" value="Gunmetal Grey"><span>Gunmetal Grey</span></label></div></div>
-      <div id="mt-25" class="hidden" style="background:var(--paper);border-radius:var(--r-sm);padding:12px;margin-bottom:8px;"><label class="form-label" style="display:block;margin-bottom:7px;">Type — 2.5"</label><div class="pill-group"><label class="pill-option"><input type="radio" name="mt" value="Fluted Gold"><span>Fluted Gold</span></label><label class="pill-option"><input type="radio" name="mt" value="Wide Walnut"><span>Wide Walnut</span></label><label class="pill-option"><input type="radio" name="mt" value="Distressed White"><span>Distressed White</span></label><label class="pill-option"><input type="radio" name="mt" value="Natural Oak Wide"><span>Natural Oak Wide</span></label><label class="pill-option"><input type="radio" name="mt" value="Metallic Silver Wide"><span>Metallic Silver Wide</span></label></div></div>
-      <div style="margin-top:12px;">
-        <label class="form-label" style="display:block;margin-bottom:8px;">Mount in Frame?</label>
-        <div class="toggle-group">
-          <label class="toggle-option"><input type="radio" name="mnt" value="Yes" onchange="toggleMount()"><span>✅ Yes</span></label>
-          <label class="toggle-option"><input type="radio" name="mnt" value="No" checked onchange="toggleMount()"><span>❌ No</span></label>
+
+      ${!hasPrinting ? `
+      <!-- Manual L & B input (only when Framing alone) -->
+      <div style="margin-bottom:14px;">
+        <label class="form-label" style="display:block;margin-bottom:8px;">Print Size (for frame calculation)</label>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <input class="form-input" id="frm-L" type="number" min="1" placeholder="Length (in)" style="max-width:120px;" oninput="calcFrame()">
+          <span style="font-weight:700;color:var(--gold-dk);">×</span>
+          <input class="form-input" id="frm-B" type="number" min="1" placeholder="Breadth (in)" style="max-width:120px;" oninput="calcFrame()">
+          <span style="font-size:12px;color:var(--ink-lt);">inches</span>
         </div>
-        <div id="mount-box" class="hidden" style="margin-top:10px;padding:12px;background:var(--paper);border-radius:var(--r-sm);">
+      </div>` : `<div id="frm-size-info" class="price-info" style="margin-bottom:12px;">📐 Print size taken from Printing panel</div>`}
+
+      <!-- Moulding Size -->
+      <label class="form-label" style="display:block;margin-bottom:8px;">1. Moulding Size</label>
+      <div class="pill-group" style="margin-bottom:12px;flex-wrap:wrap;">
+        ${MOULDING_SIZES.map(s=>`<label class="pill-option"><input type="radio" name="ms" value="${s}" onchange="onMouldSizeChange('${s}')"><span>${s}"</span></label>`).join('')}
+      </div>
+
+      <!-- Moulding Type dropdown (populated by JS) -->
+      <div id="frm-mould-type-section" class="hidden" style="margin-bottom:14px;">
+        <label class="form-label" style="display:block;margin-bottom:8px;">2. Moulding Type</label>
+        <select class="form-input" id="frm-mould-select" onchange="calcFrame()" style="margin-bottom:8px;">
+          <option value="">— Select Moulding —</option>
+        </select>
+        <!-- Add New Moulding -->
+        <div id="frm-add-mould-section">
+          <button type="button" class="btn-outline" onclick="toggleAddMould()" style="font-size:12px;padding:6px 12px;margin-bottom:8px;">➕ Add New Moulding</button>
+          <div id="frm-add-mould-form" class="hidden" style="background:var(--paper);border-radius:var(--r-sm);padding:12px;margin-bottom:8px;">
+            <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+              <input class="form-input" id="frm-new-code" placeholder="Code (e.g. M6)" style="max-width:120px;">
+              <input class="form-input" id="frm-new-name" placeholder="Name/Color (e.g. Rose Gold)" style="flex:1;min-width:150px;">
+            </div>
+            <button type="button" class="btn-gold" onclick="saveNewMoulding()" style="font-size:12px;padding:6px 16px;">💾 Save Moulding</button>
+            <button type="button" class="btn-outline" onclick="toggleAddMould()" style="font-size:12px;padding:6px 12px;margin-left:8px;">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mount Option -->
+      <div id="frm-mount-section" class="hidden" style="margin-bottom:14px;">
+        <label class="form-label" style="display:block;margin-bottom:8px;">3. Mount</label>
+        <div class="toggle-group" style="margin-bottom:10px;">
+          <label class="toggle-option"><input type="radio" name="mnt" value="No" checked onchange="onMountChange()"><span>🖼️ Frame Without Mount</span></label>
+          <label class="toggle-option"><input type="radio" name="mnt" value="Yes" onchange="onMountChange()"><span>🖼️ Frame With Mount</span></label>
+        </div>
+        <!-- Mount Size (only if With Mount) -->
+        <div id="frm-mount-size-box" class="hidden" style="background:var(--paper);border-radius:var(--r-sm);padding:12px;margin-bottom:10px;">
           <label class="form-label" style="display:block;margin-bottom:8px;">Mount Size</label>
-          <div class="pill-group"><label class="pill-option"><input type="radio" name="mntS" value='0.5"'><span>0.5"</span></label><label class="pill-option"><input type="radio" name="mntS" value='1"'><span>1"</span></label><label class="pill-option"><input type="radio" name="mntS" value='1.5"'><span>1.5"</span></label><label class="pill-option"><input type="radio" name="mntS" value='2"'><span>2"</span></label><label class="pill-option"><input type="radio" name="mntS" value='2.5"'><span>2.5"</span></label></div>
+          <div class="pill-group" style="flex-wrap:wrap;">
+            ${MOUNT_SIZES.map(s=>`<label class="pill-option"><input type="radio" name="mntS" value="${s}" onchange="calcFrame()"><span>${s}"</span></label>`).join('')}
+          </div>
         </div>
       </div>
-      <div class="form-group" style="margin-top:14px;max-width:220px;">
-        <label class="form-label">Framing Charge (₹)</label>
-        <input class="form-input" id="frm-charge" type="number" min="0" placeholder="Enter price">
+
+      <!-- Auto-calculated Frame Cost -->
+      <div id="frm-cost-tag" class="price-tag hidden" style="margin-bottom:14px;"></div>
+
+      <!-- Accessories -->
+      <div id="frm-accessories" class="hidden" style="margin-bottom:10px;">
+        <label class="form-label" style="display:block;margin-bottom:8px;">4. Accessories (Optional)</label>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <label class="check-btn" style="width:100%;">
+            <input type="checkbox" name="acc" value="Table Stand" onchange="calcFrame()">
+            <span>🪑 Table Stand <span style="font-size:11px;color:var(--ink-lt);">Free · Recommended for max 10×12"</span></span>
+          </label>
+          <label class="check-btn" style="width:100%;">
+            <input type="checkbox" name="acc" value="Hanging Wire" onchange="calcFrame()">
+            <span>🪢 Hanging Wire <span style="font-size:11px;color:var(--ink-lt);">Free</span></span>
+          </label>
+          <!-- Sleeve — only visible with mount -->
+          <div id="frm-sleeve-row" class="hidden">
+            <label class="check-btn" style="width:100%;">
+              <input type="checkbox" id="acc-sleeve" onchange="onSleeveToggle()">
+              <span>🛍️ Sleeve</span>
+            </label>
+            <div id="frm-sleeve-opts" class="hidden" style="background:var(--paper);border-radius:var(--r-sm);padding:12px;margin-top:8px;">
+              <label class="form-label" style="display:block;margin-bottom:8px;">Sleeve Type</label>
+              <div class="toggle-group" style="margin-bottom:10px;">
+                <label class="toggle-option"><input type="radio" name="slvType" value="plain" checked onchange="onSleeveTypeChange()"><span>Plain Plastic Sleeve</span></label>
+                <label class="toggle-option"><input type="radio" name="slvType" value="stripe" onchange="onSleeveTypeChange()"><span>Golden Stripe</span></label>
+              </div>
+              <div id="frm-sleeve-colors" style="margin-bottom:8px;">
+                <label class="form-label" style="display:block;margin-bottom:6px;">Color</label>
+                <div class="pill-group">
+                  <label class="pill-option"><input type="radio" name="slvColor" value="Gold" checked onchange="calcFrame()"><span>🟡 Gold</span></label>
+                  <label class="pill-option"><input type="radio" name="slvColor" value="Silver" onchange="calcFrame()"><span>⚪ Silver</span></label>
+                  <label class="pill-option"><input type="radio" name="slvColor" value="Black" onchange="calcFrame()"><span>⚫ Black</span></label>
+                </div>
+              </div>
+              <div id="frm-sleeve-price" class="price-info hidden"></div>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <!-- Grand Total -->
+      <div id="frm-total-tag" class="price-tag hidden"></div>
     </div>`;
+  }
 
   return html;
 }
@@ -417,9 +491,122 @@ window.onMouldSize      = function(el) {
   if(map[el.value]) document.getElementById(map[el.value])?.classList.remove('hidden');
   document.querySelectorAll('input[name="mt"]').forEach(r=>r.checked=false);
 };
-window.toggleMount = function() {
-  document.getElementById('mount-box')?.classList.toggle('hidden',
-    document.querySelector('input[name="mnt"]:checked')?.value!=='Yes');
+window.toggleMount = function() {}; // legacy stub
+
+// ── Framing Handlers ──────────────────────────────────────────
+
+window.onMouldSizeChange = function(size) {
+  const sec = document.getElementById('frm-mould-type-section');
+  const sel = document.getElementById('frm-mould-select');
+  if (!sec || !sel) return;
+  sec.classList.remove('hidden');
+  const items = window.mouldingsCache[size] || DEFAULT_MOULDINGS[size] || [];
+  let opts = '<option value="">— Select Moulding —</option>';
+  items.forEach((m,i) => opts += `<option value="${i}">${m.code} — ${m.name}</option>`);
+  sel.innerHTML = opts;
+  sel.dataset.mouldSize = size;
+  document.getElementById('frm-mount-section')?.classList.remove('hidden');
+  calcFrame();
+};
+
+window.toggleAddMould = function() {
+  document.getElementById('frm-add-mould-form')?.classList.toggle('hidden');
+};
+
+window.saveNewMoulding = async function() {
+  const size = document.getElementById('frm-mould-select')?.dataset.mouldSize;
+  const code = document.getElementById('frm-new-code')?.value.trim();
+  const name = document.getElementById('frm-new-name')?.value.trim();
+  if (!size || !code || !name) { toast('⚠️ Enter moulding code and name','error'); return; }
+  await addMoulding(size, code, name);
+  onMouldSizeChange(size);
+  document.getElementById('frm-new-code').value = '';
+  document.getElementById('frm-new-name').value = '';
+  document.getElementById('frm-add-mould-form')?.classList.add('hidden');
+  toast('✅ Moulding saved!');
+};
+
+window.onMountChange = function() {
+  const mnt = document.querySelector('input[name="mnt"]:checked')?.value;
+  document.getElementById('frm-mount-size-box')?.classList.toggle('hidden', mnt !== 'Yes');
+  document.getElementById('frm-sleeve-row')?.classList.toggle('hidden', mnt !== 'Yes');
+  if (mnt !== 'Yes') {
+    const slv = document.getElementById('acc-sleeve');
+    if (slv) slv.checked = false;
+    document.getElementById('frm-sleeve-opts')?.classList.add('hidden');
+  }
+  document.getElementById('frm-accessories')?.classList.remove('hidden');
+  calcFrame();
+};
+
+window.onSleeveToggle = function() {
+  const checked = document.getElementById('acc-sleeve')?.checked;
+  document.getElementById('frm-sleeve-opts')?.classList.toggle('hidden', !checked);
+  calcFrame();
+};
+
+window.onSleeveTypeChange = function() {
+  const type = document.querySelector('input[name="slvType"]:checked')?.value;
+  document.getElementById('frm-sleeve-colors')?.classList.toggle('hidden', type === 'stripe');
+  calcFrame();
+};
+
+function getFrameLB() {
+  const groupAsel = [...document.querySelectorAll('input[name="groupA"]:checked')].map(c=>c.value);
+  if (groupAsel.includes('Printing')) {
+    const size = document.getElementById('pr-size')?.value;
+    if (size && SIZE_DIMS[size]) return { l: SIZE_DIMS[size].w, b: SIZE_DIMS[size].h };
+    return null;
+  }
+  const l = +(document.getElementById('frm-L')?.value) || 0;
+  const b = +(document.getElementById('frm-B')?.value) || 0;
+  if (!l || !b) return null;
+  return { l, b };
+}
+
+window.calcFrame = function() {
+  const costTag  = document.getElementById('frm-cost-tag');
+  const totalTag = document.getElementById('frm-total-tag');
+  const accBox   = document.getElementById('frm-accessories');
+  if (!costTag) return;
+  const lb = getFrameLB();
+  const mouldSize = document.querySelector('input[name="ms"]:checked')?.value;
+  const mouldSel  = document.getElementById('frm-mould-select');
+  const mouldIdx  = mouldSel?.value;
+  const mnt       = document.querySelector('input[name="mnt"]:checked')?.value || 'No';
+  const mountSize = +(document.querySelector('input[name="mntS"]:checked')?.value) || 0;
+  if (!lb || !mouldSize || !mouldIdx) { costTag.classList.add('hidden'); totalTag?.classList.add('hidden'); return; }
+  if (mnt === 'Yes' && !mountSize) { costTag.classList.add('hidden'); totalTag?.classList.add('hidden'); return; }
+  const { l, b } = lb;
+  let frameCost = 0, costLabel = '';
+  if (mnt === 'Yes') {
+    frameCost = calcFrameCostWithMount(l, b, mouldSize, mountSize);
+    const newL = l + mountSize*2, newB = b + mountSize*2;
+    costLabel = `Frame+Mount: [(${newL}+${newB})×2]+[${mouldRound(mouldSize)}×8×Rs.${FRAME_PRICE_PER_FT}] = <b>Rs.${frameCost}</b>`;
+  } else {
+    frameCost = calcFrameCost(l, b, mouldSize);
+    costLabel = `Frame: [(${l}+${b})×2]+[${mouldRound(mouldSize)}×8×Rs.${FRAME_PRICE_PER_FT}] = <b>Rs.${frameCost}</b>`;
+  }
+  costTag.classList.remove('hidden');
+  costTag.innerHTML = costLabel;
+  accBox?.classList.remove('hidden');
+  let sleeveTotal = 0;
+  const slvChk = document.getElementById('acc-sleeve')?.checked;
+  if (slvChk && mnt === 'Yes') {
+    const slvType  = document.querySelector('input[name="slvType"]:checked')?.value || 'plain';
+    sleeveTotal = calcSleeveCost(slvType, l, b);
+    const slvTag = document.getElementById('frm-sleeve-price');
+    if (slvTag) {
+      slvTag.classList.remove('hidden');
+      const slvColor = document.querySelector('input[name="slvColor"]:checked')?.value || '';
+      slvTag.innerHTML = `Sleeve (${slvType==='plain'?'Plain Plastic':'Golden Stripe'}${slvColor?' · '+slvColor:''}): <b>Rs.${sleeveTotal}</b>`;
+    }
+  } else {
+    document.getElementById('frm-sleeve-price')?.classList.add('hidden');
+  }
+  const grand = frameCost + sleeveTotal;
+  totalTag.classList.remove('hidden');
+  totalTag.textContent = `Total Framing Cost: Rs.${grand}`;
 };
 
 function onOrderType() {
@@ -768,7 +955,38 @@ window.addToCart = function() {
       parts.push(`Print ${SIZE_LABELS[size]||size} ${qual} ×${qty}${extraLabel} ₹${pT}`);
       totalP += pT;
     }
-    if(groupAsel.includes('Framing')){const ms=document.querySelector('input[name="ms"]:checked')?.value||'';const mt=document.querySelector('input[name="mt"]:checked')?.value||'';const mnt=document.querySelector('input[name="mnt"]:checked')?.value||'No';const fch=+(document.getElementById('frm-charge')?.value)||0;parts.push(`Frame${ms?' '+ms:''}${mt?' '+mt:''}${mnt==='Yes'?' +Mount':''} ₹${fch}`);totalP+=fch;}
+    if(groupAsel.includes('Framing')){
+      const lb = getFrameLB();
+      if (!lb) { toast('⚠️ Enter print size for framing','error'); return; }
+      const mouldSize = document.querySelector('input[name="ms"]:checked')?.value;
+      const mouldSel  = document.getElementById('frm-mould-select');
+      const mouldIdx  = mouldSel?.value;
+      if (!mouldSize) { toast('⚠️ Select moulding size','error'); return; }
+      if (!mouldIdx)  { toast('⚠️ Select moulding type','error'); return; }
+      const mouldItem = (window.mouldingsCache[mouldSize] || DEFAULT_MOULDINGS[mouldSize] || [])[+mouldIdx];
+      const mnt       = document.querySelector('input[name="mnt"]:checked')?.value || 'No';
+      const mountSize = +(document.querySelector('input[name="mntS"]:checked')?.value) || 0;
+      if (mnt === 'Yes' && !mountSize) { toast('⚠️ Select mount size','error'); return; }
+      const { l, b } = lb;
+      const frameCost = mnt === 'Yes'
+        ? calcFrameCostWithMount(l, b, mouldSize, mountSize)
+        : calcFrameCost(l, b, mouldSize);
+      // Accessories
+      const accs = [...document.querySelectorAll('input[name="acc"]:checked')].map(a=>a.value);
+      const slvChk = document.getElementById('acc-sleeve')?.checked;
+      let sleeveTotal = 0, sleeveDesc = '';
+      if (slvChk && mnt === 'Yes') {
+        const slvType  = document.querySelector('input[name="slvType"]:checked')?.value || 'plain';
+        const slvColor = document.querySelector('input[name="slvColor"]:checked')?.value || '';
+        sleeveTotal = calcSleeveCost(slvType, l, b);
+        sleeveDesc  = ` +Sleeve(${slvType==='plain'?'Plain':'GoldenStripe'}${slvColor?' '+slvColor:''}) Rs.${sleeveTotal}`;
+      }
+      const fTotal = frameCost + sleeveTotal;
+      const accDesc = accs.length ? ` [${accs.join('+')}]` : '';
+      const mouldDesc = mouldItem ? `${mouldItem.code}-${mouldItem.name}` : mouldSize+'"';
+      parts.push(`Frame ${mouldSize}" ${mouldDesc} ${mnt==='Yes'?'+Mount '+mountSize+'"':'NoMount'}${accDesc}${sleeveDesc} Rs.${fTotal}`);
+      totalP += fTotal;
+    }
     price=totalP; label=parts.join(' · ');
   } else if(groupBsel) {
     svcs=[groupBsel];

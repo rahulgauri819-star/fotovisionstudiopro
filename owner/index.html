@@ -22,13 +22,7 @@
 <!-- HEADER -->
 <header class="hdr">
   <a href="../index.html" class="hdr-logo">
-    <div class="hdr-logo-mark">
-      <svg viewBox="0 0 48 48" fill="none"><text x="24" y="34" text-anchor="middle" font-family="DM Serif Display,serif" font-size="26" font-weight="700" fill="white">FV</text></svg>
-    </div>
-    <div class="hdr-logo-text">
-      <span class="hdr-logo-name">Fotovision</span>
-      <span class="hdr-logo-sub">Studio Pro</span>
-    </div>
+    <div style="background:#111;border-radius:10px;padding:4px 12px;"><img src="../logo.png" alt="FV" style="height:38px;display:block;"></div>
   </a>
   <nav class="hdr-nav" id="desktop-nav"></nav>
   <div class="hdr-right">
@@ -110,6 +104,15 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- ═══ MANAGE MOULDINGS ═══ -->
+<div id="pg-mouldings" class="hidden">
+  <div class="page-header">
+    <div class="page-title">🖼️ Manage Mouldings</div>
+    <div class="page-sub">Add or delete mouldings for each size category</div>
+  </div>
+  <div id="mouldings-manager" style="display:flex;flex-direction:column;gap:16px;"></div>
 </div>
 
 <!-- ═══ ORDERS ═══ -->
@@ -267,7 +270,8 @@ document.getElementById('role-pill').textContent = getCurrentIcon() + ' ' + getC
 const TABS = [
   { id:'dashboard', label:'Dashboard', icon:'📊', name:'Dash' },
   { id:'orders',    label:'Orders',    icon:'📋', name:'Orders' },
-  { id:'framer',    label:'Framing',   icon:'🖼️', name:'Framing' },
+  { id:'mouldings', label:'Mouldings', icon:'🖼️', name:'Moulds' },
+  { id:'framer',    label:'Framing',   icon:'🔨', name:'Framing' },
 ];
 
 function buildNav() {
@@ -290,7 +294,7 @@ function buildNav() {
 }
 
 window.showPage = function(p) {
-  ['dashboard','orders','framer','form'].forEach(x => {
+  ['dashboard','orders','framer','form','mouldings'].forEach(x => {
     const el = document.getElementById('pg-'+x);
     if(el) el.classList.add('hidden');
   });
@@ -301,9 +305,10 @@ window.showPage = function(p) {
   document.getElementById('tnb-'+p)?.classList.add('act');
   window.scrollTo(0,0);
   currentPage = p;
-  if(p==='dashboard') renderDash();
-  if(p==='orders')    renderOrders();
-  if(p==='framer')    renderFramer();
+  if(p==='dashboard')  renderDash();
+  if(p==='orders')     renderOrders();
+  if(p==='framer')     renderFramer();
+  if(p==='mouldings')  renderMouldingsManager();
 };
 
 let currentPage = 'dashboard';
@@ -662,9 +667,56 @@ window.billOrd    = billOrd;
 window.delOrd     = delOrd;
 window.doLogout   = doLogout;
 
+// ── Manage Mouldings ─────────────────────────────────────────
+window.renderMouldingsManager = function() {
+  const container = document.getElementById('mouldings-manager');
+  if (!container) return;
+  container.innerHTML = MOULDING_SIZES.map(size => {
+    const items = window.mouldingsCache[size] || DEFAULT_MOULDINGS[size] || [];
+    const rows = items.map((m,i) => `
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--paper);border-radius:var(--r-sm);margin-bottom:6px;">
+        <span style="font-weight:700;color:var(--gold-dk);min-width:50px;">${m.code}</span>
+        <span style="flex:1;">${m.name}</span>
+        <button onclick="ownerDeleteMoulding('${size}',${i})" style="background:#e53935;color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;">🗑️ Delete</button>
+      </div>`).join('') || '<div style="color:var(--ink-lt);font-size:13px;padding:8px;">No mouldings yet</div>';
+    return `
+    <div style="background:#fff;border-radius:var(--r-md);padding:16px;box-shadow:var(--shadow-sm);">
+      <div style="font-weight:700;font-size:14px;color:var(--gold-dk);margin-bottom:10px;">📐 ${size}" Moulding</div>
+      <div id="mould-list-${size.replace('.','_')}">${rows}</div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+        <input id="mc-${size.replace('.','_')}" class="form-input" placeholder="Code (e.g. M6)" style="max-width:110px;">
+        <input id="mn-${size.replace('.','_')}" class="form-input" placeholder="Name/Color" style="flex:1;min-width:140px;">
+        <button onclick="ownerAddMoulding('${size}')" class="btn-gold" style="padding:8px 14px;font-size:13px;">➕ Add</button>
+      </div>
+    </div>`;
+  }).join('');
+};
+
+window.ownerAddMoulding = async function(size) {
+  const key  = size.replace('.','_');
+  const code = document.getElementById('mc-'+key)?.value.trim();
+  const name = document.getElementById('mn-'+key)?.value.trim();
+  if (!code || !name) { toast('⚠️ Enter code and name','error'); return; }
+  await addMoulding(size, code, name);
+  document.getElementById('mc-'+key).value = '';
+  document.getElementById('mn-'+key).value = '';
+  renderMouldingsManager();
+  toast('✅ Moulding added!');
+};
+
+window.ownerDeleteMoulding = async function(size, index) {
+  if (!confirm('Delete this moulding?')) return;
+  await deleteMoulding(size, index);
+  renderMouldingsManager();
+  toast('🗑️ Moulding deleted');
+};
+
 // ── Init ──────────────────────────────────────────────────────
 buildNav();
-initDB().then(() => showPage('dashboard'));
+initDB().then(async () => {
+  await loadMouldings();
+  showPage('dashboard');
+});
 
 </script>
 <script src="../form.js"></script>
