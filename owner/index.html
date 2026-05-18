@@ -596,6 +596,7 @@ function recentRow(o) {
 
 // ── Orders ────────────────────────────────────────────────────
 function renderOrders() {
+  try {
   const q    = (document.getElementById('srch')?.value||'').toLowerCase();
   const fs   = document.getElementById('fst')?.value||'';
   const fv   = document.getElementById('fsv')?.value||'';
@@ -612,7 +613,6 @@ function renderOrders() {
     document.getElementById('order-list').innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No orders found</div><div class="empty-sub">Try adjusting your filters</div></div>`;
     return;
   }
-  // Group by date
   const byDate = {};
   fil.forEach(o => { const d=o.date||'Unknown'; if(!byDate[d]) byDate[d]=[]; byDate[d].push(o); });
   const sortedDates = Object.keys(byDate).sort((a,b)=>b.localeCompare(a));
@@ -621,9 +621,16 @@ function renderOrders() {
     return `<div style="margin-bottom:6px;"><span class="t-label" style="color:var(--gold-dk);font-size:13px;">${label} <span style="color:var(--ink3);font-weight:400;">(${byDate[d].length} order${byDate[d].length>1?'s':''})</span></span></div>
     ${byDate[d].map(o=>orderCard(o,'owner')).join('')}`;
   }).join('');
+  } catch(err) {
+    console.error('renderOrders error:', err);
+    const ol = document.getElementById('order-list');
+    if(ol) ol.innerHTML = orders.map(o=>`<div style="padding:12px;border-bottom:1px solid #eee;">
+      <b>${o.name||'?'}</b> · ${o.id||''} · <span style="color:#C9973A;">${o.status||''}</span>
+      <div style="font-size:12px;color:#888;">${(o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]).join(', ')}</div>
+    </div>`).join('') || '<div style="padding:20px;text-align:center;">No orders</div>';
+  }
 }
 
-function renderOrders() {
 // ── Bookings Timeline ─────────────────────────────────────────
 window.renderBookings = function() {
   const el = document.getElementById('bookings-list');

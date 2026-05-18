@@ -127,6 +127,7 @@ function orderNeedsFramer(o) {
 }
 
 function render(){
+  try {
   const fo=orders.filter(o=>orderNeedsFramer(o));
   const active=fo.filter(o=>o.status!=='Delivered');
   const done=fo.filter(o=>o.status==='Delivered');
@@ -192,6 +193,11 @@ function render(){
         </div>`;
       }).join('')
     :`<div class="empty-state"><div class="empty-icon">🖼️</div><div class="empty-title">No framing orders yet</div><div class="empty-sub">New jobs will appear here automatically</div></div>`;
+  } catch(err) {
+    console.error('Framer render error:', err);
+    document.getElementById('framer-notifs').innerHTML = '<div style="color:#888;font-size:13px;">Loading...</div>';
+    document.getElementById('framer-orders').innerHTML = orders.map(o=>`<div style="padding:12px;border-bottom:1px solid #eee;"><b>${o.name}</b> · ${o.status}</div>`).join('') || '<div style="padding:20px;text-align:center;color:#888;">No orders yet</div>';
+  }
 }
 
 window.markReady=async function(id){

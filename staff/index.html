@@ -211,16 +211,33 @@ window.showPage=function(p){
   if(p==='bookings')  renderBookings();
 };
 function refreshCurrentPage(){
-  if(currentPage==='dashboard')renderDash();
-  else if(currentPage==='orders')renderOrders();
-  else if(currentPage==='framer')renderFramer();
-  else if(currentPage==='bookings')renderBookings();
-  // Check for newly Ready orders → notify staff
-  checkReadyNotifications();
-  // Update bookings badge
-  const pb=orders.filter(o=>o.orderType==='Booking'&&o.status!=='Delivered').length;
-  const bb=document.getElementById('bookings-badge');
-  if(bb) bb.textContent=pb>0?pb:'';
+  try {
+    if(currentPage==='dashboard')renderDash();
+    else if(currentPage==='orders')renderOrders();
+    else if(currentPage==='framer')renderFramer();
+    else if(currentPage==='bookings')renderBookings();
+    checkReadyNotifications();
+    const pb=orders.filter(o=>o.orderType==='Booking'&&o.status!=='Delivered').length;
+    const bb=document.getElementById('bookings-badge');
+    if(bb) bb.textContent=pb>0?pb:'';
+  } catch(err) {
+    console.error('refreshCurrentPage error:', err);
+    // Force show orders even on error
+    const ol = document.getElementById('order-list');
+    if(ol && currentPage==='orders') renderOrdersSafe();
+  }
+}
+
+function renderOrdersSafe() {
+  const ol = document.getElementById('order-list');
+  if (!ol) return;
+  try { renderOrders(); }
+  catch(e) {
+    ol.innerHTML = orders.map(o => `<div style="padding:12px;border-bottom:1px solid #eee;">
+      <b>${o.name||'Unknown'}</b> · ${o.id||''} · <span style="color:#C9973A;">${o.status||''}</span>
+      <div style="font-size:12px;color:#888;">${(o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]).join(', ')}</div>
+    </div>`).join('') || '<div style="padding:20px;text-align:center;color:#888;">No orders yet</div>';
+  }
 }
 
 function checkReadyNotifications(){
@@ -254,7 +271,39 @@ function renderDash(){
     :'<div style="font-size:12px;color:var(--ink3);padding:8px 0;">None due today 🎉</div>';
 }
 
+function staffOrderCard(o){
+  const sc=STATUS_CFG[o.status]||STATUS_CFG['Pending'];
+  const bal=(+(o.total||0))-(+(o.advance||0));
+  const svcs=[...new Set((o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]))];
+  const payIcon=o.payMode==='UPI'?'📱':o.payMode==='Credit Card'?'💳':o.payMode==='Cash+UPI'?'💵📱':'💵';
+  return `<div class="order-card fade-in">
+    <div class="order-card-head">
+      <div class="order-avatar">${svcs.slice(0,2).map(s=>SVC_ICONS[s]||'').join('')||'📦'}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="order-name">${o.name}</div>
+        <div class="order-id">${o.id}</div>
+        <div class="order-meta">📞 ${o.phone||'—'} · 📅 ${o.date||''}${o.orderType?` · ${o.orderType==='Instant'?'⚡':'📅'} ${o.orderType}`:''}${o.payMode?` · ${payIcon} ${o.payMode}`:''}${o.delivery?`<br>⏰ ${formatDatetime(o.delivery)}`:''}</div>
+      </div>
+    </div>
+    <div class="order-tags">
+      ${(o.cartItems||[]).map(i=>`<span class="tag">${(i.svcs||[i.svc]).map(s=>SVC_ICONS[s]||'').join('')} ${(i.svcs||[i.svc]).join('+')}${i.price?' Rs.'+i.price:''}</span>`).join('')}
+      ${o.discountPct&&+o.discountPct>0?`<span class="tag green">🏷️ ${o.discountPct}% OFF</span>`:''}
+      ${o.total?`<span class="tag gold">Total Rs.${o.total}</span>`:''}
+      ${bal>0?`<span class="tag" style="background:#ffeaea;color:#e53935;">Bal Rs.${bal}</span>`:''}
+    </div>
+    <div class="order-actions">
+      <select class="status-select ${sc.cls}" onchange="chgStatus('${o.id}',this.value)" style="background:${sc.bg};color:${sc.cl};">
+        ${['Pending','In Progress','Ready','Delivered'].map(s=>`<option${s===o.status?' selected':''}>${s}</option>`).join('')}
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="editOrd('${o.id}')">✏️ Edit</button>
+      <button class="btn btn-ghost btn-sm" onclick="billOrd('${o.id}')">🧾 Bill</button>
+      <button class="btn btn-danger btn-sm" onclick="requestDelete('${o.id}')">🗑️</button>
+    </div>
+  </div>`;
+}
+
 function renderOrders(){
+  try {
   const q  =(document.getElementById('srch')?.value||'').toLowerCase();
   const fs =document.getElementById('fst')?.value||'';
   const fd =document.getElementById('fdate')?.value||'';
@@ -272,6 +321,10 @@ function renderOrders(){
     const label=d===todayStr()?'📅 Today':d===yesterdayStr()?'📅 Yesterday':`📅 ${formatDate(d)}`;
     return `<div style="margin-bottom:6px;"><span class="t-label" style="color:var(--gold-dk);font-size:13px;">${label} <span style="color:var(--ink3);font-weight:400;">(${byDate[d].length} order${byDate[d].length>1?'s':''})</span></span></div>${byDate[d].map(o=>staffOrderCard(o)).join('')}`;
   }).join('');
+  } catch(err) {
+    console.error('renderOrders error:', err);
+    renderOrdersSafe();
+  }
 }
 
 function yesterdayStr(){const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);}
