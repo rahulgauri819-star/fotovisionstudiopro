@@ -389,16 +389,16 @@ function calcSleeveCost(type, l, b) {
 
 // Default mouldings per size (used on first load if Firebase empty)
 const DEFAULT_MOULDINGS = {
-  '0.5':  [{code:'M1',name:'Golden Oak'},{code:'M2',name:'Matte Black'},{code:'M3',name:'Walnut Brown'},{code:'M4',name:'Silver Chrome'},{code:'M5',name:'Ivory White'}],
-  '0.75': [{code:'M1',name:'Golden Oak'},{code:'M2',name:'Matte Black'},{code:'M3',name:'Walnut Brown'},{code:'M4',name:'Silver Chrome'},{code:'M5',name:'Ivory White'}],
-  '1':    [{code:'M1',name:'Classic Gold'},{code:'M2',name:'Classic Silver'},{code:'M3',name:'Matt Black'},{code:'M4',name:'Rustic Wood'},{code:'M5',name:'White Gloss'}],
-  '1.5':  [{code:'M1',name:'Antique Bronze'},{code:'M2',name:'Dark Walnut'},{code:'M3',name:'Champagne Gold'},{code:'M4',name:'Rose Gold'},{code:'M5',name:'Ivory Matte'}],
-  '2':    [{code:'M1',name:'Ornate Gold'},{code:'M2',name:'Ebony Black'},{code:'M3',name:'Mahogany'},{code:'M4',name:'Teak Brown'},{code:'M5',name:'Gunmetal Grey'}],
-  '2.5':  [{code:'M1',name:'Fluted Gold'},{code:'M2',name:'Wide Walnut'},{code:'M3',name:'Distressed White'},{code:'M4',name:'Natural Oak'},{code:'M5',name:'Metallic Silver'}],
-  '3':    [{code:'M1',name:'Golden Oak'},{code:'M2',name:'Matte Black'},{code:'M3',name:'Walnut Brown'},{code:'M4',name:'Silver Chrome'},{code:'M5',name:'Ivory White'}],
-  '3.5':  [{code:'M1',name:'Golden Oak'},{code:'M2',name:'Matte Black'},{code:'M3',name:'Walnut Brown'},{code:'M4',name:'Silver Chrome'},{code:'M5',name:'Ivory White'}],
-  '4':    [{code:'M1',name:'Golden Oak'},{code:'M2',name:'Matte Black'},{code:'M3',name:'Walnut Brown'},{code:'M4',name:'Silver Chrome'},{code:'M5',name:'Ivory White'}],
-  '5':    [{code:'M1',name:'Golden Oak'},{code:'M2',name:'Matte Black'},{code:'M3',name:'Walnut Brown'},{code:'M4',name:'Silver Chrome'},{code:'M5',name:'Ivory White'}],
+  '0.5':  [{code:'M1',name:'Golden Oak',price:10},{code:'M2',name:'Matte Black',price:15},{code:'M3',name:'Walnut Brown',price:12},{code:'M4',name:'Silver Chrome',price:18},{code:'M5',name:'Ivory White',price:20}],
+  '0.75': [{code:'M1',name:'Golden Oak',price:10},{code:'M2',name:'Matte Black',price:15},{code:'M3',name:'Walnut Brown',price:12},{code:'M4',name:'Silver Chrome',price:18},{code:'M5',name:'Ivory White',price:20}],
+  '1':    [{code:'M1',name:'Classic Gold',price:10},{code:'M2',name:'Classic Silver',price:15},{code:'M3',name:'Matt Black',price:12},{code:'M4',name:'Rustic Wood',price:18},{code:'M5',name:'White Gloss',price:20}],
+  '1.5':  [{code:'M1',name:'Antique Bronze',price:10},{code:'M2',name:'Dark Walnut',price:15},{code:'M3',name:'Champagne Gold',price:12},{code:'M4',name:'Rose Gold',price:18},{code:'M5',name:'Ivory Matte',price:20}],
+  '2':    [{code:'M1',name:'Ornate Gold',price:10},{code:'M2',name:'Ebony Black',price:15},{code:'M3',name:'Mahogany',price:12},{code:'M4',name:'Teak Brown',price:18},{code:'M5',name:'Gunmetal Grey',price:20}],
+  '2.5':  [{code:'M1',name:'Fluted Gold',price:10},{code:'M2',name:'Wide Walnut',price:15},{code:'M3',name:'Distressed White',price:12},{code:'M4',name:'Natural Oak',price:18},{code:'M5',name:'Metallic Silver',price:20}],
+  '3':    [{code:'M1',name:'Golden Oak',price:10},{code:'M2',name:'Matte Black',price:15},{code:'M3',name:'Walnut Brown',price:12},{code:'M4',name:'Silver Chrome',price:18},{code:'M5',name:'Ivory White',price:20}],
+  '3.5':  [{code:'M1',name:'Golden Oak',price:10},{code:'M2',name:'Matte Black',price:15},{code:'M3',name:'Walnut Brown',price:12},{code:'M4',name:'Silver Chrome',price:18},{code:'M5',name:'Ivory White',price:20}],
+  '4':    [{code:'M1',name:'Golden Oak',price:10},{code:'M2',name:'Matte Black',price:15},{code:'M3',name:'Walnut Brown',price:12},{code:'M4',name:'Silver Chrome',price:18},{code:'M5',name:'Ivory White',price:20}],
+  '5':    [{code:'M1',name:'Golden Oak',price:10},{code:'M2',name:'Matte Black',price:15},{code:'M3',name:'Walnut Brown',price:12},{code:'M4',name:'Silver Chrome',price:18},{code:'M5',name:'Ivory White',price:20}],
 };
 
 // In-memory moulding cache (loaded from Firebase)
@@ -433,9 +433,9 @@ async function saveMouldings(size) {
 }
 
 // Add a moulding to a size
-async function addMoulding(size, code, name) {
+async function addMoulding(size, code, name, price=10) {
   if (!window.mouldingsCache[size]) window.mouldingsCache[size] = [];
-  window.mouldingsCache[size].push({ code, name });
+  window.mouldingsCache[size].push({ code, name, price });
   await saveMouldings(size);
 }
 

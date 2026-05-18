@@ -321,8 +321,9 @@ function getSvcPanelHTML(svcs) {
           <button type="button" class="btn-outline" onclick="toggleAddMould()" style="font-size:12px;padding:6px 12px;margin-bottom:8px;">➕ Add New Moulding</button>
           <div id="frm-add-mould-form" class="hidden" style="background:var(--paper);border-radius:var(--r-sm);padding:12px;margin-bottom:8px;">
             <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-              <input class="form-input" id="frm-new-code" placeholder="Code (e.g. M6)" style="max-width:120px;">
+              <input class="form-input" id="frm-new-code" placeholder="Code (e.g. M6)" style="max-width:110px;">
               <input class="form-input" id="frm-new-name" placeholder="Name/Color (e.g. Rose Gold)" style="flex:1;min-width:150px;">
+              <input class="form-input" id="frm-new-price" type="number" min="1" placeholder="Rs./ft" style="max-width:90px;">
             </div>
             <button type="button" class="btn-gold" onclick="saveNewMoulding()" style="font-size:12px;padding:6px 16px;">💾 Save Moulding</button>
             <button type="button" class="btn-outline" onclick="toggleAddMould()" style="font-size:12px;padding:6px 12px;margin-left:8px;">Cancel</button>
@@ -560,7 +561,7 @@ window.onMouldSizeChange = function(size) {
   sec.classList.remove('hidden');
   const items = window.mouldingsCache[size] || DEFAULT_MOULDINGS[size] || [];
   let opts = '<option value="">— Select Moulding —</option>';
-  items.forEach((m,i) => opts += `<option value="${i}">${m.code} — ${m.name}</option>`);
+  items.forEach((m,i) => opts += `<option value="${i}">${m.code} — ${m.name} (Rs.${m.price||10}/ft)</option>`);
   sel.innerHTML = opts;
   sel.dataset.mouldSize = size;
   document.getElementById('frm-mount-section')?.classList.remove('hidden');
@@ -572,14 +573,17 @@ window.toggleAddMould = function() {
 };
 
 window.saveNewMoulding = async function() {
-  const size = document.getElementById('frm-mould-select')?.dataset.mouldSize;
-  const code = document.getElementById('frm-new-code')?.value.trim();
-  const name = document.getElementById('frm-new-name')?.value.trim();
+  const size  = document.getElementById('frm-mould-select')?.dataset.mouldSize;
+  const code  = document.getElementById('frm-new-code')?.value.trim();
+  const name  = document.getElementById('frm-new-name')?.value.trim();
+  const price = +(document.getElementById('frm-new-price')?.value) || 0;
   if (!size || !code || !name) { toast('⚠️ Enter moulding code and name','error'); return; }
-  await addMoulding(size, code, name);
+  if (!price) { toast('⚠️ Enter price per ft','error'); return; }
+  await addMoulding(size, code, name, price);
   onMouldSizeChange(size);
   document.getElementById('frm-new-code').value = '';
   document.getElementById('frm-new-name').value = '';
+  document.getElementById('frm-new-price').value = '';
   document.getElementById('frm-add-mould-form')?.classList.add('hidden');
   toast('✅ Moulding saved!');
 };
@@ -636,14 +640,20 @@ window.calcFrame = function() {
   if (!lb || !mouldSize || !mouldIdx) { costTag.classList.add('hidden'); totalTag?.classList.add('hidden'); return; }
   if (mnt === 'Yes' && !mountSize) { costTag.classList.add('hidden'); totalTag?.classList.add('hidden'); return; }
   const { l, b } = lb;
+  const mouldItem = (window.mouldingsCache[mouldSize] || DEFAULT_MOULDINGS[mouldSize] || [])[+mouldIdx];
+  const pricePerFt = mouldItem?.price || FRAME_PRICE_PER_FT;
   let frameCost = 0, costLabel = '';
   if (mnt === 'Yes') {
-    frameCost = calcFrameCostWithMount(l, b, mouldSize, mountSize);
     const newL = l + mountSize*2, newB = b + mountSize*2;
-    costLabel = `Frame+Mount: [(${newL}+${newB})×2]+[${mouldRound(mouldSize)}×8×Rs.${FRAME_PRICE_PER_FT}] = <b>Rs.${frameCost}</b>`;
+    const perim = (newL + newB) * 2;
+    const mouldCost = mouldRound(mouldSize) * 8 * pricePerFt;
+    frameCost = perim + mouldCost;
+    costLabel = `Frame+Mount: [(${newL}+${newB})×2]+[${mouldRound(mouldSize)}×8×Rs.${pricePerFt}] = <b>Rs.${frameCost}</b>`;
   } else {
-    frameCost = calcFrameCost(l, b, mouldSize);
-    costLabel = `Frame: [(${l}+${b})×2]+[${mouldRound(mouldSize)}×8×Rs.${FRAME_PRICE_PER_FT}] = <b>Rs.${frameCost}</b>`;
+    const perim = (l + b) * 2;
+    const mouldCost = mouldRound(mouldSize) * 8 * pricePerFt;
+    frameCost = perim + mouldCost;
+    costLabel = `Frame: [(${l}+${b})×2]+[${mouldRound(mouldSize)}×8×Rs.${pricePerFt}] = <b>Rs.${frameCost}</b>`;
   }
   costTag.classList.remove('hidden');
   costTag.innerHTML = costLabel;
@@ -1065,13 +1075,20 @@ window.addToCart = function() {
       if (!mouldSize) { toast('⚠️ Select moulding size','error'); return; }
       if (!mouldIdx)  { toast('⚠️ Select moulding type','error'); return; }
       const mouldItem = (window.mouldingsCache[mouldSize] || DEFAULT_MOULDINGS[mouldSize] || [])[+mouldIdx];
+      const pricePerFt = mouldItem?.price || FRAME_PRICE_PER_FT;
       const mnt       = document.querySelector('input[name="mnt"]:checked')?.value || 'No';
       const mountSize = +(document.querySelector('input[name="mntS"]:checked')?.value) || 0;
       if (mnt === 'Yes' && !mountSize) { toast('⚠️ Select mount size','error'); return; }
       const { l, b } = lb;
-      const frameCost = mnt === 'Yes'
-        ? calcFrameCostWithMount(l, b, mouldSize, mountSize)
-        : calcFrameCost(l, b, mouldSize);
+      // Use moulding's own price
+      const mouldCost = mouldRound(mouldSize) * 8 * pricePerFt;
+      let frameCost;
+      if (mnt === 'Yes') {
+        const newL = l + mountSize*2, newB = b + mountSize*2;
+        frameCost = (newL + newB) * 2 + mouldCost;
+      } else {
+        frameCost = (l + b) * 2 + mouldCost;
+      }
       // Accessories
       const accs = [...document.querySelectorAll('input[name="acc"]:checked')].map(a=>a.value);
       const slvChk = document.getElementById('acc-sleeve')?.checked;

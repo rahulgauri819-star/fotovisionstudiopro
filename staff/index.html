@@ -59,11 +59,19 @@
   </div>
 </div>
 
+<!-- BOOKINGS -->
+<div id="pg-bookings" class="hidden">
+  <div class="page-header"><div class="page-title">📅 Bookings</div><div class="page-sub">Pending delivery timeline</div></div>
+  <div id="bookings-list"></div>
+</div>
+
 <!-- ORDERS -->
 <div id="pg-orders" class="hidden">
   <div class="page-header"><div class="page-title">Orders</div><div class="page-sub">View and manage orders</div></div>
   <div class="filter-bar">
     <input class="filter-input" id="srch" placeholder="Search name or order ID…" oninput="renderOrders()">
+    <input type="date" class="filter-select" id="fdate" onchange="renderOrders()" style="max-width:160px;">
+    <button class="btn-outline" onclick="document.getElementById('fdate').value='';renderOrders();" style="font-size:12px;padding:6px 10px;">Clear</button>
     <select class="filter-select" id="fst" onchange="renderOrders()">
       <option value="">All Status</option><option>Pending</option><option>In Progress</option><option>Ready</option><option>Delivered</option>
     </select>
@@ -169,13 +177,14 @@ if(!requireRole('staff')) throw new Error('Not authorized');
 
 const TABS=[
   {id:'dashboard',label:'Dashboard',icon:'📊',name:'Dash'},
-  {id:'orders',label:'Orders',icon:'📋',name:'Orders'},
-  {id:'framer',label:'Framing',icon:'🖼️',name:'Framing'},
+  {id:'bookings', label:'Bookings', icon:'📅',name:'Book'},
+  {id:'orders',   label:'Orders',  icon:'📋',name:'Orders'},
+  {id:'framer',   label:'Framing', icon:'🖼️',name:'Framing'},
 ];
 
 function buildNav(){
   const dn=document.getElementById('desktop-nav');
-  dn.innerHTML=TABS.map(t=>`<button class="hdr-nav-btn" id="nav-${t.id}" onclick="showPage('${t.id}')">${t.icon} ${t.label}</button>`).join('');
+  dn.innerHTML=TABS.map(t=>`<button class="hdr-nav-btn" id="nav-${t.id}" onclick="showPage('${t.id}')">${t.icon} ${t.label}${t.id==='bookings'?'<span id="bookings-badge" style="background:#e53935;color:#fff;border-radius:100px;font-size:10px;padding:1px 5px;margin-left:4px;"></span>':''}</button>`).join('');
   const ti=document.getElementById('tab-nav-inner');
   const half=Math.floor(TABS.length/2);
   let html='';
@@ -186,8 +195,10 @@ function buildNav(){
 }
 
 let currentPage='dashboard';
+let lastReadyIds = new Set();
+
 window.showPage=function(p){
-  ['dashboard','orders','framer','form'].forEach(x=>document.getElementById('pg-'+x)?.classList.add('hidden'));
+  ['dashboard','orders','framer','form','bookings'].forEach(x=>document.getElementById('pg-'+x)?.classList.add('hidden'));
   document.getElementById('pg-'+p)?.classList.remove('hidden');
   document.querySelectorAll('.hdr-nav-btn').forEach(b=>b.classList.remove('act'));
   document.getElementById('nav-'+p)?.classList.add('act');
@@ -197,8 +208,31 @@ window.showPage=function(p){
   if(p==='dashboard') renderDash();
   if(p==='orders')    renderOrders();
   if(p==='framer')    renderFramer();
+  if(p==='bookings')  renderBookings();
 };
-function refreshCurrentPage(){if(currentPage==='dashboard')renderDash();else if(currentPage==='orders')renderOrders();else if(currentPage==='framer')renderFramer();}
+function refreshCurrentPage(){
+  if(currentPage==='dashboard')renderDash();
+  else if(currentPage==='orders')renderOrders();
+  else if(currentPage==='framer')renderFramer();
+  else if(currentPage==='bookings')renderBookings();
+  // Check for newly Ready orders → notify staff
+  checkReadyNotifications();
+  // Update bookings badge
+  const pb=orders.filter(o=>o.orderType==='Booking'&&o.status!=='Delivered').length;
+  const bb=document.getElementById('bookings-badge');
+  if(bb) bb.textContent=pb>0?pb:'';
+}
+
+function checkReadyNotifications(){
+  const nowReady=new Set(orders.filter(o=>o.status==='Ready').map(o=>o.id));
+  nowReady.forEach(id=>{
+    if(!lastReadyIds.has(id)){
+      const o=orders.find(x=>x.id===id);
+      if(o) toast(`🖼️ Order #${o.id} (${o.name}) is Ready!`,'success');
+    }
+  });
+  lastReadyIds=nowReady;
+}
 
 function renderDash(){
   document.getElementById('dashdate').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
@@ -221,64 +255,129 @@ function renderDash(){
 }
 
 function renderOrders(){
-  const q=(document.getElementById('srch').value||'').toLowerCase();
-  const fs=document.getElementById('fst').value;
+  const q  =(document.getElementById('srch')?.value||'').toLowerCase();
+  const fs =document.getElementById('fst')?.value||'';
+  const fd =document.getElementById('fdate')?.value||'';
   const fil=orders.filter(o=>{
     if(fs&&o.status!==fs)return false;
     if(q&&!o.name?.toLowerCase().includes(q)&&!(o.id||'').toLowerCase().includes(q))return false;
+    if(fd&&o.date!==fd)return false;
     return true;
   });
-  document.getElementById('order-list').innerHTML=fil.length
-    ?fil.map(o=>staffOrderCard(o)).join('')
-    :`<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No orders found</div></div>`;
+  if(!fil.length){document.getElementById('order-list').innerHTML=`<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No orders found</div></div>`;return;}
+  const byDate={};
+  fil.forEach(o=>{const d=o.date||'Unknown';if(!byDate[d])byDate[d]=[];byDate[d].push(o);});
+  const sortedDates=Object.keys(byDate).sort((a,b)=>b.localeCompare(a));
+  document.getElementById('order-list').innerHTML=sortedDates.map(d=>{
+    const label=d===todayStr()?'📅 Today':d===yesterdayStr()?'📅 Yesterday':`📅 ${formatDate(d)}`;
+    return `<div style="margin-bottom:6px;"><span class="t-label" style="color:var(--gold-dk);font-size:13px;">${label} <span style="color:var(--ink3);font-weight:400;">(${byDate[d].length} order${byDate[d].length>1?'s':''})</span></span></div>${byDate[d].map(o=>staffOrderCard(o)).join('')}`;
+  }).join('');
 }
 
-function staffOrderCard(o){
-  const sc=STATUS_CFG[o.status]||STATUS_CFG['Pending'];
-  const bal=(+(o.total||0))-(+(o.advance||0));
-  const svcs=[...new Set((o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]))];
-  const payIcon=o.payMode==='UPI'?'📱':o.payMode==='Credit Card'?'💳':'💵';
-  return `<div class="order-card fade-in">
-    <div class="order-card-head">
-      <div class="order-avatar">${svcs.slice(0,2).map(s=>SVC_ICONS[s]||'').join('')||'📦'}</div>
-      <div style="flex:1;min-width:0;">
-        <div class="order-name">${o.name}</div>
-        <div class="order-id">${o.id}</div>
-        <div class="order-meta">📞 ${o.phone||'—'} · 📅 ${o.date}${o.orderType?` · ${o.orderType==='Instant'?'⚡ Instant':'📅 Booking'}`:''}${o.payMode?` · ${payIcon} ${o.payMode}`:''}${o.delivery?`<br>⏰ ${formatDatetime(o.delivery)}`:''}</div>
-      </div>
-    </div>
-    <div class="order-tags">
-      ${(o.cartItems||[]).map(i=>`<span class="tag">${(i.svcs||[i.svc]).map(s=>SVC_ICONS[s]||'').join('')} ${(i.svcs||[i.svc]).join('+')}${i.price?' '+inr(i.price):''}</span>`).join('')}
-      ${o.discountPct&&+o.discountPct>0?`<span class="tag green">🏷️ ${o.discountPct}% OFF</span>`:''}
-      ${o.total?`<span class="tag gold">Total ${inr(o.total)}</span>`:''}
-    </div>
-    <div class="order-actions">
-      <select class="status-select ${sc.cls}" onchange="chgStatus('${o.id}',this.value)" style="background:${sc.bg};color:${sc.cl};">
-        ${['Pending','In Progress','Ready','Delivered'].map(s=>`<option${s===o.status?' selected':''}>${s}</option>`).join('')}
-      </select>
-      <button class="btn btn-ghost btn-sm" onclick="editOrd('${o.id}')">✏️ Edit</button>
-      <button class="btn btn-ghost btn-sm" onclick="billOrd('${o.id}')">🧾 Bill</button>
-      <button class="btn btn-danger btn-sm" onclick="requestDelete('${o.id}')">🗑️</button>
-    </div>
-  </div>`;
-}
+function yesterdayStr(){const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);}
+function formatDate(d){if(!d)return '';const dt=new Date(d+'T00:00:00');return dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});}
+
+window.renderBookings = function(){
+  const el=document.getElementById('bookings-list');if(!el)return;
+  const todayDate=todayStr();
+  const tomorrowDate=new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate()+1).toISOString().slice(0,10);
+  const in7Date=new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate()+7).toISOString().slice(0,10);
+  const bookings=orders.filter(o=>o.orderType==='Booking'&&o.delivery).sort((a,b)=>a.delivery.localeCompare(b.delivery));
+  if(!bookings.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-title">No bookings yet</div></div>`;return;}
+  const groups={overdue:[],today:[],tomorrow:[],week:[],later:[]};
+  bookings.forEach(o=>{
+    const d=o.delivery.slice(0,10);
+    if(o.status==='Delivered'){groups.later.push(o);return;}
+    if(d<todayDate)groups.overdue.push(o);
+    else if(d===todayDate)groups.today.push(o);
+    else if(d===tomorrowDate)groups.tomorrow.push(o);
+    else if(d<=in7Date)groups.week.push(o);
+    else groups.later.push(o);
+  });
+  const section=(title,color,list)=>{
+    if(!list.length)return'';
+    return`<div style="margin-bottom:16px;"><div style="font-weight:700;font-size:13px;color:${color};margin-bottom:8px;padding:6px 10px;background:${color}18;border-radius:8px;border-left:4px solid ${color};">${title}</div>
+    ${list.map(o=>{const bal=(+o.total||0)-(+o.advance||0);const isDone=o.status==='Delivered';
+      return`<div class="order-card fade-in" style="${isDone?'opacity:.6;text-decoration:line-through;':''}">
+        <div class="order-card-head"><div style="flex:1;">
+          <div class="order-name">${o.name} <span style="font-size:11px;color:var(--ink3);">#${o.id}</span></div>
+          <div class="order-meta">⏰ ${formatDatetime(o.delivery)} · 👤 ${o.staff}</div>
+          <div class="order-meta">${[...new Set((o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]))].join(', ')}</div>
+        </div>
+        <div style="text-align:right;"><div style="font-weight:700;color:var(--gold-dk);">Rs.${o.total}</div>${bal>0?`<div style="font-size:11px;color:#e53935;">Bal Rs.${bal}</div>`:''}<div style="font-size:11px;margin-top:4px;">${STATUS_CFG[o.status]?.icon||''} ${o.status}</div></div>
+        </div></div>`;}).join('')}</div>`;
+  };
+  el.innerHTML=section('🔴 OVERDUE','#e53935',groups.overdue)+section('🟡 TODAY','#C9973A',groups.today)+section('🟠 TOMORROW','#f57c00',groups.tomorrow)+section('🔵 THIS WEEK','#1976d2',groups.week)+section('⚪ LATER','#888',groups.later);
+};
 
 function renderFramer(){
-  const fo=orders.filter(o=>(o.cartItems||[]).some(i=>(i.svcs||[i.svc]).some(s=>FRAMING_SVCS.includes(s))));
+  function orderNeedsFramer(o){return(o.cartItems||[]).some(item=>{const svcs=item.svcs||[item.svc]||[];if(svcs.includes('Framing'))return true;if(svcs.includes('Printing')&&/Sun Board|MDF|Stretcher/i.test(item.label||''))return true;return false;});}
+  const fo=orders.filter(o=>orderNeedsFramer(o));
   const active=fo.filter(o=>o.status!=='Delivered');
   document.getElementById('framer-notifs').innerHTML=active.length
-    ?active.map(o=>{const fi=(o.cartItems||[]).filter(i=>(i.svcs||[i.svc]).some(s=>FRAMING_SVCS.includes(s)));
-      return `<div class="job-notif"><div class="job-dot"></div><div><div class="job-text"><b>${o.name}</b> — ${fi.map(i=>i.label||((i.svcs||[i.svc]).join('+'))).join(' | ')} — <b>${o.status}</b></div><div class="job-time">${o.id} · ${o.date}</div></div></div>`;}).join('')
+    ?active.map(o=>`<div class="job-notif"><div class="job-dot"></div><div><div class="job-text"><b>${o.name}</b> · ${o.id} · <b>${o.status}</b></div><div class="job-time">📅 ${o.date} · 👤 ${o.staff}${o.delivery?' · ⏰ '+formatDatetime(o.delivery):''}</div></div></div>`).join('')
     :'<div style="font-size:13px;color:#9C8060;padding:6px 0;">No active framing jobs 🎉</div>';
   document.getElementById('framer-orders').innerHTML=fo.length
-    ?fo.map(o=>{const sc=STATUS_CFG[o.status]||STATUS_CFG['Pending'];return `<div class="card" style="margin-bottom:10px;"><div class="card-body"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-size:15px;font-weight:600;">${o.name}</div><span class="${sc.cls}" style="padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;">${o.status}</span></div><div style="font-size:12px;color:var(--ink2);line-height:1.8;">${(o.cartItems||[]).filter(i=>(i.svcs||[i.svc]).some(s=>FRAMING_SVCS.includes(s))).map(i=>`<b>${(i.svcs||[i.svc]).join('+')}</b>: ${i.label||''}`).join('<br>')}</div>${o.delivery?`<div style="font-size:11px;color:var(--red);margin-top:6px;font-weight:600;">⏰ Due: ${formatDatetime(o.delivery)}</div>`:''}</div></div>`;}).join('')
+    ?fo.map(o=>{const sc=STATUS_CFG[o.status]||STATUS_CFG['Pending'];return`<div class="card" style="margin-bottom:10px;"><div class="card-body"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-size:15px;font-weight:600;">${o.name}</div><span class="${sc.cls}" style="padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;">${o.status}</span></div>${o.delivery?`<div style="font-size:12px;color:var(--red);font-weight:600;margin-bottom:6px;">⏰ ${formatDatetime(o.delivery)}</div>`:''}<div style="font-size:12px;color:var(--ink2);line-height:1.8;">${(o.cartItems||[]).map(i=>`<div><b>${(i.svcs||[i.svc]).join('+')}</b>: ${i.label||''}</div>`).join('')}</div></div></div>`;}).join('')
     :'<div class="empty-state"><div class="empty-icon">🖼️</div><div class="empty-title">No framing orders</div></div>';
 }
 
 async function chgStatus(id,val){
-  if(useLocal){orders=orders.map(o=>o.id===id?{...o,status:val}:o);saveLocal();refreshCurrentPage();}
+  const o=orders.find(x=>x.id===id);if(!o)return;
+  if(val==='Delivered'&&o.orderType==='Booking'){
+    const bal=(+o.total||0)-(+o.advance||0);
+    if(bal>0){showBalancePopup(o);setTimeout(()=>renderOrders(),50);return;}
+  }
+  if(useLocal){orders=orders.map(x=>x.id===id?{...x,status:val}:x);saveLocal();refreshCurrentPage();}
   else await updateDoc(doc(db,'orders',id),{status:val});
 }
+
+function showBalancePopup(o){
+  const bal=(+o.total||0)-(+o.advance||0);
+  const ex=document.getElementById('bal-popup-overlay');if(ex)ex.remove();
+  const overlay=document.createElement('div');
+  overlay.id='bal-popup-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+  overlay.innerHTML=`<div style="background:#fff;border-radius:16px;padding:24px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+    <div style="font-size:18px;font-weight:700;margin-bottom:4px;">💰 Collect Balance Payment</div>
+    <div style="font-size:13px;color:var(--ink3);margin-bottom:16px;">${o.name} · #${o.id}</div>
+    <div style="background:var(--paper);border-radius:10px;padding:12px;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Order Total</span><b>Rs.${o.total}</b></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Advance Paid</span><span>Rs.${o.advance||0}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:700;color:var(--gold-dk);border-top:1px solid var(--border);padding-top:8px;"><span>Balance Due</span><span>Rs.${bal}</span></div>
+    </div>
+    <div style="font-weight:600;margin-bottom:8px;">Select Payment Mode:</div>
+    <div class="toggle-group" style="flex-wrap:wrap;margin-bottom:12px;">
+      <label class="toggle-option"><input type="radio" name="balPay" value="Cash" checked onchange="onBalPayMode()"><span>💵 Cash</span></label>
+      <label class="toggle-option"><input type="radio" name="balPay" value="UPI" onchange="onBalPayMode()"><span>📱 UPI</span></label>
+      <label class="toggle-option"><input type="radio" name="balPay" value="Credit Card" onchange="onBalPayMode()"><span>💳 Credit Card</span></label>
+      <label class="toggle-option"><input type="radio" name="balPay" value="Cash+UPI" onchange="onBalPayMode()"><span>💵📱 Cash+UPI</span></label>
+    </div>
+    <div id="bal-split-box" class="hidden" style="background:var(--paper);border-radius:8px;padding:12px;margin-bottom:12px;">
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <div style="flex:1;"><label style="font-size:12px;font-weight:600;">Cash (Rs.)</label><input class="form-input" id="bal-split-cash" type="number" min="0" placeholder="0" oninput="checkBalSplit(${bal})"></div>
+        <div style="flex:1;"><label style="font-size:12px;font-weight:600;">UPI (Rs.)</label><input class="form-input" id="bal-split-upi" type="number" min="0" placeholder="0" oninput="checkBalSplit(${bal})"></div>
+      </div>
+      <div id="bal-split-info" style="font-size:12px;color:var(--ink3);"></div>
+      <div id="bal-split-warn" class="warn-box hidden">⚠️ Must equal Rs.${bal}</div>
+    </div>
+    <button id="bal-confirm-btn" onclick="confirmBalPayment('${o.id}',${bal})" class="btn-gold" style="width:100%;padding:12px;font-size:15px;font-weight:700;">✅ Confirm Payment & Deliver</button>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+
+window.onBalPayMode=function(){const pm=document.querySelector('input[name="balPay"]:checked')?.value;document.getElementById('bal-split-box')?.classList.toggle('hidden',pm!=='Cash+UPI');};
+window.checkBalSplit=function(bal){const cash=+(document.getElementById('bal-split-cash')?.value)||0;const upi=+(document.getElementById('bal-split-upi')?.value)||0;const info=document.getElementById('bal-split-info');const warn=document.getElementById('bal-split-warn');const btn=document.getElementById('bal-confirm-btn');if(info)info.textContent=`Cash Rs.${cash} + UPI Rs.${upi} = Rs.${cash+upi}`;const ok=(cash+upi)===bal;warn?.classList.toggle('hidden',ok);if(btn)btn.disabled=!ok;};
+window.confirmBalPayment=async function(id,bal){
+  const pm=document.querySelector('input[name="balPay"]:checked')?.value||'Cash';
+  if(pm==='Cash+UPI'){const cash=+(document.getElementById('bal-split-cash')?.value)||0;const upi=+(document.getElementById('bal-split-upi')?.value)||0;if(cash+upi!==bal){toast('⚠️ Amounts must match balance due','error');return;}}
+  const o=orders.find(x=>x.id===id);if(!o)return;
+  const updateData={status:'Delivered',balPayMode:pm,advance:o.total};
+  if(useLocal){orders=orders.map(x=>x.id===id?{...x,...updateData}:x);saveLocal();refreshCurrentPage();}
+  else await updateDoc(doc(db,'orders',id),updateData);
+  document.getElementById('bal-popup-overlay')?.remove();
+  toast('✅ Payment collected! Order Delivered.','success');
+};
 
 function requestDelete(id){
   openApproval({title:'🗑️ Delete Order',sub:`Deleting order <b>${id}</b> requires Owner approval.`,
@@ -329,8 +428,14 @@ window.saveOrder=async function(){
   const discAmt=Math.round(cartTotal*discPct/100);
   const finalTotal=cartTotal-discAmt;
   const payMode=document.querySelector('input[name="paymode"]:checked')?.value||'Cash';
+  let splitCash=0,splitUPI=0;
+  if(payMode==='Cash+UPI'){
+    splitCash=+(document.getElementById('split-cash')?.value)||0;
+    splitUPI=+(document.getElementById('split-upi')?.value)||0;
+    if(splitCash+splitUPI!==finalTotal){toast('⚠️ Cash + UPI must equal Rs.'+finalTotal,'error');return;}
+  }
   const advance=otype==='Instant'?finalTotal:(+(document.getElementById('f-advance')?.value)||0);
-  const data={name,phone:document.getElementById('f-phone')?.value||'',address:document.getElementById('f-address')?.value||'',staff:document.getElementById('f-staff')?.value||'',status:window.editId?(orders.find(x=>x.id===window.editId)?.status||'Pending'):'Pending',orderType:otype,delivery:otype==='Booking'?delivery:'',date:window.editId?(orders.find(x=>x.id===window.editId)?.date||todayStr()):todayStr(),notes:document.getElementById('f-notes')?.value||'',cartItems:JSON.parse(JSON.stringify(window.cart)),cartTotal,discountPct:discPct,discountAmt:discAmt,total:finalTotal,advance,payMode,bookedBy:'staff'};
+  const data={name,phone:document.getElementById('f-phone')?.value||'',address:document.getElementById('f-address')?.value||'',staff:document.getElementById('f-staff')?.value||'',status:window.editId?(orders.find(x=>x.id===window.editId)?.status||'Pending'):'Pending',orderType:otype,delivery:otype==='Booking'?delivery:'',date:window.editId?(orders.find(x=>x.id===window.editId)?.date||todayStr()):todayStr(),notes:document.getElementById('f-notes')?.value||'',cartItems:JSON.parse(JSON.stringify(window.cart)),cartTotal,discountPct:discPct,discountAmt:discAmt,total:finalTotal,advance,payMode,splitCash:payMode==='Cash+UPI'?splitCash:0,splitUPI:payMode==='Cash+UPI'?splitUPI:0,bookedBy:'staff'};
   if(useLocal){if(window.editId){orders=orders.map(o=>o.id===window.editId?{...o,...data}:o);}else{data.id='FV-'+String(Date.now()).slice(-6);data.created=Date.now();orders=[data,...orders];}saveLocal();}
   else{if(window.editId)await updateDoc(doc(db,'orders',window.editId),data);else{data.created=serverTimestamp();await addDoc(collection(db,'orders'),data);}}
   const isF=cart.some(i=>(i.svcs||[]).some(s=>FRAMING_SVCS.includes(s)));
