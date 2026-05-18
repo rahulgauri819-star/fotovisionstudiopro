@@ -542,6 +542,17 @@ textarea.form-input { min-height: 80px; resize: vertical; }
 }
 .filter-select:focus { border-color: var(--gold); }
 
+.dash-filter-btn {
+  padding: 5px 11px; font-size: 12px; font-weight: 600;
+  border: 1.5px solid var(--paper3); border-radius: 100px;
+  background: #fff; color: var(--ink2); cursor: pointer;
+  transition: all .18s; white-space: nowrap;
+}
+.dash-filter-btn.act {
+  background: var(--gold-dk); color: #fff; border-color: var(--gold-dk);
+}
+.dash-filter-btn:hover:not(.act) { border-color: var(--gold-dk); color: var(--gold-dk); }
+
 /* ── FRAMER PANEL ── */
 .framer-panel {
   background: linear-gradient(135deg, #0F0F0F, #1C1410);

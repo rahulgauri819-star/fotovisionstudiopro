@@ -55,7 +55,10 @@ const SVC_ICONS = {
 const FRAMING_SVCS = ['Framing','Sunboard','MDF Board'];
 
 // ── Date Helpers ──────────────────────────────────────────────
-function todayStr() { return new Date().toLocaleDateString('en-IN'); }
+function todayStr() { return new Date().toISOString().slice(0,10); }
+function yesterdayStr() { const d=new Date(); d.setDate(d.getDate()-1); return d.toISOString().slice(0,10); }
+function thisMonthStr() { return new Date().toISOString().slice(0,7); }
+function formatDate(d) { if(!d) return ''; const dt=new Date(d+'T00:00:00'); return dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}); }
 function formatDatetime(dt) { return dt ? dt.replace('T',' ').slice(0,16) : ''; }
 
 // ── Number Format ─────────────────────────────────────────────

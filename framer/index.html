@@ -106,6 +106,8 @@ async function initDB(){
     db=getFirestore(app);
     const q=query(collection(db,'orders'),orderBy('created','desc'));
     onSnapshot(q,snap=>{orders=snap.docs.map(d=>({id:d.id,...d.data()}));render();});
+    // Fallback: render after 3s even if no data
+    setTimeout(()=>render(), 3000);
   }catch(e){useLocal=true;orders=JSON.parse(localStorage.getItem('fv_orders')||'[]');render();}
 }
 

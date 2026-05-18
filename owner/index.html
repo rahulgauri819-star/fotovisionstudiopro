@@ -52,26 +52,73 @@
     <div class="page-sub" id="dashdate"></div>
   </div>
 
-  <!-- Today's Stats -->
+  <!-- 1. DAILY SALES CHART — TOP -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      <div class="card-title">📊 Daily Sales</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+        <button class="dash-filter-btn act" onclick="setSalesFilter('today')" id="sf-today">Today</button>
+        <button class="dash-filter-btn" onclick="setSalesFilter('yesterday')" id="sf-yesterday">Yesterday</button>
+        <button class="dash-filter-btn" onclick="setSalesFilter('month')" id="sf-month">This Month</button>
+        <input type="date" id="sf-date" class="filter-select" style="font-size:12px;max-width:140px;" onchange="setSalesFilter('date')">
+      </div>
+    </div>
+    <div class="card-body" style="padding:12px;">
+      <div id="sales-display"></div>
+    </div>
+  </div>
+
+  <!-- 2. TODAY'S STATS -->
   <div style="margin-bottom:6px;"><span class="t-label" style="color:var(--gold-dk);">📅 Today</span></div>
-  <div class="stat-grid" id="today-stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px;">
-    <div class="stat-card gold-card"><div class="stat-icon">💰</div><div class="stat-value" id="s-today-sales">₹0</div><div class="stat-label">Today's Sales</div></div>
-    <div class="stat-card gold-card"><div class="stat-icon">📦</div><div class="stat-value" id="s-today-orders">0</div><div class="stat-label">Today's Orders</div></div>
-    <div class="stat-card gold-card"><div class="stat-icon">💳</div><div class="stat-value" id="s-today-avg">₹0</div><div class="stat-label">Avg. Order Value</div></div>
+  <div class="stat-grid" style="grid-template-columns:1fr 1fr;margin-bottom:16px;">
+    <div class="stat-card gold-card">
+      <div class="stat-icon">💰</div>
+      <div class="stat-value" id="s-today-sales">Rs.0</div>
+      <div class="stat-label">Today's Sales</div>
+      <div id="s-today-pay-breakdown" style="margin-top:8px;font-size:12px;line-height:1.8;text-align:left;"></div>
+    </div>
+    <div class="stat-card gold-card">
+      <div class="stat-icon">📦</div>
+      <div class="stat-value" id="s-today-orders">0</div>
+      <div class="stat-label">Today's Orders</div>
+    </div>
   </div>
 
-  <!-- All Time Stats -->
-  <div style="margin-bottom:6px;"><span class="t-label" style="color:var(--ink3);">📊 All Orders</span></div>
-  <div class="stat-grid" style="margin-bottom:24px;">
-    <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-value" id="s-tot">0</div><div class="stat-label">Total</div></div>
-    <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-value" id="s-pnd">0</div><div class="stat-label">Pending</div></div>
-    <div class="stat-card"><div class="stat-icon">⚙️</div><div class="stat-value" id="s-prg">0</div><div class="stat-label">In Progress</div></div>
-    <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value" id="s-rdy">0</div><div class="stat-label">Ready</div></div>
-    <div class="stat-card"><div class="stat-icon">🚀</div><div class="stat-value" id="s-del">0</div><div class="stat-label">Delivered</div></div>
+  <!-- 3. ALL ORDERS with filter -->
+  <div style="margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <span class="t-label" style="color:var(--ink3);">📦 All Orders</span>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <button class="dash-filter-btn act" onclick="setOrderFilter('today')" id="of-today">Today</button>
+      <button class="dash-filter-btn" onclick="setOrderFilter('yesterday')" id="of-yesterday">Yesterday</button>
+      <button class="dash-filter-btn" onclick="setOrderFilter('month')" id="of-month">This Month</button>
+      <input type="date" id="of-date" class="filter-select" style="font-size:12px;max-width:140px;" onchange="setOrderFilter('date')">
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;" id="order-stat-cards">
+    <div style="flex:1;min-width:60px;background:#fff;border-radius:10px;padding:8px 10px;text-align:center;box-shadow:var(--shadow-sm);">
+      <div style="font-size:18px;font-weight:800;color:var(--ink1);" id="s-tot">0</div>
+      <div style="font-size:10px;color:var(--ink3);">TOTAL</div>
+    </div>
+    <div style="flex:1;min-width:60px;background:#fff;border-radius:10px;padding:8px 10px;text-align:center;box-shadow:var(--shadow-sm);">
+      <div style="font-size:18px;font-weight:800;color:#f57c00;" id="s-pnd">0</div>
+      <div style="font-size:10px;color:var(--ink3);">PENDING</div>
+    </div>
+    <div style="flex:1;min-width:60px;background:#fff;border-radius:10px;padding:8px 10px;text-align:center;box-shadow:var(--shadow-sm);">
+      <div style="font-size:18px;font-weight:800;color:#1976d2;" id="s-prg">0</div>
+      <div style="font-size:10px;color:var(--ink3);">IN PROG</div>
+    </div>
+    <div style="flex:1;min-width:60px;background:#fff;border-radius:10px;padding:8px 10px;text-align:center;box-shadow:var(--shadow-sm);">
+      <div style="font-size:18px;font-weight:800;color:#388e3c;" id="s-rdy">0</div>
+      <div style="font-size:10px;color:var(--ink3);">READY</div>
+    </div>
+    <div style="flex:1;min-width:60px;background:#fff;border-radius:10px;padding:8px 10px;text-align:center;box-shadow:var(--shadow-sm);">
+      <div style="font-size:18px;font-weight:800;color:var(--gold-dk);" id="s-del">0</div>
+      <div style="font-size:10px;color:var(--ink3);">DELIVERED</div>
+    </div>
   </div>
 
-  <!-- Monthly + Chart -->
-  <div class="monthly-summary">
+  <!-- 4. MONTHLY -->
+  <div class="monthly-summary" style="margin-bottom:16px;">
     <div class="ms-box">
       <div class="ms-label">This Month's Revenue</div>
       <div class="ms-val" id="s-month-sales">Rs.0</div>
@@ -84,20 +131,7 @@
     </div>
   </div>
 
-  <!-- Daily Sales Bar Chart -->
-  <div class="card" style="margin-bottom:16px;">
-    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-      <div class="card-title">📊 Daily Sales</div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <select id="chart-month" class="filter-select" style="font-size:13px;" onchange="renderSalesChart()"></select>
-        <div id="chart-summary" style="font-size:12px;color:var(--ink3);"></div>
-      </div>
-    </div>
-    <div class="card-body" style="padding:12px;overflow-x:auto;">
-      <div id="sales-chart" style="display:flex;align-items:flex-end;gap:4px;height:120px;min-width:300px;"></div>
-    </div>
-  </div>
-
+  <!-- 5. SERVICES + RECENT + DUE TODAY -->
   <div style="display:grid;grid-template-columns:3fr 2fr;gap:16px;" id="dash-grid">
     <div>
       <div class="card" style="margin-bottom:14px;">
@@ -109,7 +143,15 @@
     </div>
     <div>
       <div class="card" style="margin-bottom:14px;">
-        <div class="card-header"><div class="card-title">📊 Services</div></div>
+        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+          <div class="card-title">📊 Services</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;">
+            <button class="dash-filter-btn act" onclick="setSvcFilter('today')" id="vf-today" style="font-size:10px;padding:3px 7px;">Today</button>
+            <button class="dash-filter-btn" onclick="setSvcFilter('yesterday')" id="vf-yesterday" style="font-size:10px;padding:3px 7px;">Yest.</button>
+            <button class="dash-filter-btn" onclick="setSvcFilter('month')" id="vf-month" style="font-size:10px;padding:3px 7px;">Month</button>
+            <input type="date" id="vf-date" class="filter-select" style="font-size:10px;max-width:110px;padding:3px 6px;" onchange="setSvcFilter('date')">
+          </div>
+        </div>
         <div class="card-body"><div id="svc-bars"></div></div>
       </div>
       <div class="card">
@@ -270,6 +312,8 @@ async function initDB() {
       orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       refreshCurrentPage();
     });
+    // Fallback: render after 4s even if snapshot hasn't fired
+    setTimeout(() => { if(orders.length === 0) refreshCurrentPage(); }, 4000);
     showBanner('🔥 Connected to Firebase', true);
   } catch(e) {
     useLocal = true;
@@ -356,66 +400,181 @@ function setGreeting() {
 }
 
 // ── Dashboard ─────────────────────────────────────────────────
+// ── Dashboard filter state ────────────────────────────────────
+let salesFilter = 'today';
+let orderFilter = 'today';
+let svcFilter   = 'today';
+
+function getFilteredOrders(filter, dateId) {
+  const today = todayStr();
+  const yesterday = yesterdayStr();
+  const month = thisMonthStr();
+  if (filter === 'today')     return orders.filter(o => o.date === today);
+  if (filter === 'yesterday') return orders.filter(o => o.date === yesterday);
+  if (filter === 'month')     return orders.filter(o => (o.date||'').startsWith(month));
+  if (filter === 'date') {
+    const d = document.getElementById(dateId)?.value || '';
+    return d ? orders.filter(o => o.date === d) : orders;
+  }
+  return orders;
+}
+
+window.setSalesFilter = function(f) {
+  salesFilter = f;
+  ['today','yesterday','month'].forEach(x => document.getElementById('sf-'+x)?.classList.toggle('act', x===f));
+  if(f!=='date') document.getElementById('sf-date').value='';
+  renderSalesDisplay();
+};
+
+window.setOrderFilter = function(f) {
+  orderFilter = f;
+  ['today','yesterday','month'].forEach(x => document.getElementById('of-'+x)?.classList.toggle('act', x===f));
+  if(f!=='date') document.getElementById('of-date').value='';
+  renderOrderStats();
+};
+
+window.setSvcFilter = function(f) {
+  svcFilter = f;
+  ['today','yesterday','month'].forEach(x => document.getElementById('vf-'+x)?.classList.toggle('act', x===f));
+  if(f!=='date') document.getElementById('vf-date').value='';
+  renderSvcBars();
+};
+
+function renderSalesDisplay() {
+  const el = document.getElementById('sales-display');
+  if (!el) return;
+  const fil = getFilteredOrders(salesFilter, 'sf-date');
+
+  if (salesFilter === 'month') {
+    // Bar chart for month
+    const today = todayStr();
+    const month = salesFilter === 'date'
+      ? (document.getElementById('sf-date')?.value||'').slice(0,7)
+      : thisMonthStr();
+    const [yr, mo] = month.split('-').map(Number);
+    const daysInMonth = new Date(yr, mo, 0).getDate();
+    const dayTotals = {};
+    for (let d=1; d<=daysInMonth; d++) dayTotals[d]=0;
+    fil.forEach(o => {
+      const od = +(o.date||'').split('-')[2];
+      if (od) dayTotals[od] = (dayTotals[od]||0) + (+o.total||0);
+    });
+    const maxVal = Math.max(...Object.values(dayTotals), 1);
+    const totalAmt = fil.reduce((s,o)=>s+(+o.total||0),0);
+    el.innerHTML = `
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:8px;">Total: <b>Rs.${totalAmt.toLocaleString('en-IN')}</b> · ${fil.length} orders</div>
+      <div style="display:flex;align-items:flex-end;gap:3px;height:100px;overflow-x:auto;">
+        ${Array.from({length:daysInMonth},(_,i)=>{
+          const day=i+1, amt=dayTotals[day]||0;
+          const h=Math.max(Math.round((amt/maxVal)*100),amt>0?4:1);
+          return `<div style="flex:1;min-width:8px;display:flex;flex-direction:column;align-items:center;gap:2px;" title="Day ${day}: Rs.${amt}">
+            <div style="width:100%;background:${amt>0?'var(--gold-dk)':'#e0e0e0'};height:${h}%;border-radius:2px 2px 0 0;min-height:2px;"></div>
+            <div style="font-size:8px;color:var(--ink3);">${day}</div>
+          </div>`;
+        }).join('')}
+      </div>`;
+  } else {
+    // Single total for Today/Yesterday/specific date
+    const totalAmt = fil.reduce((s,o)=>s+(+o.total||0),0);
+    el.innerHTML = `<div style="font-size:28px;font-weight:800;color:var(--gold-dk);">Rs.${totalAmt.toLocaleString('en-IN')}</div>
+      <div style="font-size:13px;color:var(--ink3);">${fil.length} orders</div>`;
+  }
+}
+
+function renderOrderStats() {
+  const fil = getFilteredOrders(orderFilter, 'of-date');
+  document.getElementById('s-tot').textContent = fil.length;
+  ['Pending','In Progress','Ready','Delivered'].forEach((s,i) => {
+    document.getElementById(['s-pnd','s-prg','s-rdy','s-del'][i]).textContent = fil.filter(o=>o.status===s).length;
+  });
+}
+
+function renderSvcBars() {
+  const fil = getFilteredOrders(svcFilter, 'vf-date');
+  const allSvcs = Object.keys(SVC_ICONS);
+  const svcTotals = {};
+  fil.forEach(o => {
+    (o.cartItems||[]).forEach(item => {
+      const svcs = item.svcs||[item.svc]||[];
+      svcs.forEach(s => { svcTotals[s] = (svcTotals[s]||0) + (+item.price||0); });
+    });
+  });
+  const maxAmt = Math.max(...Object.values(svcTotals), 1);
+  const bars = allSvcs.filter(s => svcTotals[s]>0).map(s => {
+    const amt = svcTotals[s]||0;
+    const pct = Math.round((amt/maxAmt)*100);
+    return `<div class="svc-bar-row">
+      <div class="svc-bar-meta">
+        <span>${SVC_ICONS[s]||'📦'} ${s}</span>
+        <span style="font-weight:700;color:var(--gold-dk);">Rs.${amt.toLocaleString('en-IN')}</span>
+      </div>
+      <div class="svc-bar-track"><div class="svc-bar-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+  document.getElementById('svc-bars').innerHTML = bars ||
+    '<div style="font-size:12px;color:var(--ink3);padding:8px 0;">No data for this period</div>';
+}
+
 function renderDash() {
   setGreeting();
+  document.getElementById('dashdate').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  // Today's stats with payment breakdown
   const todayOrds = orders.filter(o => o.date === todayStr());
-  const todaySales = todayOrds.reduce((s,o) => s+(+(o.total)||0), 0);
-  const todayAvg   = todayOrds.length ? Math.round(todaySales/todayOrds.length) : 0;
-
-  document.getElementById('s-today-sales').textContent  = inr(todaySales);
+  const todaySales = todayOrds.reduce((s,o) => s+(+o.total||0), 0);
+  document.getElementById('s-today-sales').textContent = 'Rs.'+todaySales.toLocaleString('en-IN');
   document.getElementById('s-today-orders').textContent = todayOrds.length;
-  document.getElementById('s-today-avg').textContent    = inr(todayAvg);
 
-  document.getElementById('s-tot').textContent = orders.length;
-  ['Pending','In Progress','Ready','Delivered'].forEach((s,i) => {
-    document.getElementById(['s-pnd','s-prg','s-rdy','s-del'][i]).textContent =
-      orders.filter(o=>o.status===s).length;
+  // Payment breakdown — merge Cash+UPI splits
+  const payTotals = { Cash:0, UPI:0, 'Credit Card':0 };
+  todayOrds.forEach(o => {
+    if (o.payMode === 'Cash+UPI') {
+      payTotals['Cash'] += (+o.splitCash||0);
+      payTotals['UPI']  += (+o.splitUPI||0);
+    } else if (o.payMode && payTotals[o.payMode] !== undefined) {
+      payTotals[o.payMode] += (+o.total||0);
+    } else if (o.payMode) {
+      payTotals[o.payMode] = (payTotals[o.payMode]||0) + (+o.total||0);
+    }
   });
+  const icons = { Cash:'💵', UPI:'📱', 'Credit Card':'💳' };
+  const breakdown = Object.entries(payTotals)
+    .filter(([,v])=>v>0)
+    .map(([k,v])=>`<div style="display:flex;justify-content:space-between;opacity:.9;">
+      <span>${icons[k]||'💰'} ${k}</span><span>Rs.${v.toLocaleString('en-IN')}</span></div>`)
+    .join('');
+  document.getElementById('s-today-pay-breakdown').innerHTML = breakdown;
 
-  const now = new Date();
-  const m = now.getMonth(), y = now.getFullYear();
-  const monthStr = now.toISOString().slice(0,7);
+  // Monthly
+  const monthStr = thisMonthStr();
   const monthOrds = orders.filter(o => (o.date||'').startsWith(monthStr));
-  const monthSales     = monthOrds.reduce((s,o) => s+(+(o.total)||0), 0);
-  const monthCollected = monthOrds.reduce((s,o) => s+(+(o.advance)||0), 0);
-  const monthPending   = monthSales - monthCollected;
+  const monthSales     = monthOrds.reduce((s,o)=>s+(+o.total||0),0);
+  const monthCollected = monthOrds.reduce((s,o)=>s+(+o.advance||0),0);
+  document.getElementById('s-month-sales').textContent     = 'Rs.'+monthSales.toLocaleString('en-IN');
+  document.getElementById('s-month-orders').textContent    = monthOrds.length+' orders';
+  document.getElementById('s-month-collected').textContent = 'Rs.'+monthCollected.toLocaleString('en-IN');
+  document.getElementById('s-month-pending-bal').textContent = 'Rs.'+(monthSales-monthCollected).toLocaleString('en-IN')+' pending';
 
-  document.getElementById('s-month-sales').textContent      = inr(monthSales);
-  document.getElementById('s-month-orders').textContent     = `${monthOrds.length} orders`;
-  document.getElementById('s-month-collected').textContent  = inr(monthCollected);
-  document.getElementById('s-month-pending-bal').textContent = inr(monthPending) + ' pending';
-
-  // Init chart
-  initChartMonthSelect();
-  renderSalesChart();
+  // Render all filter-based sections
+  renderSalesDisplay();
+  renderOrderStats();
+  renderSvcBars();
 
   // Bookings badge
-  const pendingBookings = orders.filter(o=>o.orderType==='Booking'&&o.status!=='Delivered').length;
+  const pb = orders.filter(o=>o.orderType==='Booking'&&o.status!=='Delivered').length;
   const bb = document.getElementById('bookings-badge');
-  if (bb) bb.textContent = pendingBookings > 0 ? pendingBookings : '';
+  if (bb) bb.textContent = pb>0?pb:'';
 
-  // Recent
+  // Recent orders
   const rec = [...orders].slice(0,8);
   document.getElementById('recent-list').innerHTML = rec.length
     ? rec.map(o => recentRow(o)).join('')
     : '<div class="empty-state" style="padding:20px"><div class="empty-sub">No orders yet</div></div>';
 
-  // Service bars
-  const allSvcs = Object.keys(SVC_ICONS);
-  const bars = allSvcs.map(s => {
-    const n = orders.filter(o => (o.cartItems||[]).some(i => (i.svcs||[i.svc]).includes(s))).length;
-    const p = orders.length ? Math.round(n/orders.length*100) : 0;
-    return n>0 ? `<div class="svc-bar-row">
-      <div class="svc-bar-meta"><span>${SVC_ICONS[s]} ${s}</span><span style="font-weight:700;color:var(--gold-dk);">${n}</span></div>
-      <div class="svc-bar-track"><div class="svc-bar-fill" style="width:${p}%"></div></div>
-    </div>` : '';
-  }).join('');
-  document.getElementById('svc-bars').innerHTML = bars || '<div style="font-size:12px;color:var(--ink3);">No data yet</div>';
-
   // Due today
   const due = orders.filter(o => o.delivery && o.delivery.startsWith(todayStr()) && o.status!=='Delivered');
   document.getElementById('due-today').innerHTML = due.length
-    ? due.map(o => `<div style="padding:8px 0;border-bottom:1px solid var(--paper2);">
+    ? due.map(o=>`<div style="padding:8px 0;border-bottom:1px solid var(--paper2);">
         <div style="font-size:13px;font-weight:600;">${o.name}</div>
         <div style="font-size:11px;color:var(--red);margin-top:2px;">⏰ ${formatDatetime(o.delivery)}</div>
       </div>`).join('')
@@ -464,63 +623,7 @@ function renderOrders() {
   }).join('');
 }
 
-function yesterdayStr() {
-  const d=new Date(); d.setDate(d.getDate()-1);
-  return d.toISOString().slice(0,10);
-}
-function formatDate(d) {
-  if(!d) return '';
-  const dt=new Date(d+'T00:00:00');
-  return dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
-}
-
-// ── Sales Bar Chart ───────────────────────────────────────────
-function initChartMonthSelect() {
-  const sel = document.getElementById('chart-month');
-  if (!sel) return;
-  const now = new Date();
-  let opts = '';
-  for (let i = 0; i < 12; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const val = d.toISOString().slice(0, 7); // YYYY-MM
-    const label = d.toLocaleDateString('en-IN', {month:'long', year:'numeric'});
-    opts += `<option value="${val}"${i===0?' selected':''}>${label}</option>`;
-  }
-  sel.innerHTML = opts;
-}
-
-window.renderSalesChart = function() {
-  const sel = document.getElementById('chart-month')?.value;
-  if (!sel) return;
-  const [yr, mo] = sel.split('-').map(Number);
-  const daysInMonth = new Date(yr, mo, 0).getDate();
-  // Aggregate by day
-  const dayTotals = {};
-  for (let d = 1; d <= daysInMonth; d++) dayTotals[d] = 0;
-  orders.forEach(o => {
-    if (!o.date) return;
-    const [oy, om, od] = o.date.split('-').map(Number);
-    if (oy === yr && om === mo) dayTotals[od] = (dayTotals[od]||0) + (+o.total||0);
-  });
-  const maxVal = Math.max(...Object.values(dayTotals), 1);
-  const totalAmt = Object.values(dayTotals).reduce((a,b)=>a+b,0);
-  const totalOrders = orders.filter(o => o.date?.startsWith(sel)).length;
-  const chart = document.getElementById('sales-chart');
-  const summary = document.getElementById('chart-summary');
-  if (summary) summary.textContent = `Total: Rs.${totalAmt.toLocaleString('en-IN')} · ${totalOrders} orders`;
-  if (!chart) return;
-  chart.innerHTML = Array.from({length:daysInMonth},(_,i)=>{
-    const day = i+1;
-    const amt = dayTotals[day]||0;
-    const pct = Math.round((amt/maxVal)*100);
-    const h = Math.max(pct, amt>0?4:1);
-    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;" title="Day ${day}: Rs.${amt}">
-      <div style="width:100%;background:${amt>0?'var(--gold-dk)':'#e0e0e0'};height:${h}%;border-radius:3px 3px 0 0;min-height:2px;transition:height .3s;"></div>
-      <div style="font-size:9px;color:var(--ink3);">${day}</div>
-    </div>`;
-  }).join('');
-};
-
+function renderOrders() {
 // ── Bookings Timeline ─────────────────────────────────────────
 window.renderBookings = function() {
   const el = document.getElementById('bookings-list');
@@ -538,7 +641,6 @@ window.renderBookings = function() {
     return;
   }
 
-  // Count pending for badge
   const pendingCount = bookings.filter(o=>o.status!=='Delivered').length;
   const badge = document.getElementById('bookings-badge');
   if (badge) badge.textContent = pendingCount > 0 ? pendingCount : '';
@@ -554,28 +656,44 @@ window.renderBookings = function() {
     else groups.later.push(o);
   });
 
+  const bookingCard = (o) => {
+    const bal = (+o.total||0) - (+o.advance||0);
+    const isDone = o.status==='Delivered';
+    const isReady = o.status==='Ready';
+    const svcs = [...new Set((o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]))].join(', ');
+    return `<div class="order-card fade-in" style="${isDone?'opacity:.6;':''} margin-bottom:10px;">
+      <div class="order-card-head">
+        <div style="flex:1;">
+          <div class="order-name">${isDone?`<s>${o.name}</s>`:o.name} <span style="font-size:11px;color:var(--ink3);">#${o.id}</span></div>
+          <div class="order-meta">⏰ ${formatDatetime(o.delivery)} · 👤 ${o.staff||'—'}</div>
+          <div class="order-meta">${svcs}</div>
+          ${o.notes?`<div class="order-meta">📝 ${o.notes}</div>`:''}
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-weight:700;color:var(--gold-dk);">Rs.${o.total}</div>
+          ${bal>0?`<div style="font-size:11px;color:#e53935;font-weight:700;">Bal Rs.${bal}</div>`:'<div style="font-size:11px;color:#388e3c;">✅ Paid</div>'}
+          <div style="font-size:11px;margin-top:4px;">${STATUS_CFG[o.status]?.icon||''} ${o.status}</div>
+        </div>
+      </div>
+      <!-- Action Buttons -->
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+        ${isDone
+          ? `<button onclick="billOrd('${o.id}')" class="btn-outline" style="font-size:12px;padding:7px 14px;">🧾 View Bill</button>`
+          : `${!isReady
+              ? `<button onclick="bookingMarkReady('${o.id}')" style="flex:1;background:#388e3c;color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">✅ Mark Ready</button>`
+              : `<button onclick="bookingUndoReady('${o.id}')" style="background:#fff;color:#e53935;border:2px solid #e53935;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">↩️ Undo</button>`
+            }
+            <button onclick="bookingCollectAndDeliver('${o.id}')" style="flex:1;background:var(--gold-dk);color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">💰 Collect & Deliver</button>`
+        }
+      </div>
+    </div>`;
+  };
+
   const section = (title, color, list) => {
     if (!list.length) return '';
     return `<div style="margin-bottom:16px;">
       <div style="font-weight:700;font-size:13px;color:${color};margin-bottom:8px;padding:6px 10px;background:${color}18;border-radius:8px;border-left:4px solid ${color};">${title}</div>
-      ${list.map(o => {
-        const bal = (+o.total||0) - (+o.advance||0);
-        const isDone = o.status==='Delivered';
-        return `<div class="order-card fade-in" style="${isDone?'opacity:.6;text-decoration:line-through;':''}" onclick="editOrd('${o.id}')">
-          <div class="order-card-head">
-            <div style="flex:1;">
-              <div class="order-name">${o.name} <span style="font-size:11px;color:var(--ink3);">#${o.id}</span></div>
-              <div class="order-meta">⏰ ${formatDatetime(o.delivery)} &nbsp;·&nbsp; 👤 ${o.staff}</div>
-              <div class="order-meta">${[...new Set((o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]))].join(', ')}</div>
-            </div>
-            <div style="text-align:right;">
-              <div style="font-weight:700;color:var(--gold-dk);">Rs.${o.total}</div>
-              ${bal>0?`<div style="font-size:11px;color:#e53935;">Bal Rs.${bal}</div>`:''}
-              <div style="font-size:11px;margin-top:4px;">${STATUS_CFG[o.status]?.icon||''} ${o.status}</div>
-            </div>
-          </div>
-        </div>`;
-      }).join('')}
+      ${list.map(o => bookingCard(o)).join('')}
     </div>`;
   };
 
@@ -584,7 +702,88 @@ window.renderBookings = function() {
     section('🟡 TODAY', '#C9973A', groups.today) +
     section('🟠 TOMORROW', '#f57c00', groups.tomorrow) +
     section('🔵 THIS WEEK', '#1976d2', groups.week) +
-    section('⚪ LATER', '#888', groups.later);
+    section('⚪ LATER / DELIVERED', '#888', groups.later);
+};
+
+window.bookingMarkReady = async function(id) {
+  if(useLocal){orders=orders.map(o=>o.id===id?{...o,status:'Ready'}:o);saveLocal();renderBookings();}
+  else await updateDoc(doc(db,'orders',id),{status:'Ready'});
+  toast('✅ Order marked Ready!','success');
+};
+
+window.bookingUndoReady = async function(id) {
+  if(!confirm('⚠️ Move order back to In Progress?')) return;
+  if(useLocal){orders=orders.map(o=>o.id===id?{...o,status:'In Progress'}:o);saveLocal();renderBookings();}
+  else await updateDoc(doc(db,'orders',id),{status:'In Progress'});
+  toast('↩️ Moved back to In Progress');
+};
+
+window.bookingCollectAndDeliver = async function(id) {
+  const o = orders.find(x=>x.id===id);
+  if (!o) return;
+  const bal = (+o.total||0) - (+o.advance||0);
+  if (bal <= 0) {
+    // Already fully paid — deliver directly
+    const updateData = {status:'Delivered'};
+    if(useLocal){orders=orders.map(x=>x.id===id?{...x,...updateData}:x);saveLocal();renderBookings();}
+    else await updateDoc(doc(db,'orders',id),updateData);
+    toast('✅ Order Delivered!','success');
+    billOrd(id); // Auto-show receipt
+    return;
+  }
+  // Show balance popup, then auto-show receipt after confirm
+  showBalancePopupWithCallback(o, () => { renderBookings(); billOrd(id); });
+};
+
+function showBalancePopupWithCallback(o, onSuccess) {
+  const bal = (+o.total||0) - (+o.advance||0);
+  const ex = document.getElementById('bal-popup-overlay'); if(ex) ex.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'bal-popup-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+  overlay.innerHTML = `<div style="background:#fff;border-radius:16px;padding:24px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+    <div style="font-size:18px;font-weight:700;margin-bottom:4px;">💰 Collect Balance Payment</div>
+    <div style="font-size:13px;color:var(--ink3);margin-bottom:16px;">${o.name} · #${o.id}</div>
+    <div style="background:var(--paper);border-radius:10px;padding:12px;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Order Total</span><b>Rs.${o.total}</b></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Advance Paid</span><span>Rs.${o.advance||0}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:700;color:var(--gold-dk);border-top:1px solid var(--border);padding-top:8px;"><span>Balance Due</span><span>Rs.${bal}</span></div>
+    </div>
+    <div style="font-weight:600;margin-bottom:8px;">Select Payment Mode:</div>
+    <div class="toggle-group" style="flex-wrap:wrap;margin-bottom:12px;">
+      <label class="toggle-option"><input type="radio" name="balPay" value="Cash" checked onchange="onBalPayMode()"><span>💵 Cash</span></label>
+      <label class="toggle-option"><input type="radio" name="balPay" value="UPI" onchange="onBalPayMode()"><span>📱 UPI</span></label>
+      <label class="toggle-option"><input type="radio" name="balPay" value="Credit Card" onchange="onBalPayMode()"><span>💳 Credit Card</span></label>
+      <label class="toggle-option"><input type="radio" name="balPay" value="Cash+UPI" onchange="onBalPayMode()"><span>💵📱 Cash+UPI</span></label>
+    </div>
+    <div id="bal-split-box" class="hidden" style="background:var(--paper);border-radius:8px;padding:12px;margin-bottom:12px;">
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <div style="flex:1;"><label style="font-size:12px;font-weight:600;">Cash (Rs.)</label><input class="form-input" id="bal-split-cash" type="number" min="0" placeholder="0" oninput="checkBalSplit(${bal})"></div>
+        <div style="flex:1;"><label style="font-size:12px;font-weight:600;">UPI (Rs.)</label><input class="form-input" id="bal-split-upi" type="number" min="0" placeholder="0" oninput="checkBalSplit(${bal})"></div>
+      </div>
+      <div id="bal-split-info" style="font-size:12px;color:var(--ink3);"></div>
+      <div id="bal-split-warn" class="warn-box hidden">⚠️ Must equal Rs.${bal}</div>
+    </div>
+    <button id="bal-confirm-btn" onclick="confirmBalPaymentCb('${o.id}',${bal})" class="btn-gold" style="width:100%;padding:12px;font-size:15px;font-weight:700;">✅ Confirm Payment & Deliver</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  window._balCallback = onSuccess;
+}
+
+window.confirmBalPaymentCb = async function(id, bal) {
+  const pm = document.querySelector('input[name="balPay"]:checked')?.value||'Cash';
+  if(pm==='Cash+UPI'){
+    const cash=+(document.getElementById('bal-split-cash')?.value)||0;
+    const upi=+(document.getElementById('bal-split-upi')?.value)||0;
+    if(cash+upi!==bal){toast('⚠️ Amounts must match balance due','error');return;}
+  }
+  const o = orders.find(x=>x.id===id); if(!o) return;
+  const updateData={status:'Delivered',balPayMode:pm,advance:o.total};
+  if(useLocal){orders=orders.map(x=>x.id===id?{...x,...updateData}:x);saveLocal();}
+  else await updateDoc(doc(db,'orders',id),updateData);
+  document.getElementById('bal-popup-overlay')?.remove();
+  toast('✅ Payment collected! Order Delivered.','success');
+  if(window._balCallback) { window._balCallback(); window._balCallback=null; }
 };
 
 function orderCard(o, role) {

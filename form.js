@@ -5,7 +5,8 @@
 function getFormHTML(existing, role) {
   const isOwner = role === 'owner';
   return `
-<div style="max-width:800px;">
+<div style="display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start;" class="form-outer-grid">
+<div style="min-width:0;">
 <div class="card" style="margin-bottom:16px;">
   <div class="card-body">
 
@@ -171,14 +172,50 @@ function getFormHTML(existing, role) {
   </div>
 </div>
 
-<!-- ACTIONS -->
+<!-- ACTIONS (bottom of form) -->
 <div style="display:flex;gap:12px;padding-bottom:20px;">
   <button class="btn btn-secondary btn-lg" style="flex:1;" onclick="requestCancelOrder()">✕ Cancel</button>
   <button class="btn btn-primary btn-lg" style="flex:2;" onclick="saveOrder()">💾 Save Order</button>
 </div>
 
-</div><!-- /max-width -->`;
+</div><!-- /form left column -->
+
+<!-- CART PANEL — RIGHT SIDE -->
+<div id="cart-panel" style="position:sticky;top:80px;">
+  <div class="card">
+    <div class="card-header" style="border-bottom:2px solid var(--gold-dk);">
+      <div class="card-title">🛒 Order Summary</div>
+    </div>
+    <div class="card-body" style="padding:12px;">
+      <div id="cart-panel-items">
+        <div style="text-align:center;padding:20px;color:var(--ink3);font-size:13px;">No services added yet</div>
+      </div>
+      <div id="cart-panel-totals" class="hidden" style="border-top:1px solid var(--paper3);padding-top:10px;margin-top:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+          <span>Subtotal</span><span id="cp-subtotal">Rs.0</span>
+        </div>
+        <div id="cp-discount-row" class="hidden" style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;color:#388e3c;">
+          <span id="cp-disc-label">Discount</span><span id="cp-discount">-Rs.0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;color:var(--gold-dk);margin-top:8px;padding-top:8px;border-top:2px solid var(--gold-dk);">
+          <span>TOTAL</span><span id="cp-total">Rs.0</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+        <button class="btn btn-primary btn-lg" style="width:100%;" onclick="saveOrder()">💾 Save Order</button>
+        <button class="btn btn-secondary" style="width:100%;" onclick="requestCancelOrder()">✕ Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /form-outer-grid -->`;
 }
+
+// Mobile: on small screens hide right panel
+const _formGridStyle = document.createElement('style');
+_formGridStyle.textContent = '@media(max-width:700px){.form-outer-grid{grid-template-columns:1fr!important;}#cart-panel{position:static;}}';
+document.head?.appendChild(_formGridStyle);
 
 // ── Service Detail Panels HTML ────────────────────────────────
 function getSvcPanelHTML(svcs) {
@@ -501,6 +538,7 @@ function getBPanelHTML(svc) {
 // ── Form Init & Interactions ──────────────────────────────────
 function initFormJS(existing, role) {
   updatePaymentSection();
+  updateCartPanel(); // Init cart panel
   if(existing) {
     document.getElementById('f-name').value    = existing.name||'';
     document.getElementById('f-phone').value   = existing.phone||'';
@@ -1148,6 +1186,7 @@ window.addToCart = function() {
 
   window.cart.push({svcs,price,label,details});
   renderCart();
+  updateCartPanel();
   // Reset panels
   document.querySelectorAll('input[name="groupA"],input[name="groupB"]').forEach(e=>e.checked=false);
   document.getElementById('svc-panel-area').innerHTML='';
@@ -1155,7 +1194,55 @@ window.addToCart = function() {
   toast(`✅ ${svcs.join('+')} added to cart`,'success');
 };
 
-window.removeFromCart = function(idx) { window.cart.splice(idx,1); renderCart(); };
+window.removeFromCart = function(idx) {
+  if (!confirm('Remove this item from the cart?')) return;
+  window.cart.splice(idx,1);
+  renderCart();
+  updateCartPanel();
+};
+
+// ── Cart Panel (right side) ───────────────────────────────────
+function updateCartPanel() {
+  const itemsEl  = document.getElementById('cart-panel-items');
+  const totalsEl = document.getElementById('cart-panel-totals');
+  if (!itemsEl) return;
+
+  if (!window.cart || window.cart.length === 0) {
+    itemsEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--ink3);font-size:13px;">No services added yet</div>';
+    totalsEl?.classList.add('hidden');
+    return;
+  }
+
+  const subtotal = window.cart.reduce((s,i) => s+(+i.price||0), 0);
+  const discPct  = +(document.querySelector('input[name="disc"]:checked')?.value||0);
+  const discAmt  = Math.round(subtotal * discPct / 100);
+  const total    = subtotal - discAmt;
+
+  itemsEl.innerHTML = window.cart.map((item, idx) => `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid var(--paper3);">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:700;color:var(--ink1);">${(item.svcs||[]).map(s=>SVC_ICONS[s]||'📦').join('')} ${(item.svcs||[]).join('+')} </div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:2px;word-break:break-word;">${item.label||''}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-weight:700;color:var(--gold-dk);font-size:13px;">Rs.${(+item.price||0).toLocaleString('en-IN')}</div>
+        <button onclick="removeFromCart(${idx})" style="background:none;border:none;color:#e53935;font-size:11px;cursor:pointer;padding:2px 0;">❌ Remove</button>
+      </div>
+    </div>`).join('');
+
+  totalsEl?.classList.remove('hidden');
+  document.getElementById('cp-subtotal').textContent = 'Rs.'+subtotal.toLocaleString('en-IN');
+  document.getElementById('cp-total').textContent    = 'Rs.'+total.toLocaleString('en-IN');
+
+  const discRow = document.getElementById('cp-discount-row');
+  if (discPct > 0) {
+    discRow?.classList.remove('hidden');
+    document.getElementById('cp-disc-label').textContent = `Discount ${discPct}%`;
+    document.getElementById('cp-discount').textContent   = `-Rs.${discAmt}`;
+  } else {
+    discRow?.classList.add('hidden');
+  }
+}
 
 function renderCart() {
   const el  = document.getElementById('cart-items-display');
@@ -1222,6 +1309,7 @@ function applyDiscount(pct) {
   const discAmt   = Math.round(cartTotal*pct/100);
   const final     = cartTotal-discAmt;
   document.getElementById('f-charge').value = final;
+  updateCartPanel();
   const tag = document.getElementById('discount-tag');
   if(tag) {
     if(pct>0){tag.classList.remove('hidden');tag.textContent=`${pct}% discount — ${inr(discAmt)} off · Final: ${inr(final)}`;}
