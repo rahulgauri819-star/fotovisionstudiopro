@@ -52,6 +52,8 @@ function getFormHTML(existing, role) {
     <div class="pill-group">
       <label class="pill-option"><input type="radio" name="groupB" value="Passport Photos" onchange="onGroupB(this)"><span>📷 Passport Photos</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Visa Photos" onchange="onGroupB(this)"><span>🛂 Visa Photos</span></label>
+      <label class="pill-option"><input type="radio" name="groupB" value="Collage Making" onchange="onGroupB(this)"><span>🖼️ Collage Making</span></label>
+      <label class="pill-option"><input type="radio" name="groupB" value="Scanning" onchange="onGroupB(this)"><span>🔍 Scanning</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Album Printing" onchange="onGroupB(this)"><span>📚 Album Printing</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Portfolio Shoot" onchange="onGroupB(this)"><span>📸 Portfolio Shoot</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Video Editing" onchange="onGroupB(this)"><span>🎬 Video Editing</span></label>
@@ -129,10 +131,26 @@ function getFormHTML(existing, role) {
     <!-- Payment Mode -->
     <div style="margin-bottom:18px;">
       <label class="form-label" style="display:block;margin-bottom:10px;">Payment Mode</label>
-      <div class="toggle-group">
-        <label class="toggle-option"><input type="radio" name="paymode" value="Cash" checked><span>💵 Cash</span></label>
-        <label class="toggle-option"><input type="radio" name="paymode" value="UPI"><span>📱 UPI</span></label>
-        <label class="toggle-option"><input type="radio" name="paymode" value="Credit Card"><span>💳 Credit Card</span></label>
+      <div class="toggle-group" style="flex-wrap:wrap;">
+        <label class="toggle-option"><input type="radio" name="paymode" value="Cash" checked onchange="onPayModeChange()"><span>💵 Cash</span></label>
+        <label class="toggle-option"><input type="radio" name="paymode" value="UPI" onchange="onPayModeChange()"><span>📱 UPI</span></label>
+        <label class="toggle-option"><input type="radio" name="paymode" value="Credit Card" onchange="onPayModeChange()"><span>💳 Credit Card</span></label>
+        <label class="toggle-option"><input type="radio" name="paymode" value="Cash+UPI" onchange="onPayModeChange()"><span>💵📱 Cash+UPI</span></label>
+      </div>
+      <!-- Cash+UPI split inputs -->
+      <div id="cash-upi-split" class="hidden" style="margin-top:12px;background:var(--paper);border-radius:var(--r-sm);padding:12px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
+          <div class="form-group" style="flex:1;min-width:120px;">
+            <label class="form-label">Cash Amount (Rs.)</label>
+            <input class="form-input" id="split-cash" type="number" min="0" placeholder="0" inputmode="numeric" oninput="calcSplitPayment()">
+          </div>
+          <div class="form-group" style="flex:1;min-width:120px;">
+            <label class="form-label">UPI Amount (Rs.)</label>
+            <input class="form-input" id="split-upi" type="number" min="0" placeholder="0" inputmode="numeric" oninput="calcSplitPayment()">
+          </div>
+        </div>
+        <div id="split-total-tag" class="price-info" style="margin-bottom:4px;"></div>
+        <div id="split-warn" class="warn-box hidden">⚠️ Cash + UPI total must match the order total exactly.</div>
       </div>
     </div>
 
@@ -378,49 +396,89 @@ function getSvcPanelHTML(svcs) {
 }
 
 function getBPanelHTML(svc) {
+  // Generate passport copies dropdown (8 to 80, multiples of 8, 10 options)
+  const ppOpts = Array.from({length:10},(_,i)=>{
+    const c=(i+1)*8;
+    const cost=200+i*100;
+    return `<option value="${c}">${c} Copies — Rs.${cost}</option>`;
+  }).join('');
+
   if(svc==='Passport Photos') return `<div class="svc-panel" id="panel-b">
     <div class="section-head" style="font-size:15px;">📷 Passport Photos</div>
-    <div class="price-info" style="margin-bottom:10px;"><b>Fixed:</b> ₹200 for 8 copies · ₹100 per extra 8 copies</div>
-    <div class="form-grid-2">
-      <div class="form-group"><label class="form-label">Number of Copies</label><input class="form-input" id="pp-copies" type="number" min="8" step="8" value="8" inputmode="numeric" oninput="calcPassport()"></div>
-      <div class="form-group"><label class="form-label">Charge</label><input class="form-input" id="pp-total" readonly style="background:#f0f0f0;font-weight:700;color:var(--gold-dk);"></div>
-    </div></div>`;
+    <div class="price-info" style="margin-bottom:10px;"><b>Rs.200</b> for 8 copies · <b>Rs.100</b> per extra 8 copies</div>
+    <div class="form-group" style="max-width:260px;margin-bottom:12px;">
+      <label class="form-label">Number of Copies</label>
+      <select class="form-input" id="pp-copies" onchange="calcPassport()">${ppOpts}</select>
+    </div>
+    <div id="pp-cost-tag" class="price-tag" style="margin-bottom:12px;">Rs.200</div>
+    <label class="form-label" style="display:block;margin-bottom:8px;">Add Soft Copy? (Optional)</label>
+    <div class="toggle-group" style="margin-bottom:8px;">
+      <label class="toggle-option"><input type="radio" name="ppSoft" value="No" checked onchange="calcPassport()"><span>❌ No</span></label>
+      <label class="toggle-option"><input type="radio" name="ppSoft" value="Yes" onchange="calcPassport()"><span>✅ Yes (+Rs.100)</span></label>
+    </div>
+    <div id="pp-total-tag" class="price-tag hidden"></div>
+  </div>`;
 
   if(svc==='Visa Photos') return `<div class="svc-panel" id="panel-b">
     <div class="section-head" style="font-size:15px;">🛂 Visa Photos</div>
-    <div class="price-info" style="margin-bottom:10px;"><b>Fixed:</b> ₹250 for 8 copies · ₹100 per extra 8 copies</div>
+    <div class="price-info" style="margin-bottom:10px;"><b>Rs.250</b> for 8 copies · <b>Rs.100</b> per extra 8 copies</div>
     <div class="form-grid-2" style="margin-bottom:10px;">
       <div class="form-group"><label class="form-label">Visa Type</label><select class="form-input" id="visa-type"><option>USA Visa</option><option>Schengen Visa</option><option>Singapore Visa</option><option>UK Visa</option><option>Other</option></select></div>
       <div class="form-group"><label class="form-label">Number of Copies</label><input class="form-input" id="vp-copies" type="number" min="8" step="8" value="8" inputmode="numeric" oninput="calcVisa()"></div>
     </div>
-    <div class="form-group" style="max-width:200px;"><label class="form-label">Charge</label><input class="form-input" id="vp-total" readonly style="background:#f0f0f0;font-weight:700;color:var(--gold-dk);"></div></div>`;
+    <div id="vp-cost-tag" class="price-tag" style="margin-bottom:12px;">Rs.250</div>
+    <label class="form-label" style="display:block;margin-bottom:8px;">Add Soft Copy? (Optional)</label>
+    <div class="toggle-group" style="margin-bottom:8px;">
+      <label class="toggle-option"><input type="radio" name="vpSoft" value="No" checked onchange="calcVisa()"><span>❌ No</span></label>
+      <label class="toggle-option"><input type="radio" name="vpSoft" value="Yes" onchange="calcVisa()"><span>✅ Yes (+Rs.100)</span></label>
+    </div>
+    <div id="vp-total-tag" class="price-tag hidden"></div>
+  </div>`;
+
+  if(svc==='Collage Making') return `<div class="svc-panel" id="panel-b">
+    <div class="section-head" style="font-size:15px;">🖼️ Collage Making</div>
+    <div class="form-group" style="max-width:250px;">
+      <label class="form-label">Collage Charge (Rs.)</label>
+      <input class="form-input" id="collage-charge" type="number" min="0" placeholder="Enter custom price">
+    </div>
+  </div>`;
+
+  if(svc==='Scanning') return `<div class="svc-panel" id="panel-b">
+    <div class="section-head" style="font-size:15px;">🔍 Scanning</div>
+    <div class="price-info" style="margin-bottom:10px;"><b>Rs.50/picture</b></div>
+    <div class="form-group" style="max-width:200px;margin-bottom:10px;">
+      <label class="form-label">Number of Pictures</label>
+      <input class="form-input" id="scan-qty" type="number" min="1" value="1" inputmode="numeric" oninput="calcScanning()">
+    </div>
+    <div id="scan-cost-tag" class="price-tag">Rs.50</div>
+  </div>`;
 
   if(svc==='Album Printing') return `<div class="svc-panel" id="panel-b">
     <div class="section-head" style="font-size:15px;">📚 Album Printing</div>
     <div class="form-grid-2">
       <div class="form-group"><label class="form-label">Number of Pages</label><input class="form-input" id="alb-pages" type="number" min="1" value="1" inputmode="numeric"></div>
-      <div class="form-group"><label class="form-label">Album Cost (₹)</label><input class="form-input" id="alb-cost" type="number" min="0" placeholder="Enter cost"></div>
+      <div class="form-group"><label class="form-label">Album Cost (Rs.)</label><input class="form-input" id="alb-cost" type="number" min="0" placeholder="Enter cost"></div>
     </div></div>`;
 
   if(svc==='Portfolio Shoot') return `<div class="svc-panel" id="panel-b">
     <div class="section-head" style="font-size:15px;">📸 Portfolio Shoot</div>
-    <div class="price-info" style="margin-bottom:10px;"><b>Base Charge:</b> ₹1,000 fixed</div>
+    <div class="price-info" style="margin-bottom:10px;"><b>Base Charge:</b> Rs.1,000 fixed</div>
     <div class="form-grid-2">
       <div class="form-group"><label class="form-label">Session Type</label><select class="form-input" id="port-type"><option>Indoor Studio</option><option>Outdoor</option><option>Fashion</option><option>Corporate</option><option>Kids</option><option>Wedding</option></select></div>
-      <div class="form-group"><label class="form-label">Additional Charge (₹)</label><input class="form-input" id="port-extra" type="number" min="0" value="0" placeholder="Optional extra"></div>
+      <div class="form-group"><label class="form-label">Additional Charge (Rs.)</label><input class="form-input" id="port-extra" type="number" min="0" value="0" placeholder="Optional extra"></div>
     </div></div>`;
 
   if(svc==='Video Editing') return `<div class="svc-panel" id="panel-b">
     <div class="section-head" style="font-size:15px;">🎬 Video Editing</div>
-    <div class="form-group" style="max-width:250px;"><label class="form-label">Editing Charge (₹)</label><input class="form-input" id="vid-edit-charge" type="number" min="0" placeholder="Enter charge"></div></div>`;
+    <div class="form-group" style="max-width:250px;"><label class="form-label">Editing Charge (Rs.)</label><input class="form-input" id="vid-edit-charge" type="number" min="0" placeholder="Enter charge"></div></div>`;
 
   if(svc==='Video Converting') return `<div class="svc-panel" id="panel-b">
     <div class="section-head" style="font-size:15px;">📼 Video Converting</div>
-    <div class="form-group" style="max-width:250px;"><label class="form-label">Converting Charge (₹)</label><input class="form-input" id="vid-conv-charge" type="number" min="0" placeholder="Enter charge"></div></div>`;
+    <div class="form-group" style="max-width:250px;"><label class="form-label">Converting Charge (Rs.)</label><input class="form-input" id="vid-conv-charge" type="number" min="0" placeholder="Enter charge"></div></div>`;
 
   if(svc==='Doorstep Passport') return `<div class="svc-panel" id="panel-b">
     <div class="section-head" style="font-size:15px;">🏠📷 Doorstep Passport Photos</div>
-    <div class="price-info" style="margin-bottom:10px;"><b>Fixed:</b> ₹500 for 8 copies · ₹100 per extra 8 copies</div>
+    <div class="price-info" style="margin-bottom:10px;"><b>Fixed:</b> Rs.500 for 8 copies · Rs.100 per extra 8 copies</div>
     <div class="form-grid-2" style="margin-bottom:10px;">
       <div class="form-group"><label class="form-label">Number of Copies</label><input class="form-input" id="dpp-copies" type="number" min="8" step="8" value="8" inputmode="numeric" oninput="calcDoorPassport()"></div>
       <div class="form-group"><label class="form-label">Charge</label><input class="form-input" id="dpp-total" readonly style="background:#f0f0f0;font-weight:700;color:var(--gold-dk);"></div>
@@ -429,7 +487,7 @@ function getBPanelHTML(svc) {
 
   if(svc==='Doorstep Visa') return `<div class="svc-panel" id="panel-b">
     <div class="section-head" style="font-size:15px;">🏠🛂 Doorstep Visa Photos</div>
-    <div class="price-info" style="margin-bottom:10px;"><b>Fixed:</b> ₹500 for 8 copies · ₹100 per extra 8 copies</div>
+    <div class="price-info" style="margin-bottom:10px;"><b>Fixed:</b> Rs.500 for 8 copies · Rs.100 per extra 8 copies</div>
     <div class="form-grid-2" style="margin-bottom:10px;">
       <div class="form-group"><label class="form-label">Number of Copies</label><input class="form-input" id="dvp-copies" type="number" min="8" step="8" value="8" inputmode="numeric" oninput="calcDoorVisa()"></div>
       <div class="form-group"><label class="form-label">Charge</label><input class="form-input" id="dvp-total" readonly style="background:#f0f0f0;font-weight:700;color:var(--gold-dk);"></div>
@@ -620,6 +678,26 @@ function updatePaymentSection() {
   document.getElementById('instant-pay-note').classList.toggle('hidden', otype!=='Instant');
   document.getElementById('booking-advance-box').classList.toggle('hidden', otype!=='Booking');
 }
+
+window.onPayModeChange = function() {
+  const pm = document.querySelector('input[name="paymode"]:checked')?.value;
+  document.getElementById('cash-upi-split')?.classList.toggle('hidden', pm !== 'Cash+UPI');
+  if (pm !== 'Cash+UPI') {
+    const sc = document.getElementById('split-cash'); if(sc) sc.value='';
+    const su = document.getElementById('split-upi');  if(su) su.value='';
+  }
+};
+
+window.calcSplitPayment = function() {
+  const cash = +(document.getElementById('split-cash')?.value)||0;
+  const upi  = +(document.getElementById('split-upi')?.value)||0;
+  const splitTotal = cash + upi;
+  const orderTotal = window.cart.reduce((s,i)=>s+(+i.price||0),0);
+  const tag  = document.getElementById('split-total-tag');
+  const warn = document.getElementById('split-warn');
+  if (tag) tag.innerHTML = `Cash Rs.${cash} + UPI Rs.${upi} = <b>Rs.${splitTotal}</b> (Order Total: Rs.${orderTotal})`;
+  if (warn) warn.classList.toggle('hidden', splitTotal === orderTotal);
+};
 
 // ── Print Quality / Size / Quantity Logic ─────────────────────
 
@@ -880,10 +958,33 @@ window.calcPrint = function() {
   tTag.textContent = `Total Print Cost: ₹${grand}`;
 };
 
-window.calcPassport     = ()=>{ const c=+(document.getElementById('pp-copies')?.value)||8;const s=Math.ceil(c/8);const el=document.getElementById('pp-total');if(el)el.value='₹'+(200+Math.max(0,s-1)*100);};
-window.calcVisa         = ()=>{ const c=+(document.getElementById('vp-copies')?.value)||8;const s=Math.ceil(c/8);const el=document.getElementById('vp-total');if(el)el.value='₹'+(250+Math.max(0,s-1)*100);};
-window.calcDoorPassport = ()=>{ const c=+(document.getElementById('dpp-copies')?.value)||8;const s=Math.ceil(c/8);const el=document.getElementById('dpp-total');if(el)el.value='₹'+(500+Math.max(0,s-1)*100);};
-window.calcDoorVisa     = ()=>{ const c=+(document.getElementById('dvp-copies')?.value)||8;const s=Math.ceil(c/8);const el=document.getElementById('dvp-total');if(el)el.value='₹'+(500+Math.max(0,s-1)*100);};
+window.calcPassport = () => {
+  const c    = +(document.getElementById('pp-copies')?.value) || 8;
+  const sets = Math.ceil(c / 8);
+  const base = 200 + Math.max(0, sets - 1) * 100;
+  const soft = document.querySelector('input[name="ppSoft"]:checked')?.value === 'Yes' ? 100 : 0;
+  const total = base + soft;
+  const costTag  = document.getElementById('pp-cost-tag');
+  const totalTag = document.getElementById('pp-total-tag');
+  if (costTag) costTag.textContent = `Print Cost: Rs.${base}`;
+  if (soft && totalTag) { totalTag.classList.remove('hidden'); totalTag.textContent = `Total: Rs.${base} + Rs.${soft} (Soft Copy) = Rs.${total}`; }
+  else if (totalTag) totalTag.classList.add('hidden');
+};
+window.calcVisa = () => {
+  const c    = +(document.getElementById('vp-copies')?.value) || 8;
+  const sets = Math.ceil(c / 8);
+  const base = 250 + Math.max(0, sets - 1) * 100;
+  const soft = document.querySelector('input[name="vpSoft"]:checked')?.value === 'Yes' ? 100 : 0;
+  const total = base + soft;
+  const costTag  = document.getElementById('vp-cost-tag');
+  const totalTag = document.getElementById('vp-total-tag');
+  if (costTag) costTag.textContent = `Print Cost: Rs.${base}`;
+  if (soft && totalTag) { totalTag.classList.remove('hidden'); totalTag.textContent = `Total: Rs.${base} + Rs.${soft} (Soft Copy) = Rs.${total}`; }
+  else if (totalTag) totalTag.classList.add('hidden');
+};
+window.calcScanning    = () => { const q=+(document.getElementById('scan-qty')?.value)||1; const t=document.getElementById('scan-cost-tag'); if(t) t.textContent=`Total: Rs.${q*50} (${q} × Rs.50)`; };
+window.calcDoorPassport = ()=>{ const c=+(document.getElementById('dpp-copies')?.value)||8;const s=Math.ceil(c/8);const el=document.getElementById('dpp-total');if(el)el.value='Rs.'+(500+Math.max(0,s-1)*100);};
+window.calcDoorVisa     = ()=>{ const c=+(document.getElementById('dvp-copies')?.value)||8;const s=Math.ceil(c/8);const el=document.getElementById('dvp-total');if(el)el.value='Rs.'+(500+Math.max(0,s-1)*100);};
 
 // ── Add to Cart ───────────────────────────────────────────────
 window.addToCart = function() {
@@ -990,14 +1091,40 @@ window.addToCart = function() {
     price=totalP; label=parts.join(' · ');
   } else if(groupBsel) {
     svcs=[groupBsel];
-    if(groupBsel==='Passport Photos'){const c=+(document.getElementById('pp-copies')?.value)||8;const s=Math.ceil(c/8);price=200+Math.max(0,s-1)*100;label=`${c} copies`;}
-    else if(groupBsel==='Visa Photos'){const c=+(document.getElementById('vp-copies')?.value)||8;const vt=document.getElementById('visa-type')?.value;const s=Math.ceil(c/8);price=250+Math.max(0,s-1)*100;label=`${vt} · ${c} copies`;}
+    if(groupBsel==='Passport Photos'){
+      const c    = +(document.getElementById('pp-copies')?.value)||8;
+      const sets = Math.ceil(c/8);
+      const base = 200+Math.max(0,sets-1)*100;
+      const soft = document.querySelector('input[name="ppSoft"]:checked')?.value==='Yes'?100:0;
+      price = base+soft;
+      label = `${c} copies${soft?' +SoftCopy Rs.100':''}`;
+    }
+    else if(groupBsel==='Visa Photos'){
+      const c    = +(document.getElementById('vp-copies')?.value)||8;
+      const vt   = document.getElementById('visa-type')?.value;
+      const sets = Math.ceil(c/8);
+      const base = 250+Math.max(0,sets-1)*100;
+      const soft = document.querySelector('input[name="vpSoft"]:checked')?.value==='Yes'?100:0;
+      price = base+soft;
+      label = `${vt} · ${c} copies${soft?' +SoftCopy Rs.100':''}`;
+    }
+    else if(groupBsel==='Collage Making'){
+      price=+(document.getElementById('collage-charge')?.value)||0;
+      if(!price){toast('⚠️ Enter collage charge','error');return;}
+      label=`Custom Collage Rs.${price}`;
+    }
+    else if(groupBsel==='Scanning'){
+      const q=+(document.getElementById('scan-qty')?.value)||0;
+      if(!q){toast('⚠️ Enter number of pictures','error');return;}
+      price=q*50; label=`${q} pictures × Rs.50`;
+    }
     else if(groupBsel==='Album Printing'){const pg=+(document.getElementById('alb-pages')?.value)||1;price=+(document.getElementById('alb-cost')?.value)||0;label=`${pg} pages`;}
-    else if(groupBsel==='Portfolio Shoot'){const ex=+(document.getElementById('port-extra')?.value)||0;price=1000+ex;const pt=document.getElementById('port-type')?.value;label=`${pt}${ex?' +Extra ₹'+ex:''}`;}
-    else if(groupBsel==='Video Editing'){price=+(document.getElementById('vid-edit-charge')?.value)||0;label=`Charge ₹${price}`;}
-    else if(groupBsel==='Video Converting'){price=+(document.getElementById('vid-conv-charge')?.value)||0;label=`Charge ₹${price}`;}
+    else if(groupBsel==='Portfolio Shoot'){const ex=+(document.getElementById('port-extra')?.value)||0;price=1000+ex;const pt=document.getElementById('port-type')?.value;label=`${pt}${ex?' +Extra Rs.'+ex:''}`;}
+    else if(groupBsel==='Video Editing'){price=+(document.getElementById('vid-edit-charge')?.value)||0;label=`Charge Rs.${price}`;}
+    else if(groupBsel==='Video Converting'){price=+(document.getElementById('vid-conv-charge')?.value)||0;label=`Charge Rs.${price}`;}
     else if(groupBsel==='Doorstep Passport'){const c=+(document.getElementById('dpp-copies')?.value)||8;const s=Math.ceil(c/8);price=500+Math.max(0,s-1)*100;const addr=document.getElementById('ds-addr')?.value||'';label=`${c} copies${addr?' · '+addr.slice(0,20):''}`;}
     else if(groupBsel==='Doorstep Visa'){const c=+(document.getElementById('dvp-copies')?.value)||8;const s=Math.ceil(c/8);price=500+Math.max(0,s-1)*100;const addr=document.getElementById('dvs-addr')?.value||'';label=`${c} copies${addr?' · '+addr.slice(0,20):''}`;}
+    else { toast('⚠️ Select a service first','error'); return; }
   } else {
     toast('⚠️ Select a service first','error'); return;
   }

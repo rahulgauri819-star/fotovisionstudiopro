@@ -74,13 +74,27 @@
   <div class="monthly-summary">
     <div class="ms-box">
       <div class="ms-label">This Month's Revenue</div>
-      <div class="ms-val" id="s-month-sales">₹0</div>
+      <div class="ms-val" id="s-month-sales">Rs.0</div>
       <div style="font-size:12px;opacity:.7;margin-top:6px;" id="s-month-orders">0 orders</div>
     </div>
     <div class="ms-box light">
       <div class="ms-label" style="color:var(--ink3);">This Month's Collection</div>
-      <div class="ms-val" id="s-month-collected">₹0</div>
-      <div style="font-size:12px;color:var(--ink3);margin-top:6px;" id="s-month-pending-bal">₹0 pending</div>
+      <div class="ms-val" id="s-month-collected">Rs.0</div>
+      <div style="font-size:12px;color:var(--ink3);margin-top:6px;" id="s-month-pending-bal">Rs.0 pending</div>
+    </div>
+  </div>
+
+  <!-- Daily Sales Bar Chart -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      <div class="card-title">📊 Daily Sales</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select id="chart-month" class="filter-select" style="font-size:13px;" onchange="renderSalesChart()"></select>
+        <div id="chart-summary" style="font-size:12px;color:var(--ink3);"></div>
+      </div>
+    </div>
+    <div class="card-body" style="padding:12px;overflow-x:auto;">
+      <div id="sales-chart" style="display:flex;align-items:flex-end;gap:4px;height:120px;min-width:300px;"></div>
     </div>
   </div>
 
@@ -106,6 +120,15 @@
   </div>
 </div>
 
+<!-- ═══ BOOKINGS ═══ -->
+<div id="pg-bookings" class="hidden">
+  <div class="page-header">
+    <div class="page-title">📅 Bookings</div>
+    <div class="page-sub">Pending delivery timeline</div>
+  </div>
+  <div id="bookings-list"></div>
+</div>
+
 <!-- ═══ MANAGE MOULDINGS ═══ -->
 <div id="pg-mouldings" class="hidden">
   <div class="page-header">
@@ -123,6 +146,8 @@
   </div>
   <div class="filter-bar">
     <input class="filter-input" id="srch" placeholder="Search by name or order ID…" oninput="renderOrders()">
+    <input type="date" class="filter-select" id="fdate" onchange="renderOrders()" style="max-width:160px;">
+    <button class="btn-outline" onclick="document.getElementById('fdate').value='';renderOrders();" style="font-size:12px;padding:6px 10px;">Clear Date</button>
     <select class="filter-select" id="fst" onchange="renderOrders()">
       <option value="">All Status</option>
       <option>Pending</option><option>In Progress</option><option>Ready</option><option>Delivered</option>
@@ -130,8 +155,9 @@
     <select class="filter-select" id="fsv" onchange="renderOrders()">
       <option value="">All Services</option>
       <option>Photo Editing</option><option>Printing</option><option>Framing</option>
-      <option>Sunboard</option><option>MDF Board</option><option>Passport Photos</option>
-      <option>Visa Photos</option><option>Album Printing</option><option>Portfolio Shoot</option>
+      <option>Passport Photos</option><option>Visa Photos</option>
+      <option>Collage Making</option><option>Scanning</option>
+      <option>Album Printing</option><option>Portfolio Shoot</option>
       <option>Video Editing</option><option>Video Converting</option>
       <option>Doorstep Passport</option><option>Doorstep Visa</option>
     </select>
@@ -269,6 +295,7 @@ document.getElementById('role-pill').textContent = getCurrentIcon() + ' ' + getC
 // ── Nav ───────────────────────────────────────────────────────
 const TABS = [
   { id:'dashboard', label:'Dashboard', icon:'📊', name:'Dash' },
+  { id:'bookings',  label:'Bookings',  icon:'📅', name:'Book' },
   { id:'orders',    label:'Orders',    icon:'📋', name:'Orders' },
   { id:'mouldings', label:'Mouldings', icon:'🖼️', name:'Moulds' },
   { id:'framer',    label:'Framing',   icon:'🔨', name:'Framing' },
@@ -277,14 +304,14 @@ const TABS = [
 function buildNav() {
   const dn = document.getElementById('desktop-nav');
   dn.innerHTML = TABS.map(t =>
-    `<button class="hdr-nav-btn" id="nav-${t.id}" onclick="showPage('${t.id}')">${t.icon} ${t.label}</button>`
+    `<button class="hdr-nav-btn" id="nav-${t.id}" onclick="showPage('${t.id}')">${t.icon} ${t.label}${t.id==='bookings'?'<span id="bookings-badge" style="background:#e53935;color:#fff;border-radius:100px;font-size:10px;padding:1px 5px;margin-left:4px;"></span>':''}</button>`
   ).join('');
 
   const ti = document.getElementById('tab-nav-inner');
   const half = Math.floor(TABS.length/2);
   let html = '';
   TABS.slice(0,half).forEach(t =>
-    html += `<button class="tab-btn" id="tnb-${t.id}" onclick="showPage('${t.id}')"><span class="tab-icon">${t.icon}</span>${t.name}</button>`
+    html += `<button class="tab-btn" id="tnb-${t.id}" onclick="showPage('${t.id}')"><span class="tab-icon">${t.icon}</span>${t.name}${t.id==='bookings'?'<span id="bookings-badge-mob" style="background:#e53935;color:#fff;border-radius:100px;font-size:9px;padding:1px 4px;margin-left:2px;"></span>':''}</button>`
   );
   html += `<button class="tab-btn-fab" onclick="openForm()">+</button>`;
   TABS.slice(half).forEach(t =>
@@ -294,7 +321,7 @@ function buildNav() {
 }
 
 window.showPage = function(p) {
-  ['dashboard','orders','framer','form','mouldings'].forEach(x => {
+  ['dashboard','orders','framer','form','mouldings','bookings'].forEach(x => {
     const el = document.getElementById('pg-'+x);
     if(el) el.classList.add('hidden');
   });
@@ -309,6 +336,7 @@ window.showPage = function(p) {
   if(p==='orders')     renderOrders();
   if(p==='framer')     renderFramer();
   if(p==='mouldings')  renderMouldingsManager();
+  if(p==='bookings')   renderBookings();
 };
 
 let currentPage = 'dashboard';
@@ -330,9 +358,7 @@ function setGreeting() {
 // ── Dashboard ─────────────────────────────────────────────────
 function renderDash() {
   setGreeting();
-  const now = new Date();
-  const todayDateStr = now.toLocaleDateString('en-IN');
-  const todayOrds = orders.filter(o => o.date === todayDateStr);
+  const todayOrds = orders.filter(o => o.date === todayStr());
   const todaySales = todayOrds.reduce((s,o) => s+(+(o.total)||0), 0);
   const todayAvg   = todayOrds.length ? Math.round(todaySales/todayOrds.length) : 0;
 
@@ -346,11 +372,10 @@ function renderDash() {
       orders.filter(o=>o.status===s).length;
   });
 
+  const now = new Date();
   const m = now.getMonth(), y = now.getFullYear();
-  const monthOrds = orders.filter(o => {
-    const d = new Date(o.created||0);
-    return d.getMonth()===m && d.getFullYear()===y;
-  });
+  const monthStr = now.toISOString().slice(0,7);
+  const monthOrds = orders.filter(o => (o.date||'').startsWith(monthStr));
   const monthSales     = monthOrds.reduce((s,o) => s+(+(o.total)||0), 0);
   const monthCollected = monthOrds.reduce((s,o) => s+(+(o.advance)||0), 0);
   const monthPending   = monthSales - monthCollected;
@@ -359,6 +384,15 @@ function renderDash() {
   document.getElementById('s-month-orders').textContent     = `${monthOrds.length} orders`;
   document.getElementById('s-month-collected').textContent  = inr(monthCollected);
   document.getElementById('s-month-pending-bal').textContent = inr(monthPending) + ' pending';
+
+  // Init chart
+  initChartMonthSelect();
+  renderSalesChart();
+
+  // Bookings badge
+  const pendingBookings = orders.filter(o=>o.orderType==='Booking'&&o.status!=='Delivered').length;
+  const bb = document.getElementById('bookings-badge');
+  if (bb) bb.textContent = pendingBookings > 0 ? pendingBookings : '';
 
   // Recent
   const rec = [...orders].slice(0,8);
@@ -379,8 +413,7 @@ function renderDash() {
   document.getElementById('svc-bars').innerHTML = bars || '<div style="font-size:12px;color:var(--ink3);">No data yet</div>';
 
   // Due today
-  const today = now.toISOString().slice(0,10);
-  const due = orders.filter(o => o.delivery && o.delivery.startsWith(today) && o.status!=='Delivered');
+  const due = orders.filter(o => o.delivery && o.delivery.startsWith(todayStr()) && o.status!=='Delivered');
   document.getElementById('due-today').innerHTML = due.length
     ? due.map(o => `<div style="padding:8px 0;border-bottom:1px solid var(--paper2);">
         <div style="font-size:13px;font-weight:600;">${o.name}</div>
@@ -404,20 +437,155 @@ function recentRow(o) {
 
 // ── Orders ────────────────────────────────────────────────────
 function renderOrders() {
-  const q   = (document.getElementById('srch').value||'').toLowerCase();
-  const fs  = document.getElementById('fst').value;
-  const fv  = document.getElementById('fsv').value;
-  const fil = orders.filter(o => {
+  const q    = (document.getElementById('srch')?.value||'').toLowerCase();
+  const fs   = document.getElementById('fst')?.value||'';
+  const fv   = document.getElementById('fsv')?.value||'';
+  const fd   = document.getElementById('fdate')?.value||'';
+  const fil  = orders.filter(o => {
     if(fs && o.status!==fs) return false;
     const svcs = (o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]);
     if(fv && !svcs.includes(fv)) return false;
     if(q && !o.name?.toLowerCase().includes(q) && !(o.id||'').toLowerCase().includes(q)) return false;
+    if(fd && o.date !== fd) return false;
     return true;
   });
-  document.getElementById('order-list').innerHTML = fil.length
-    ? fil.map(o => orderCard(o, 'owner')).join('')
-    : `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No orders found</div><div class="empty-sub">Try adjusting your filters</div></div>`;
+  if (!fil.length) {
+    document.getElementById('order-list').innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No orders found</div><div class="empty-sub">Try adjusting your filters</div></div>`;
+    return;
+  }
+  // Group by date
+  const byDate = {};
+  fil.forEach(o => { const d=o.date||'Unknown'; if(!byDate[d]) byDate[d]=[]; byDate[d].push(o); });
+  const sortedDates = Object.keys(byDate).sort((a,b)=>b.localeCompare(a));
+  document.getElementById('order-list').innerHTML = sortedDates.map(d => {
+    const label = d===todayStr()?'📅 Today':d===yesterdayStr()?'📅 Yesterday':`📅 ${formatDate(d)}`;
+    return `<div style="margin-bottom:6px;"><span class="t-label" style="color:var(--gold-dk);font-size:13px;">${label} <span style="color:var(--ink3);font-weight:400;">(${byDate[d].length} order${byDate[d].length>1?'s':''})</span></span></div>
+    ${byDate[d].map(o=>orderCard(o,'owner')).join('')}`;
+  }).join('');
 }
+
+function yesterdayStr() {
+  const d=new Date(); d.setDate(d.getDate()-1);
+  return d.toISOString().slice(0,10);
+}
+function formatDate(d) {
+  if(!d) return '';
+  const dt=new Date(d+'T00:00:00');
+  return dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+}
+
+// ── Sales Bar Chart ───────────────────────────────────────────
+function initChartMonthSelect() {
+  const sel = document.getElementById('chart-month');
+  if (!sel) return;
+  const now = new Date();
+  let opts = '';
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const val = d.toISOString().slice(0, 7); // YYYY-MM
+    const label = d.toLocaleDateString('en-IN', {month:'long', year:'numeric'});
+    opts += `<option value="${val}"${i===0?' selected':''}>${label}</option>`;
+  }
+  sel.innerHTML = opts;
+}
+
+window.renderSalesChart = function() {
+  const sel = document.getElementById('chart-month')?.value;
+  if (!sel) return;
+  const [yr, mo] = sel.split('-').map(Number);
+  const daysInMonth = new Date(yr, mo, 0).getDate();
+  // Aggregate by day
+  const dayTotals = {};
+  for (let d = 1; d <= daysInMonth; d++) dayTotals[d] = 0;
+  orders.forEach(o => {
+    if (!o.date) return;
+    const [oy, om, od] = o.date.split('-').map(Number);
+    if (oy === yr && om === mo) dayTotals[od] = (dayTotals[od]||0) + (+o.total||0);
+  });
+  const maxVal = Math.max(...Object.values(dayTotals), 1);
+  const totalAmt = Object.values(dayTotals).reduce((a,b)=>a+b,0);
+  const totalOrders = orders.filter(o => o.date?.startsWith(sel)).length;
+  const chart = document.getElementById('sales-chart');
+  const summary = document.getElementById('chart-summary');
+  if (summary) summary.textContent = `Total: Rs.${totalAmt.toLocaleString('en-IN')} · ${totalOrders} orders`;
+  if (!chart) return;
+  chart.innerHTML = Array.from({length:daysInMonth},(_,i)=>{
+    const day = i+1;
+    const amt = dayTotals[day]||0;
+    const pct = Math.round((amt/maxVal)*100);
+    const h = Math.max(pct, amt>0?4:1);
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;" title="Day ${day}: Rs.${amt}">
+      <div style="width:100%;background:${amt>0?'var(--gold-dk)':'#e0e0e0'};height:${h}%;border-radius:3px 3px 0 0;min-height:2px;transition:height .3s;"></div>
+      <div style="font-size:9px;color:var(--ink3);">${day}</div>
+    </div>`;
+  }).join('');
+};
+
+// ── Bookings Timeline ─────────────────────────────────────────
+window.renderBookings = function() {
+  const el = document.getElementById('bookings-list');
+  if (!el) return;
+  const now = new Date();
+  const todayDate = todayStr();
+  const tomorrowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1).toISOString().slice(0,10);
+  const in7Date = new Date(now.getFullYear(), now.getMonth(), now.getDate()+7).toISOString().slice(0,10);
+
+  const bookings = orders.filter(o => o.orderType==='Booking' && o.delivery);
+  bookings.sort((a,b)=>a.delivery.localeCompare(b.delivery));
+
+  if (!bookings.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-title">No bookings yet</div></div>`;
+    return;
+  }
+
+  // Count pending for badge
+  const pendingCount = bookings.filter(o=>o.status!=='Delivered').length;
+  const badge = document.getElementById('bookings-badge');
+  if (badge) badge.textContent = pendingCount > 0 ? pendingCount : '';
+
+  const groups = { overdue:[], today:[], tomorrow:[], week:[], later:[] };
+  bookings.forEach(o => {
+    const d = o.delivery.slice(0,10);
+    if (o.status==='Delivered') { groups.later.push(o); return; }
+    if (d < todayDate) groups.overdue.push(o);
+    else if (d === todayDate) groups.today.push(o);
+    else if (d === tomorrowDate) groups.tomorrow.push(o);
+    else if (d <= in7Date) groups.week.push(o);
+    else groups.later.push(o);
+  });
+
+  const section = (title, color, list) => {
+    if (!list.length) return '';
+    return `<div style="margin-bottom:16px;">
+      <div style="font-weight:700;font-size:13px;color:${color};margin-bottom:8px;padding:6px 10px;background:${color}18;border-radius:8px;border-left:4px solid ${color};">${title}</div>
+      ${list.map(o => {
+        const bal = (+o.total||0) - (+o.advance||0);
+        const isDone = o.status==='Delivered';
+        return `<div class="order-card fade-in" style="${isDone?'opacity:.6;text-decoration:line-through;':''}" onclick="editOrd('${o.id}')">
+          <div class="order-card-head">
+            <div style="flex:1;">
+              <div class="order-name">${o.name} <span style="font-size:11px;color:var(--ink3);">#${o.id}</span></div>
+              <div class="order-meta">⏰ ${formatDatetime(o.delivery)} &nbsp;·&nbsp; 👤 ${o.staff}</div>
+              <div class="order-meta">${[...new Set((o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]))].join(', ')}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-weight:700;color:var(--gold-dk);">Rs.${o.total}</div>
+              ${bal>0?`<div style="font-size:11px;color:#e53935;">Bal Rs.${bal}</div>`:''}
+              <div style="font-size:11px;margin-top:4px;">${STATUS_CFG[o.status]?.icon||''} ${o.status}</div>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  };
+
+  el.innerHTML =
+    section('🔴 OVERDUE', '#e53935', groups.overdue) +
+    section('🟡 TODAY', '#C9973A', groups.today) +
+    section('🟠 TOMORROW', '#f57c00', groups.tomorrow) +
+    section('🔵 THIS WEEK', '#1976d2', groups.week) +
+    section('⚪ LATER', '#888', groups.later);
+};
 
 function orderCard(o, role) {
   const sc  = STATUS_CFG[o.status] || STATUS_CFG['Pending'];
@@ -458,15 +626,69 @@ function orderCard(o, role) {
 }
 
 // ── Framer ────────────────────────────────────────────────────
+const FRAMER_FILTER_SVCS = ['Sun Board 3mm','Sun Board 5mm','MDF 3mm','MDF 8mm','Framing'];
+
+function orderNeedsFramer(o) {
+  return (o.cartItems||[]).some(item => {
+    const svcs = item.svcs||[item.svc]||[];
+    // Framing service
+    if (svcs.includes('Framing')) return true;
+    // Printing with Sun Board or MDF finishing
+    if (svcs.includes('Printing')) {
+      const lbl = item.label||'';
+      if (/Sun Board|MDF/i.test(lbl)) return true;
+    }
+    // Canvas with Stretcher
+    if (svcs.includes('Printing') && /Stretcher/i.test(item.label||'')) return true;
+    return false;
+  });
+}
+
+function formatFramerOrderDetail(o) {
+  const items = (o.cartItems||[]);
+  let html = `<div style="margin-bottom:12px;">`;
+
+  // Customer & delivery info
+  html += `<div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px;margin-bottom:12px;background:var(--paper);padding:10px;border-radius:8px;">
+    <span style="color:var(--ink3);">👤 Customer</span><span style="font-weight:600;">${o.name}</span>
+    <span style="color:var(--ink3);">📋 Order</span><span>${o.id}</span>
+    <span style="color:var(--ink3);">👷 Staff</span><span>${o.staff||'—'}</span>
+    ${o.delivery ? `<span style="color:var(--red);font-weight:600;">⏰ Delivery</span><span style="color:var(--red);font-weight:700;">${formatDatetime(o.delivery)}</span>` : ''}
+  </div>`;
+
+  // Each cart item
+  items.forEach((item, idx) => {
+    const svcs = item.svcs||[item.svc]||[];
+    const lbl  = item.label||'';
+    html += `<div style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;">`;
+    html += `<div style="font-weight:700;font-size:13px;color:var(--gold-dk);margin-bottom:8px;">${svcs.map(s=>SVC_ICONS[s]||'').join('')} ${svcs.join(' + ')}</div>`;
+    html += `<div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:12px;">`;
+
+    if (svcs.includes('Printing')) {
+      // Parse label for printing details
+      const parts = lbl.split(' ');
+      html += `<span style="color:var(--ink3);">Details</span><span>${lbl}</span>`;
+    }
+    if (svcs.includes('Framing')) {
+      html += `<span style="color:var(--ink3);">Details</span><span>${lbl}</span>`;
+    }
+    html += `<span style="color:var(--ink3);">💰 Cost</span><span style="font-weight:700;">Rs.${item.price||0}</span>`;
+    html += `</div></div>`;
+  });
+
+  html += `<div style="font-weight:700;font-size:14px;color:var(--gold-dk);text-align:right;padding-top:8px;border-top:1px solid var(--border);">Total: Rs.${o.total||0}</div>`;
+  html += `</div>`;
+  return html;
+}
+
 function renderFramer() {
-  const fo = orders.filter(o => (o.cartItems||[]).some(i=>(i.svcs||[i.svc]).some(s=>FRAMING_SVCS.includes(s))));
+  const fo = orders.filter(o => orderNeedsFramer(o));
   const active = fo.filter(o => o.status!=='Delivered');
   document.getElementById('framer-notifs').innerHTML = active.length
     ? active.map(o => {
-        const fi = (o.cartItems||[]).filter(i=>(i.svcs||[i.svc]).some(s=>FRAMING_SVCS.includes(s)));
         return `<div class="job-notif"><div class="job-dot"></div><div>
-          <div class="job-text"><b>${o.name}</b> — ${fi.map(i=>i.label||((i.svcs||[i.svc]).join('+'))).join(' | ')} — <b>${o.status}</b></div>
-          <div class="job-time">${o.id} · ${o.date} · 👤 ${o.staff}${o.delivery?' · ⏰ '+formatDatetime(o.delivery):''}</div>
+          <div class="job-text"><b>${o.name}</b> · ${o.id} · <b>${o.status}</b></div>
+          <div class="job-time">📅 ${o.date} · 👤 ${o.staff}${o.delivery?' · ⏰ '+formatDatetime(o.delivery):''}</div>
         </div></div>`;
       }).join('')
     : '<div style="font-size:13px;color:#9C8060;padding:6px 0;">No active framing jobs 🎉</div>';
@@ -474,31 +696,142 @@ function renderFramer() {
   document.getElementById('framer-orders').innerHTML = fo.length
     ? fo.map(o => {
         const sc = STATUS_CFG[o.status] || STATUS_CFG['Pending'];
-        return `<div class="card" style="margin-bottom:10px;">
+        const isDone = o.status === 'Delivered';
+        return `<div class="card" style="margin-bottom:12px;">
           <div class="card-body">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-              <div style="font-size:15px;font-weight:600;">${o.name}</div>
-              <span class="${sc.cls}" style="padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;">${o.status}</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <div style="font-size:15px;font-weight:700;">${o.name}</div>
+              <span class="${sc.cls}" style="padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;">${sc.icon||''} ${o.status}</span>
             </div>
-            <div style="font-size:12px;color:var(--ink2);line-height:1.8;">
-              ${(o.cartItems||[]).filter(i=>(i.svcs||[i.svc]).some(s=>FRAMING_SVCS.includes(s))).map(i=>`<b>${(i.svcs||[i.svc]).join('+')}</b>: ${i.label||''}`).join('<br>')}
-            </div>
-            ${o.delivery?`<div style="font-size:11px;color:var(--red);margin-top:6px;font-weight:600;">⏰ Due: ${formatDatetime(o.delivery)}</div>`:''}
+            ${formatFramerOrderDetail(o)}
+            ${!isDone ? `<div style="display:flex;gap:8px;margin-top:10px;">
+              ${o.status!=='Ready' ? `<button onclick="markFramerReady('${o.id}')" class="btn-gold" style="flex:1;padding:10px;font-size:13px;">✅ Mark Ready</button>` : ''}
+              ${o.status==='Ready' ? `<button onclick="undoFramerReady('${o.id}')" class="btn-outline" style="flex:1;padding:10px;font-size:13px;color:#e53935;border-color:#e53935;">↩️ Undo Ready</button>` : ''}
+            </div>` : ''}
           </div>
         </div>`;
       }).join('')
     : '<div class="empty-state"><div class="empty-icon">🖼️</div><div class="empty-title">No framing orders</div></div>';
 }
 
+window.markFramerReady = async function(id) {
+  if(useLocal) {
+    orders = orders.map(o=>o.id===id?{...o,status:'Ready'}:o);
+    saveLocal(); renderFramer();
+  } else {
+    await updateDoc(doc(db,'orders',id),{status:'Ready'});
+  }
+  toast('✅ Order marked Ready!','success');
+};
+
+window.undoFramerReady = async function(id) {
+  if (!confirm('⚠️ Are you sure? This will move the order back to In Progress.')) return;
+  if(useLocal) {
+    orders = orders.map(o=>o.id===id?{...o,status:'In Progress'}:o);
+    saveLocal(); renderFramer();
+  } else {
+    await updateDoc(doc(db,'orders',id),{status:'In Progress'});
+  }
+  toast('↩️ Order moved back to In Progress');
+};
+
 // ── Order CRUD ────────────────────────────────────────────────
 async function chgStatus(id, val) {
+  const o = orders.find(x=>x.id===id);
+  if (!o) return;
+  // Block Delivered for booking orders with balance due
+  if (val === 'Delivered' && o.orderType === 'Booking') {
+    const bal = (+o.total||0) - (+o.advance||0);
+    if (bal > 0) {
+      showBalancePopup(o);
+      // Reset select back to current status
+      setTimeout(() => renderOrders(), 50);
+      return;
+    }
+  }
   if(useLocal) {
-    orders = orders.map(o=>o.id===id?{...o,status:val}:o);
+    orders = orders.map(x=>x.id===id?{...x,status:val}:x);
     saveLocal(); refreshCurrentPage();
   } else {
     await updateDoc(doc(db,'orders',id),{status:val});
   }
 }
+
+// ── Balance Payment Popup ─────────────────────────────────────
+function showBalancePopup(o) {
+  const bal = (+o.total||0) - (+o.advance||0);
+  const existing = document.getElementById('bal-popup-overlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'bal-popup-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:16px;padding:24px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+      <div style="font-size:18px;font-weight:700;margin-bottom:4px;">💰 Collect Balance Payment</div>
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:16px;">${o.name} · #${o.id}</div>
+      <div style="background:var(--paper);border-radius:10px;padding:12px;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Order Total</span><b>Rs.${o.total}</b></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Advance Paid</span><span>Rs.${o.advance||0}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:700;color:var(--gold-dk);border-top:1px solid var(--border);padding-top:8px;"><span>Balance Due</span><span>Rs.${bal}</span></div>
+      </div>
+      <div style="font-weight:600;margin-bottom:8px;">Select Payment Mode:</div>
+      <div class="toggle-group" style="flex-wrap:wrap;margin-bottom:12px;">
+        <label class="toggle-option"><input type="radio" name="balPay" value="Cash" checked onchange="onBalPayMode()"><span>💵 Cash</span></label>
+        <label class="toggle-option"><input type="radio" name="balPay" value="UPI" onchange="onBalPayMode()"><span>📱 UPI</span></label>
+        <label class="toggle-option"><input type="radio" name="balPay" value="Credit Card" onchange="onBalPayMode()"><span>💳 Credit Card</span></label>
+        <label class="toggle-option"><input type="radio" name="balPay" value="Cash+UPI" onchange="onBalPayMode()"><span>💵📱 Cash+UPI</span></label>
+      </div>
+      <div id="bal-split-box" class="hidden" style="background:var(--paper);border-radius:8px;padding:12px;margin-bottom:12px;">
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <div style="flex:1;"><label style="font-size:12px;font-weight:600;">Cash (Rs.)</label><input class="form-input" id="bal-split-cash" type="number" min="0" placeholder="0" oninput="checkBalSplit(${bal})"></div>
+          <div style="flex:1;"><label style="font-size:12px;font-weight:600;">UPI (Rs.)</label><input class="form-input" id="bal-split-upi" type="number" min="0" placeholder="0" oninput="checkBalSplit(${bal})"></div>
+        </div>
+        <div id="bal-split-info" style="font-size:12px;color:var(--ink3);"></div>
+        <div id="bal-split-warn" class="warn-box hidden">⚠️ Must equal Rs.${bal}</div>
+      </div>
+      <button id="bal-confirm-btn" onclick="confirmBalPayment('${o.id}',${bal})" class="btn-gold" style="width:100%;padding:12px;font-size:15px;font-weight:700;">✅ Confirm Payment & Deliver</button>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+window.onBalPayMode = function() {
+  const pm = document.querySelector('input[name="balPay"]:checked')?.value;
+  document.getElementById('bal-split-box')?.classList.toggle('hidden', pm!=='Cash+UPI');
+};
+
+window.checkBalSplit = function(bal) {
+  const cash = +(document.getElementById('bal-split-cash')?.value)||0;
+  const upi  = +(document.getElementById('bal-split-upi')?.value)||0;
+  const info = document.getElementById('bal-split-info');
+  const warn = document.getElementById('bal-split-warn');
+  const btn  = document.getElementById('bal-confirm-btn');
+  if (info) info.textContent = `Cash Rs.${cash} + UPI Rs.${upi} = Rs.${cash+upi}`;
+  const ok = (cash+upi)===bal;
+  warn?.classList.toggle('hidden', ok);
+  if (btn) btn.disabled = !ok;
+};
+
+window.confirmBalPayment = async function(id, bal) {
+  const pm = document.querySelector('input[name="balPay"]:checked')?.value||'Cash';
+  if (pm==='Cash+UPI') {
+    const cash = +(document.getElementById('bal-split-cash')?.value)||0;
+    const upi  = +(document.getElementById('bal-split-upi')?.value)||0;
+    if (cash+upi !== bal) { toast('⚠️ Amounts must match balance due','error'); return; }
+  }
+  // Update order: status=Delivered, balPayMode, new advance = total
+  const o = orders.find(x=>x.id===id);
+  if (!o) return;
+  const updateData = { status:'Delivered', balPayMode: pm, advance: o.total };
+  if(useLocal) {
+    orders = orders.map(x=>x.id===id?{...x,...updateData}:x);
+    saveLocal(); refreshCurrentPage();
+  } else {
+    await updateDoc(doc(db,'orders',id), updateData);
+  }
+  document.getElementById('bal-popup-overlay')?.remove();
+  toast('✅ Payment collected! Order Delivered.','success');
+};
 
 async function delOrd(id) {
   if(!confirm('Delete this order permanently?')) return;
@@ -620,7 +953,18 @@ window.saveOrder = async function() {
   const discAmt   = Math.round(cartTotal*discPct/100);
   const finalTotal= cartTotal - discAmt;
   const payMode   = document.querySelector('input[name="paymode"]:checked')?.value||'Cash';
-  const advance   = otype==='Instant' ? finalTotal : (+(document.getElementById('f-advance')?.value)||0);
+
+  // Validate Cash+UPI split
+  let splitCash = 0, splitUPI = 0;
+  if (payMode === 'Cash+UPI') {
+    splitCash = +(document.getElementById('split-cash')?.value)||0;
+    splitUPI  = +(document.getElementById('split-upi')?.value)||0;
+    if (splitCash + splitUPI !== finalTotal) {
+      toast('⚠️ Cash + UPI must equal order total Rs.'+finalTotal,'error'); return;
+    }
+  }
+
+  const advance = otype==='Instant' ? finalTotal : (+(document.getElementById('f-advance')?.value)||0);
 
   const data = {
     name, phone: document.getElementById('f-phone')?.value||'',
@@ -633,6 +977,8 @@ window.saveOrder = async function() {
     cartItems: JSON.parse(JSON.stringify(window.cart)),
     cartTotal, discountPct: discPct, discountAmt: discAmt,
     total: finalTotal, advance, payMode,
+    splitCash: payMode==='Cash+UPI'?splitCash:0,
+    splitUPI:  payMode==='Cash+UPI'?splitUPI:0,
     bookedBy: 'owner',
   };
 
