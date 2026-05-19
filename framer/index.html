@@ -71,17 +71,29 @@
     </div>
   </div>
 
-  <!-- Active Alerts -->
-  <div class="framer-panel" id="active-panel">
-    <div class="framer-panel-title">🔔 Active Job Alerts</div>
-    <div id="framer-notifs"><div style="font-size:13px;color:#9C8060;">Loading jobs…</div></div>
+  <!-- Tabs -->
+  <div style="display:flex;gap:0;margin-bottom:16px;background:var(--paper);border-radius:12px;padding:4px;">
+    <button id="tab-active" onclick="framerTab('active')" style="flex:1;padding:10px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;background:var(--gold-dk);color:#fff;">
+      🔨 Active Jobs <span id="active-badge" style="background:rgba(255,255,255,.3);border-radius:100px;padding:1px 7px;font-size:11px;margin-left:4px;"></span>
+    </button>
+    <button id="tab-done" onclick="framerTab('done')" style="flex:1;padding:10px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;background:transparent;color:var(--ink2);">
+      ✅ Completed
+    </button>
   </div>
 
-  <!-- All Framing Orders -->
-  <div style="margin-bottom:12px;">
-    <div class="page-title" style="font-size:20px;">All Framing Orders</div>
+  <!-- Active Jobs -->
+  <div id="panel-active">
+    <div class="framer-panel" id="active-panel">
+      <div class="framer-panel-title">🔔 Active Job Alerts</div>
+      <div id="framer-notifs"><div style="font-size:13px;color:#9C8060;">Loading...</div></div>
+    </div>
+    <div id="framer-orders"><div class="loader"></div></div>
   </div>
-  <div id="framer-orders"><div class="loader"></div></div>
+
+  <!-- Completed -->
+  <div id="panel-done" style="display:none;">
+    <div id="framer-done"><div class="loader"></div></div>
+  </div>
 
 </div>
 
@@ -134,115 +146,103 @@ function orderNeedsFramer(o) {
   });
 }
 
+let framerCurrentTab = 'active';
+
+window.framerTab = function(tab) {
+  framerCurrentTab = tab;
+  document.getElementById('panel-active').style.display = tab==='active'?'block':'none';
+  document.getElementById('panel-done').style.display   = tab==='done'?'block':'none';
+  const btnA = document.getElementById('tab-active');
+  const btnD = document.getElementById('tab-done');
+  if(btnA){ btnA.style.background=tab==='active'?'var(--gold-dk)':'transparent'; btnA.style.color=tab==='active'?'#fff':'var(--ink2)'; }
+  if(btnD){ btnD.style.background=tab==='done'?'var(--gold-dk)':'transparent'; btnD.style.color=tab==='done'?'#fff':'var(--ink2)'; }
+  framerRender();
+};
+
+function framerCard(o, showActions) {
+  const isReady = o.status === 'Ready';
+  return `<div class="job-card${o.status==='Delivered'?' delivered':''}">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;">
+      <div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:2px;">${o.name||''}</div>
+        <div style="font-size:11px;color:var(--ink3);">${o.id||''} · 👤 ${o.staff||''}</div>
+      </div>
+      <span style="padding:4px 10px;border-radius:100px;font-size:11px;font-weight:700;white-space:nowrap;
+        background:${o.status==='Ready'?'#e8f5e9':o.status==='Delivered'?'#eee':'#fff3e0'};
+        color:${o.status==='Ready'?'#2e7d32':o.status==='Delivered'?'#666':'#e65100'};">
+        ${o.status==='Ready'?'✅':o.status==='Delivered'?'📦':'🔨'} ${o.status}
+      </span>
+    </div>
+    ${o.delivery?`<div style="background:#fff3e0;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px;font-weight:700;color:#e65100;">⏰ Delivery: ${formatDatetime(o.delivery)}</div>`:''}
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+      ${(o.cartItems||[]).map(item=>{
+        const svcs=item.svcs||[item.svc]||[];
+        return `<div style="background:var(--paper);border-radius:8px;padding:12px;border-left:3px solid var(--gold-dk);">
+          <div style="font-weight:700;font-size:13px;color:var(--gold-dk);margin-bottom:6px;">${svcs.join(' + ')}</div>
+          <div style="font-size:12px;color:var(--ink2);">${item.label||'—'}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    ${o.notes?`<div style="font-size:12px;color:var(--ink3);background:var(--paper);padding:8px 12px;border-radius:8px;margin-bottom:10px;">📝 ${o.notes}</div>`:''}
+    ${showActions?`<div style="display:flex;gap:8px;">
+      ${!isReady?`<button onclick="framerMarkReady('${o.id}')" style="flex:1;background:var(--gold-dk);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">✅ Mark Ready</button>`:''}
+      ${isReady ?`<button onclick="framerUndoReady('${o.id}')" style="flex:1;background:#fff;color:#e53935;border:2px solid #e53935;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">↩️ Undo Ready</button>`:''}
+    </div>`:''}
+  </div>`;
+}
+
 function framerRender() {
   try {
-    const fo = framerOrders.filter(o => orderNeedsFramer(o));
-    const active = fo.filter(o => o.status !== 'Delivered');
-    const done   = fo.filter(o => o.status === 'Delivered');
+    const fo     = framerOrders.filter(o=>orderNeedsFramer(o));
+    const active = fo.filter(o=>o.status!=='Delivered').sort((a,b)=>(b.created||0)-(a.created||0));
+    const done   = fo.filter(o=>o.status==='Delivered').sort((a,b)=>(b.created||0)-(a.created||0));
 
     document.getElementById('fs-active').textContent = active.length;
     document.getElementById('fs-total').textContent  = fo.length;
     document.getElementById('fs-done').textContent   = done.length;
 
-    // Active alerts
-    document.getElementById('framer-notifs').innerHTML = active.length
-      ? active.map(o => `<div class="job-notif">
-          <div class="job-dot"></div>
-          <div>
+    const badge = document.getElementById('active-badge');
+    if(badge) badge.textContent = active.length>0 ? active.length : '';
+
+    if(framerCurrentTab==='active') {
+      document.getElementById('framer-notifs').innerHTML = active.length
+        ? active.map(o=>`<div class="job-notif"><div class="job-dot"></div><div>
             <div class="job-text"><b>${o.name}</b> · ${o.id} · <b>${o.status}</b></div>
-            <div class="job-time">📅 ${o.date||''} · 👤 ${o.staff||''}${o.delivery?' · ⏰ '+formatDatetime(o.delivery):''}</div>
-          </div>
-        </div>`).join('')
-      : '<div style="font-size:13px;color:#9C8060;">No active framing jobs 🎉</div>';
-
-    // All jobs
-    if (!fo.length) {
-      document.getElementById('framer-orders').innerHTML = '<div class="empty-state"><div class="empty-icon">🖼️</div><div class="empty-title">No framing orders yet</div><div class="empty-sub">New jobs will appear here automatically</div></div>';
-      return;
+            <div class="job-time">👤 ${o.staff||''}${o.delivery?' · ⏰ '+formatDatetime(o.delivery):''}</div>
+          </div></div>`).join('')
+        : '<div style="font-size:13px;color:#9C8060;">No active framing jobs 🎉</div>';
+      document.getElementById('framer-orders').innerHTML = active.length
+        ? active.map(o=>framerCard(o,true)).join('')
+        : '<div class="empty-state"><div class="empty-icon">🎉</div><div class="empty-title">All caught up!</div><div class="empty-sub">No active framing orders</div></div>';
+    } else {
+      document.getElementById('framer-done').innerHTML = done.length
+        ? done.map(o=>framerCard(o,false)).join('')
+        : '<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-title">No completed orders yet</div></div>';
     }
-
-    document.getElementById('framer-orders').innerHTML = fo.map(o => {
-      const sc = (STATUS_CFG||{})[o.status] || { cls:'', icon:'', bg:'#eee', cl:'#333' };
-      const isDone  = o.status === 'Delivered';
-      const isReady = o.status === 'Ready';
-
-      return `<div class="job-card${isDone?' delivered':''}">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;">
-          <div>
-            <div style="font-size:16px;font-weight:700;margin-bottom:2px;">${o.name||''}</div>
-            <div style="font-size:11px;color:var(--ink3);">${o.id||''} · 📅 ${o.date||''} · 👤 ${o.staff||''}</div>
-          </div>
-          <span style="padding:4px 10px;border-radius:100px;font-size:11px;font-weight:700;white-space:nowrap;background:${sc.bg||'#eee'};color:${sc.cl||'#333'};">${sc.icon||''} ${o.status}</span>
-        </div>
-
-        ${o.delivery?`<div style="background:#fff3e0;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px;font-weight:700;color:#e65100;">⏰ Delivery: ${formatDatetime(o.delivery)}</div>`:''}
-
-        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
-          ${(o.cartItems||[]).map(item => {
-            const svcs = item.svcs||[item.svc]||[];
-            return `<div style="background:var(--paper);border-radius:8px;padding:12px;border-left:3px solid var(--gold-dk);">
-              <div style="font-weight:700;font-size:13px;color:var(--gold-dk);margin-bottom:8px;">${svcs.join(' + ')}</div>
-              <div style="display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:12px;">
-                <span style="color:var(--ink3);">Details</span><span>${item.label||'—'}</span>
-                <span style="color:var(--ink3);">Price</span><span style="font-weight:700;">Rs.${item.price||0}</span>
-              </div>
-            </div>`;
-          }).join('')}
-        </div>
-
-        ${o.notes?`<div style="font-size:12px;color:var(--ink3);background:var(--paper);padding:8px 12px;border-radius:8px;margin-bottom:10px;">📝 ${o.notes}</div>`:''}
-
-        ${!isDone ? `<div style="display:flex;gap:8px;">
-          ${!isReady ? `<button onclick="framerMarkReady('${o.id}')" style="flex:1;background:var(--gold-dk);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">✅ Mark Ready</button>` : ''}
-          ${isReady  ? `<button onclick="framerUndoReady('${o.id}')" style="background:#fff;color:#e53935;border:2px solid #e53935;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;flex:1;">↩️ Undo Ready</button>` : ''}
-        </div>` : '<div style="text-align:center;font-size:13px;color:var(--ink3);padding:4px;">📦 Delivered</div>'}
-      </div>`;
-    }).join('');
-
   } catch(err) {
-    console.error('framerRender error:', err);
-    document.getElementById('framer-notifs').innerHTML = '<div style="color:#888;font-size:13px;">No active jobs</div>';
-    document.getElementById('framer-orders').innerHTML = framerOrders.length
-      ? framerOrders.map(o=>`<div style="padding:12px;border-bottom:1px solid #eee;"><b>${o.name||'?'}</b> · ${o.status||''}</div>`).join('')
-      : '<div style="padding:20px;text-align:center;color:#888;">No framing orders yet</div>';
+    console.error('framerRender error:',err);
+    document.getElementById('framer-notifs').innerHTML='<div style="color:#888;font-size:13px;">No active jobs</div>';
+    document.getElementById('framer-orders').innerHTML='<div style="padding:20px;text-align:center;color:#888;">Loading...</div>';
   }
 }
 
 window.framerMarkReady = async function(id) {
-  if (framerUseLocal) {
-    framerOrders = framerOrders.map(o=>o.id===id?{...o,status:'Ready'}:o);
-    localStorage.setItem('fv_orders', JSON.stringify(framerOrders));
-    framerRender();
-  } else {
-    try { await framerDb.collection('orders').doc(id).update({status:'Ready'}); }
-    catch(e) { toast('Error updating status','error'); return; }
-  }
+  if(framerUseLocal){framerOrders=framerOrders.map(o=>o.id===id?{...o,status:'Ready'}:o);localStorage.setItem('fv_orders',JSON.stringify(framerOrders));framerRender();}
+  else { try{await framerDb.collection('orders').doc(id).update({status:'Ready'});}catch(e){toast('Error','error');return;} }
   toast('✅ Order marked Ready!','success');
 };
 
 window.framerUndoReady = async function(id) {
-  if (!confirm('⚠️ Move order back to In Progress?')) return;
-  if (framerUseLocal) {
-    framerOrders = framerOrders.map(o=>o.id===id?{...o,status:'In Progress'}:o);
-    localStorage.setItem('fv_orders', JSON.stringify(framerOrders));
-    framerRender();
-  } else {
-    try { await framerDb.collection('orders').doc(id).update({status:'In Progress'}); }
-    catch(e) { toast('Error updating status','error'); return; }
-  }
+  if(!confirm('⚠️ Move order back to In Progress?')) return;
+  if(framerUseLocal){framerOrders=framerOrders.map(o=>o.id===id?{...o,status:'In Progress'}:o);localStorage.setItem('fv_orders',JSON.stringify(framerOrders));framerRender();}
+  else { try{await framerDb.collection('orders').doc(id).update({status:'In Progress'});}catch(e){toast('Error','error');return;} }
   toast('↩️ Moved back to In Progress');
 };
 
 window.doLogout = doLogout;
-
-// Guard role
-if (!requireRole('framer')) throw new Error('Not authorized');
-
-// Start — use localStorage as primary, Firebase as real-time sync
+if(!requireRole('framer')) throw new Error('Not authorized');
 framerOrders = JSON.parse(localStorage.getItem('fv_orders')||'[]');
-framerRender(); // Show immediately from local storage
-
-// Then try Firebase for live data
+framerRender();
 framerInitDB();
 </script>
 </body>

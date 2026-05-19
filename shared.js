@@ -59,6 +59,46 @@ function todayStr() { return new Date().toISOString().slice(0,10); }
 function yesterdayStr() { const d=new Date(); d.setDate(d.getDate()-1); return d.toISOString().slice(0,10); }
 function thisMonthStr() { return new Date().toISOString().slice(0,7); }
 function formatDate(d) { if(!d) return ''; const dt=new Date(d+'T00:00:00'); return dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}); }
+
+// ── Bill Number Generation ────────────────────────────────────
+// Format: FV-DDMMYY-001
+function getBillDatePrefix() {
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2,'0');
+  const mm = String(now.getMonth()+1).padStart(2,'0');
+  const yy = String(now.getFullYear()).slice(-2);
+  return `FV-${dd}${mm}${yy}`;
+}
+
+async function getNextBillNumber() {
+  const prefix = getBillDatePrefix();
+  const counterKey = 'billCounter_' + todayStr().replace(/-/g,'');
+  if (window.db) {
+    try {
+      const ref = window.db.collection('counters').doc(counterKey);
+      const snap = await ref.get();
+      const next = (snap.exists ? snap.data().count : 0) + 1;
+      await ref.set({ count: next, date: todayStr() });
+      return `${prefix}-${String(next).padStart(3,'0')}`;
+    } catch(e) { /* fallback to local */ }
+  }
+  // Local fallback
+  const localCount = +(localStorage.getItem(counterKey)||'0') + 1;
+  localStorage.setItem(counterKey, String(localCount));
+  return `${prefix}-${String(localCount).padStart(3,'0')}`;
+}
+
+// ── Day Close Helpers ─────────────────────────────────────────
+function isDayClosed(dateStr) {
+  const closed = JSON.parse(localStorage.getItem('fv_day_closed')||'{}');
+  return !!closed[dateStr||todayStr()];
+}
+
+function markDayClosed(dateStr, report) {
+  const closed = JSON.parse(localStorage.getItem('fv_day_closed')||'{}');
+  closed[dateStr||todayStr()] = report;
+  localStorage.setItem('fv_day_closed', JSON.stringify(closed));
+}
 function formatDatetime(dt) { return dt ? dt.replace('T',' ').slice(0,16) : ''; }
 
 // ── Number Format ─────────────────────────────────────────────
@@ -350,7 +390,28 @@ function isSizeAllowedForQuality(sizeKey, quality) {
   return false;
 }
 
-// ── Framing Constants ─────────────────────────────────────────
+// ── Stock Items ───────────────────────────────────────────────
+window.stockItems = [];
+
+async function updateStockQty(id, newQty) {
+  if(window.db) {
+    try { await window.db.collection('stock').doc(id).update({qty:newQty}); } catch(e){}
+  } else {
+    localStorage.setItem('fv_stock', JSON.stringify(window.stockItems));
+  }
+}
+
+async function loadStock() {
+  if(window.db) {
+    try {
+      window.db.collection('stock').onSnapshot(snap=>{
+        window.stockItems = snap.docs.map(d=>({id:d.id,...d.data()}));
+      });
+    } catch(e){window.stockItems=JSON.parse(localStorage.getItem('fv_stock')||'[]');}
+  } else {
+    window.stockItems = JSON.parse(localStorage.getItem('fv_stock')||'[]');
+  }
+}
 const MOULDING_SIZES = ['0.5','0.75','1','1.5','2','2.5','3','3.5','4','5'];
 const MOUNT_SIZES    = [1, 1.5, 2, 2.5, 3, 3.5, 4];
 const FRAME_PRICE_PER_FT = 10;

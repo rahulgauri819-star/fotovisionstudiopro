@@ -59,6 +59,48 @@
   </div>
 </div>
 
+<!-- DAY END -->
+<div id="pg-dayend" class="hidden">
+  <div class="page-header"><div class="page-title">🌙 Day End Settlement</div><div class="page-sub" id="staff-dayend-date"></div></div>
+  <div id="staff-dayend-content"></div>
+</div>
+
+<!-- EXPENSES -->
+<div id="pg-expenses" class="hidden">
+  <div class="page-header"><div class="page-title">💸 Daily Expenses</div><div class="page-sub">Track shop expenses</div></div>
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header"><div class="card-title">+ Add Expense</div></div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group"><label class="form-label">Date</label>
+          <input class="form-input" id="staff-exp-date" type="date" readonly style="background:#f5f5f5;color:#888;"></div>
+        <div class="form-group"><label class="form-label">Paid By</label>
+          <div class="toggle-group">
+            <label class="toggle-option"><input type="radio" name="staff-exp-pay" value="Cash" checked><span>💵 Cash</span></label>
+            <label class="toggle-option"><input type="radio" name="staff-exp-pay" value="UPI"><span>📱 UPI</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:10px;">
+        <label class="form-label">Expense Description</label>
+        <input class="form-input" id="staff-exp-desc" placeholder="e.g. Electricity bill, Tea & snacks...">
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label">Amount (Rs.)</label>
+        <input class="form-input" id="staff-exp-amt" type="number" min="0" placeholder="0" style="max-width:200px;">
+      </div>
+      <button onclick="staffAddExpense()" class="btn-gold" style="padding:10px 24px;">➕ Add Expense</button>
+    </div>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+    <button class="dash-filter-btn act" onclick="staffSetExpFilter('today')" id="sef-today">Today</button>
+    <button class="dash-filter-btn" onclick="staffSetExpFilter('yesterday')" id="sef-yesterday">Yesterday</button>
+    <button class="dash-filter-btn" onclick="staffSetExpFilter('month')" id="sef-month">This Month</button>
+    <input type="date" id="sef-date" class="filter-select" style="font-size:12px;max-width:140px;" onchange="staffSetExpFilter('date')">
+  </div>
+  <div id="staff-expenses-list"></div>
+</div>
+
 <!-- BOOKINGS -->
 <div id="pg-bookings" class="hidden">
   <div class="page-header"><div class="page-title">📅 Bookings</div><div class="page-sub">Pending delivery timeline</div></div>
@@ -179,6 +221,8 @@ const TABS=[
   {id:'dashboard',label:'Dashboard',icon:'📊',name:'Dash'},
   {id:'bookings', label:'Bookings', icon:'📅',name:'Book'},
   {id:'orders',   label:'Orders',  icon:'📋',name:'Orders'},
+  {id:'expenses', label:'Expenses',icon:'💸',name:'Expense'},
+  {id:'dayend',   label:'Day End', icon:'🌙',name:'DayEnd'},
   {id:'framer',   label:'Framing', icon:'🖼️',name:'Framing'},
 ];
 
@@ -198,7 +242,7 @@ let currentPage='dashboard';
 let lastReadyIds = new Set();
 
 window.showPage=function(p){
-  ['dashboard','orders','framer','form','bookings'].forEach(x=>document.getElementById('pg-'+x)?.classList.add('hidden'));
+  ['dashboard','orders','framer','form','bookings','expenses','dayend'].forEach(x=>document.getElementById('pg-'+x)?.classList.add('hidden'));
   document.getElementById('pg-'+p)?.classList.remove('hidden');
   document.querySelectorAll('.hdr-nav-btn').forEach(b=>b.classList.remove('act'));
   document.getElementById('nav-'+p)?.classList.add('act');
@@ -209,6 +253,8 @@ window.showPage=function(p){
   if(p==='orders')    renderOrders();
   if(p==='framer')    renderFramer();
   if(p==='bookings')  renderBookings();
+  if(p==='expenses')  { staffSetExpDate(); staffRenderExpenses(); }
+  if(p==='dayend')    renderStaffDayEnd();
 };
 function refreshCurrentPage(){
   try {
@@ -216,13 +262,13 @@ function refreshCurrentPage(){
     else if(currentPage==='orders')renderOrders();
     else if(currentPage==='framer')renderFramer();
     else if(currentPage==='bookings')renderBookings();
+    else if(currentPage==='expenses')staffRenderExpenses();
     checkReadyNotifications();
     const pb=orders.filter(o=>o.orderType==='Booking'&&o.status!=='Delivered').length;
     const bb=document.getElementById('bookings-badge');
     if(bb) bb.textContent=pb>0?pb:'';
   } catch(err) {
     console.error('refreshCurrentPage error:', err);
-    // Force show orders even on error
     const ol = document.getElementById('order-list');
     if(ol && currentPage==='orders') renderOrdersSafe();
   }
@@ -470,6 +516,7 @@ function buildReceiptHTML(o){
 }
 
 window.saveOrder=async function(){
+  if(!window.editId && isDayClosed(todayStr())){toast('⚠️ Today is closed! Contact owner to reopen.','error');return;}
   const name=document.getElementById('f-name')?.value.trim();
   if(!name){toast('⚠️ Customer name required','error');return;}
   if(cart.length===0){toast('⚠️ Add at least one service','error');return;}
@@ -488,19 +535,110 @@ window.saveOrder=async function(){
     if(splitCash+splitUPI!==finalTotal){toast('⚠️ Cash + UPI must equal Rs.'+finalTotal,'error');return;}
   }
   const advance=otype==='Instant'?finalTotal:(+(document.getElementById('f-advance')?.value)||0);
-  const data={name,phone:document.getElementById('f-phone')?.value||'',address:document.getElementById('f-address')?.value||'',staff:document.getElementById('f-staff')?.value||'',status:window.editId?(orders.find(x=>x.id===window.editId)?.status||'Pending'):'Pending',orderType:otype,delivery:otype==='Booking'?delivery:'',date:window.editId?(orders.find(x=>x.id===window.editId)?.date||todayStr()):todayStr(),notes:document.getElementById('f-notes')?.value||'',cartItems:JSON.parse(JSON.stringify(window.cart)),cartTotal,discountPct:discPct,discountAmt:discAmt,total:finalTotal,advance,payMode,splitCash:payMode==='Cash+UPI'?splitCash:0,splitUPI:payMode==='Cash+UPI'?splitUPI:0,bookedBy:'staff'};
-  if(useLocal){if(window.editId){orders=orders.map(o=>o.id===window.editId?{...o,...data}:o);}else{data.id='FV-'+String(Date.now()).slice(-6);data.created=Date.now();orders=[data,...orders];}saveLocal();}
+  const billNo=window.editId?(orders.find(x=>x.id===window.editId)?.billNo||''):await getNextBillNumber();
+  const data={name,phone:document.getElementById('f-phone')?.value||'',address:document.getElementById('f-address')?.value||'',staff:document.getElementById('f-staff')?.value||'',status:window.editId?(orders.find(x=>x.id===window.editId)?.status||'Pending'):'Pending',orderType:otype,delivery:otype==='Booking'?delivery:'',date:window.editId?(orders.find(x=>x.id===window.editId)?.date||todayStr()):todayStr(),notes:document.getElementById('f-notes')?.value||'',cartItems:JSON.parse(JSON.stringify(window.cart)),cartTotal,discountPct:discPct,discountAmt:discAmt,total:finalTotal,advance,payMode,splitCash:payMode==='Cash+UPI'?splitCash:0,splitUPI:payMode==='Cash+UPI'?splitUPI:0,bookedBy:'staff',billNo};
+  if(useLocal){if(window.editId){orders=orders.map(o=>o.id===window.editId?{...o,...data}:o);}else{data.id=billNo||('FV-'+String(Date.now()).slice(-6));data.created=Date.now();orders=[data,...orders];}saveLocal();}
   else{if(window.editId)await updateDoc(doc(db,'orders',window.editId),data);else{data.created=serverTimestamp();await addDoc(collection(db,'orders'),data);}}
   const isF=cart.some(i=>(i.svcs||[]).some(s=>FRAMING_SVCS.includes(s)));
   toast(isF?'✅ Saved! 🖼️ Framer notified':window.editId?'✅ Updated!':'✅ Order created!','success');
   window.cart=[];window.editId=null;showPage('orders');
 };
 
+// ── Staff Expenses ────────────────────────────────────────────
+let staffExpenses = [];
+let staffExpFilter = 'today';
+
+function staffSetExpDate() {
+  const el = document.getElementById('staff-exp-date');
+  if(el) el.value = todayStr();
+}
+
+window.staffSetExpFilter = function(f) {
+  staffExpFilter = f;
+  ['today','yesterday','month'].forEach(x=>document.getElementById('sef-'+x)?.classList.toggle('act',x===f));
+  if(f!=='date') document.getElementById('sef-date').value='';
+  staffRenderExpenses();
+};
+
+window.staffAddExpense = async function() {
+  const desc = document.getElementById('staff-exp-desc')?.value.trim();
+  const amt  = +(document.getElementById('staff-exp-amt')?.value)||0;
+  const pay  = document.querySelector('input[name="staff-exp-pay"]:checked')?.value||'Cash';
+  if(!desc){toast('⚠️ Enter expense description','error');return;}
+  if(!amt) {toast('⚠️ Enter amount','error');return;}
+  const exp = {desc,amount:amt,paidBy:pay,date:todayStr(),created:Date.now()};
+  if(useLocal){staffExpenses.unshift({...exp,id:'EXP-'+Date.now()});localStorage.setItem('fv_expenses',JSON.stringify(staffExpenses));}
+  else { try{await window.db.collection('expenses').add(exp);}catch(e){toast('Error saving','error');return;} }
+  document.getElementById('staff-exp-desc').value='';
+  document.getElementById('staff-exp-amt').value='';
+  toast('✅ Expense added!','success');
+  staffRenderExpenses();
+};
+
+function staffGetFilteredExp() {
+  const fd=document.getElementById('sef-date')?.value||'';
+  if(staffExpFilter==='today')     return staffExpenses.filter(e=>e.date===todayStr());
+  if(staffExpFilter==='yesterday') return staffExpenses.filter(e=>e.date===yesterdayStr());
+  if(staffExpFilter==='month')     return staffExpenses.filter(e=>(e.date||'').startsWith(thisMonthStr()));
+  if(staffExpFilter==='date'&&fd)  return staffExpenses.filter(e=>e.date===fd);
+  return staffExpenses;
+}
+
+function staffRenderExpenses() {
+  const el=document.getElementById('staff-expenses-list');
+  if(!el)return;
+  const fil=staffGetFilteredExp();
+  const total=fil.reduce((s,e)=>s+(+e.amount||0),0);
+  const cashT=fil.filter(e=>e.paidBy==='Cash').reduce((s,e)=>s+(+e.amount||0),0);
+  const upiT =fil.filter(e=>e.paidBy==='UPI').reduce((s,e)=>s+(+e.amount||0),0);
+  const isToday = staffExpFilter==='today';
+  el.innerHTML=`<div class="card"><div class="card-body">
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--paper3);">
+      <div><span style="font-size:13px;color:var(--ink3);">Total</span><div style="font-size:22px;font-weight:800;color:var(--gold-dk);">Rs.${total.toLocaleString('en-IN')}</div></div>
+      ${cashT>0?`<div><span style="font-size:12px;color:var(--ink3);">💵 Cash</span><div style="font-size:16px;font-weight:700;">Rs.${cashT.toLocaleString('en-IN')}</div></div>`:''}
+      ${upiT>0 ?`<div><span style="font-size:12px;color:var(--ink3);">📱 UPI</span><div style="font-size:16px;font-weight:700;">Rs.${upiT.toLocaleString('en-IN')}</div></div>`:''}
+    </div>
+    ${fil.length?fil.map(e=>{
+      const canEdit=isToday&&e.date===todayStr();
+      return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--paper3);">
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:600;">${e.desc}</div>
+          <div style="font-size:11px;color:var(--ink3);">${e.date} · ${e.paidBy==='Cash'?'💵':'📱'} ${e.paidBy}</div>
+        </div>
+        <div style="font-weight:700;color:var(--gold-dk);">Rs.${(+e.amount||0).toLocaleString('en-IN')}</div>
+        ${canEdit?`<button onclick="staffEditExpense('${e.id}')" style="background:none;border:none;color:var(--gold-dk);cursor:pointer;font-size:14px;">✏️</button>`:''}
+      </div>`;
+    }).join(''):'<div style="text-align:center;padding:20px;color:var(--ink3);">No expenses for this period</div>'}
+  </div></div>`;
+}
+
+window.staffEditExpense = function(id) {
+  const e = staffExpenses.find(x=>x.id===id);
+  if(!e) return;
+  document.getElementById('staff-exp-desc').value = e.desc;
+  document.getElementById('staff-exp-amt').value  = e.amount;
+  const payEl = document.querySelector(`input[name="staff-exp-pay"][value="${e.paidBy}"]`);
+  if(payEl) payEl.checked = true;
+  // Remove old entry
+  staffExpenses = staffExpenses.filter(x=>x.id!==id);
+  localStorage.setItem('fv_expenses',JSON.stringify(staffExpenses));
+  staffRenderExpenses();
+  toast('✏️ Edit the form and re-save');
+};
+
+async function staffLoadExpenses() {
+  if(useLocal){staffExpenses=JSON.parse(localStorage.getItem('fv_expenses')||'[]');return;}
+  try {
+    window.db.collection('expenses').orderBy('created','desc')
+      .onSnapshot(snap=>{staffExpenses=snap.docs.map(d=>({id:d.id,...d.data()}));if(currentPage==='expenses')staffRenderExpenses();});
+  } catch(e){staffExpenses=JSON.parse(localStorage.getItem('fv_expenses')||'[]');}
+}
+
 window.cancelForm=()=>{window.cart=[];window.editId=null;showPage('orders');};
 window.chgStatus=chgStatus;window.editOrd=editOrd;window.billOrd=billOrd;window.requestDelete=requestDelete;window.doLogout=doLogout;
 
 buildNav();
-initDB().then(async ()=>{ await loadMouldings(); showPage('dashboard'); });
+initDB().then(async()=>{ await loadMouldings(); await staffLoadExpenses(); showPage('dashboard'); });
 </script>
 <script src="../form.js"></script>
 </body>

@@ -48,8 +48,17 @@
 <!-- ═══ DASHBOARD ═══ -->
 <div id="pg-dashboard">
   <div class="page-header">
-    <div class="page-title">Good <span id="greeting-time"></span>, Owner 👑</div>
+    <div class="page-title">Good <span id="greeting-time"></span>, Harish 👑</div>
     <div class="page-sub" id="dashdate"></div>
+  </div>
+  <!-- Day closed banner -->
+  <div id="day-closed-banner" class="hidden" style="background:#fff3cd;border:1px solid #f0a500;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+    <div>🔒 <b>Today is closed.</b> Day End has been submitted.</div>
+    <button onclick="reopenDay()" style="background:#C9973A;color:#fff;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:13px;">🔓 Reopen Day</button>
+  </div>
+  <!-- Day Reports notification -->
+  <div id="new-day-report-banner" class="hidden" style="background:#e8f5e9;border:1px solid #4caf50;border-radius:10px;padding:12px 16px;margin-bottom:16px;cursor:pointer;" onclick="showPage('dayreports')">
+    📋 <b>New Day Report received!</b> Tap to view →
   </div>
 
   <!-- 1. DAILY SALES CHART — TOP -->
@@ -162,6 +171,145 @@
   </div>
 </div>
 
+<!-- ═══ STOCK ═══ -->
+<div id="pg-stock" class="hidden">
+  <div class="page-header">
+    <div class="page-title">📦 Stock Items</div>
+    <div class="page-sub">Ready-made stock inventory</div>
+  </div>
+  <!-- Add Item Form -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header"><div class="card-title">➕ Add Stock Item</div></div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group">
+          <label class="form-label">Item Code (Manual)</label>
+          <input class="form-input" id="stock-code" placeholder="e.g. F577MMWHITE">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Item Name</label>
+          <input class="form-input" id="stock-name" placeholder="e.g. F5X7 7MM WHITE">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group">
+          <label class="form-label">Quantity</label>
+          <input class="form-input" id="stock-qty" type="number" min="0" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Selling Price (Rs.)</label>
+          <input class="form-input" id="stock-sell" type="number" min="0" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cost Price (Rs.)</label>
+          <input class="form-input" id="stock-cost" type="number" min="0" placeholder="0">
+        </div>
+      </div>
+      <button onclick="ownerAddStock()" class="btn-gold" style="padding:10px 24px;">➕ Add Item</button>
+    </div>
+  </div>
+  <div id="stock-list"></div>
+</div>
+
+<!-- ═══ DAY END ═══ -->
+<div id="pg-dayend" class="hidden">
+  <div class="page-header">
+    <div class="page-title">🌙 Day End Settlement</div>
+    <div class="page-sub" id="dayend-date"></div>
+  </div>
+  <div id="dayend-content"></div>
+</div>
+
+<!-- ═══ DAY REPORTS ═══ -->
+<div id="pg-dayreports" class="hidden">
+  <div class="page-header">
+    <div class="page-title">📋 Day Reports</div>
+    <div class="page-sub">History of all day-end settlements</div>
+  </div>
+  <div id="dayreports-list"></div>
+</div>
+
+<!-- ═══ EXPENSES ═══ -->
+<div id="pg-expenses" class="hidden">
+  <div class="page-header">
+    <div class="page-title">💸 Daily Expenses</div>
+    <div class="page-sub">Track your shop expenses</div>
+  </div>
+  <!-- Add Expense Form -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header"><div class="card-title">+ Add Expense</div></div>
+    <div class="card-body">
+      <!-- Quick Select saved expenses -->
+      <div style="margin-bottom:12px;">
+        <label class="form-label" style="display:block;margin-bottom:6px;">Quick Select</label>
+        <div id="saved-expense-chips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input class="form-input" id="exp-date" type="date" readonly style="background:#f5f5f5;color:#888;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Paid By</label>
+          <div class="toggle-group">
+            <label class="toggle-option"><input type="radio" name="exp-pay" value="Cash" checked><span>💵 Cash</span></label>
+            <label class="toggle-option"><input type="radio" name="exp-pay" value="UPI"><span>📱 UPI</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:10px;">
+        <label class="form-label">Expense Name</label>
+        <input class="form-input" id="exp-desc" placeholder="e.g. Electricity bill, Tea & snacks...">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group">
+          <label class="form-label">Qty</label>
+          <input class="form-input" id="exp-qty" type="number" min="1" value="1" oninput="calcExpTotal()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Price/Unit (Rs.)</label>
+          <input class="form-input" id="exp-unit-price" type="number" min="0" placeholder="0" oninput="calcExpTotal()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Total (Rs.)</label>
+          <input class="form-input" id="exp-total-display" readonly style="background:#f5f5f5;font-weight:700;color:var(--gold-dk);">
+        </div>
+      </div>
+      <button onclick="addExpense()" class="btn-gold" style="padding:10px 24px;">➕ Add Expense</button>
+    </div>
+  </div>
+  <!-- Filter -->
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+    <button class="dash-filter-btn act" onclick="setExpFilter('today')" id="ef-today">Today</button>
+    <button class="dash-filter-btn" onclick="setExpFilter('yesterday')" id="ef-yesterday">Yesterday</button>
+    <button class="dash-filter-btn" onclick="setExpFilter('month')" id="ef-month">This Month</button>
+    <input type="date" id="ef-date" class="filter-select" style="font-size:12px;max-width:140px;" onchange="setExpFilter('date')">
+  </div>
+  <div id="expenses-list"></div>
+</div>
+
+<!-- ═══ CUSTOMERS ═══ -->
+<div id="pg-customers" class="hidden">
+  <div class="page-header">
+    <div class="page-title">👥 Customers</div>
+    <div class="page-sub">Customer database — auto-built from orders</div>
+  </div>
+  <div class="filter-bar" style="margin-bottom:12px;">
+    <input class="filter-input" id="cust-srch" placeholder="Search by name or phone…" oninput="renderCustomers()">
+  </div>
+  <div id="customers-list"></div>
+  <!-- Customer Detail Modal -->
+  <div id="cust-modal" class="modal-overlay hidden">
+    <div class="modal-box" style="max-width:500px;">
+      <div class="modal-header">
+        <div class="modal-title" id="cust-modal-title">Customer</div>
+        <button onclick="closeCustModal()" style="background:none;border:none;font-size:20px;cursor:pointer;">✕</button>
+      </div>
+      <div class="modal-body" id="cust-modal-body"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ BOOKINGS ═══ -->
 <div id="pg-bookings" class="hidden">
   <div class="page-header">
@@ -267,6 +415,16 @@
 </div>
 
 <!-- BILL MODAL -->
+<!-- Order Detail Bottom Sheet -->
+<div id="order-detail-sheet" style="position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:20px 20px 0 0;box-shadow:0 -8px 40px rgba(0,0,0,.2);z-index:9000;max-height:85vh;overflow-y:auto;transform:translateY(100%);transition:transform .3s ease;display:none;">
+  <div style="position:sticky;top:0;background:#fff;padding:12px 16px;border-bottom:1px solid var(--paper3);display:flex;justify-content:space-between;align-items:center;z-index:1;">
+    <div style="font-weight:700;font-size:16px;" id="ods-title">Order Details</div>
+    <button onclick="closeOrderSheet()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--ink2);">✕</button>
+  </div>
+  <div id="ods-content" style="padding:16px;"></div>
+</div>
+<div id="ods-overlay" onclick="closeOrderSheet()" style="position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:8999;display:none;"></div>
+
 <div id="bill-modal" class="modal-overlay hidden">
   <div class="modal-box bill-modal-box">
     <div class="receipt" id="bill-content"></div>
@@ -338,11 +496,15 @@ document.getElementById('role-pill').textContent = getCurrentIcon() + ' ' + getC
 
 // ── Nav ───────────────────────────────────────────────────────
 const TABS = [
-  { id:'dashboard', label:'Dashboard', icon:'📊', name:'Dash' },
-  { id:'bookings',  label:'Bookings',  icon:'📅', name:'Book' },
-  { id:'orders',    label:'Orders',    icon:'📋', name:'Orders' },
-  { id:'mouldings', label:'Mouldings', icon:'🖼️', name:'Moulds' },
-  { id:'framer',    label:'Framing',   icon:'🔨', name:'Framing' },
+  { id:'dashboard',   label:'Dashboard',   icon:'📊', name:'Dash' },
+  { id:'bookings',    label:'Bookings',    icon:'📅', name:'Book' },
+  { id:'orders',      label:'Orders',      icon:'📋', name:'Orders' },
+  { id:'expenses',    label:'Expenses',    icon:'💸', name:'Expense' },
+  { id:'stock',       label:'Stock',       icon:'📦', name:'Stock' },
+  { id:'customers',   label:'Customers',   icon:'👥', name:'Clients' },
+  { id:'dayreports',  label:'Day Reports', icon:'📋', name:'Reports' },
+  { id:'mouldings',   label:'Mouldings',   icon:'🖼️', name:'Moulds' },
+  { id:'framer',      label:'Framing',     icon:'🔨', name:'Framing' },
 ];
 
 function buildNav() {
@@ -365,9 +527,8 @@ function buildNav() {
 }
 
 window.showPage = function(p) {
-  ['dashboard','orders','framer','form','mouldings','bookings'].forEach(x => {
-    const el = document.getElementById('pg-'+x);
-    if(el) el.classList.add('hidden');
+  ['dashboard','orders','framer','form','mouldings','bookings','expenses','customers','dayend','dayreports','stock'].forEach(x => {
+    document.getElementById('pg-'+x)?.classList.add('hidden');
   });
   document.getElementById('pg-'+p)?.classList.remove('hidden');
   document.querySelectorAll('.hdr-nav-btn').forEach(b => b.classList.remove('act'));
@@ -381,6 +542,11 @@ window.showPage = function(p) {
   if(p==='framer')     renderFramer();
   if(p==='mouldings')  renderMouldingsManager();
   if(p==='bookings')   renderBookings();
+  if(p==='expenses')   { setExpDateInput(); renderExpenses(); }
+  if(p==='customers')  renderCustomers();
+  if(p==='dayend')     renderDayEnd();
+  if(p==='dayreports') renderDayReports();
+  if(p==='stock')      renderStock();
 };
 
 let currentPage = 'dashboard';
@@ -444,40 +610,48 @@ function renderSalesDisplay() {
   const el = document.getElementById('sales-display');
   if (!el) return;
   const fil = getFilteredOrders(salesFilter, 'sf-date');
+  const totalAmt = fil.reduce((s,o)=>s+(+o.total||0),0);
 
-  if (salesFilter === 'month') {
-    // Bar chart for month
-    const today = todayStr();
-    const month = salesFilter === 'date'
-      ? (document.getElementById('sf-date')?.value||'').slice(0,7)
-      : thisMonthStr();
+  if (salesFilter === 'month' || salesFilter === 'date') {
+    // Determine month to show
+    let month = thisMonthStr();
+    if (salesFilter === 'date') {
+      const d = document.getElementById('sf-date')?.value||'';
+      if (d) month = d.slice(0,7); else month = thisMonthStr();
+    }
     const [yr, mo] = month.split('-').map(Number);
     const daysInMonth = new Date(yr, mo, 0).getDate();
     const dayTotals = {};
     for (let d=1; d<=daysInMonth; d++) dayTotals[d]=0;
-    fil.forEach(o => {
+
+    // Get ALL orders for this month (not filtered by date)
+    const monthOrds = orders.filter(o=>(o.date||'').startsWith(month));
+    monthOrds.forEach(o => {
       const od = +(o.date||'').split('-')[2];
       if (od) dayTotals[od] = (dayTotals[od]||0) + (+o.total||0);
     });
+    const monthTotal = monthOrds.reduce((s,o)=>s+(+o.total||0),0);
     const maxVal = Math.max(...Object.values(dayTotals), 1);
-    const totalAmt = fil.reduce((s,o)=>s+(+o.total||0),0);
+
     el.innerHTML = `
-      <div style="font-size:13px;color:var(--ink3);margin-bottom:8px;">Total: <b>Rs.${totalAmt.toLocaleString('en-IN')}</b> · ${fil.length} orders</div>
-      <div style="display:flex;align-items:flex-end;gap:3px;height:100px;overflow-x:auto;">
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;">Total: <b style="color:var(--gold-dk);font-size:16px;">Rs.${monthTotal.toLocaleString('en-IN')}</b> · ${monthOrds.length} orders</div>
+      <div style="display:flex;align-items:flex-end;gap:3px;height:110px;overflow-x:auto;padding-bottom:4px;">
         ${Array.from({length:daysInMonth},(_,i)=>{
           const day=i+1, amt=dayTotals[day]||0;
-          const h=Math.max(Math.round((amt/maxVal)*100),amt>0?4:1);
-          return `<div style="flex:1;min-width:8px;display:flex;flex-direction:column;align-items:center;gap:2px;" title="Day ${day}: Rs.${amt}">
-            <div style="width:100%;background:${amt>0?'var(--gold-dk)':'#e0e0e0'};height:${h}%;border-radius:2px 2px 0 0;min-height:2px;"></div>
-            <div style="font-size:8px;color:var(--ink3);">${day}</div>
+          const barH = Math.max(Math.round((amt/maxVal)*90), amt>0?6:2);
+          const isToday = (`${yr}-${String(mo).padStart(2,'0')}-${String(day).padStart(2,'0')}`) === todayStr();
+          return `<div style="flex:1;min-width:10px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;height:110px;" title="Day ${day}: Rs.${amt.toLocaleString('en-IN')}">
+            <div style="width:100%;background:${amt>0?(isToday?'#e65100':'var(--gold-dk)'):'#e8e8e8'};height:${barH}px;border-radius:3px 3px 0 0;transition:height .3s;"></div>
+            <div style="font-size:7px;color:${isToday?'var(--gold-dk)':'var(--ink3)'};font-weight:${isToday?'700':'400'};">${day}</div>
           </div>`;
         }).join('')}
-      </div>`;
+      </div>
+      <div style="font-size:10px;color:var(--ink3);margin-top:4px;">🟠 Today &nbsp; 🟡 Other days</div>`;
   } else {
-    // Single total for Today/Yesterday/specific date
-    const totalAmt = fil.reduce((s,o)=>s+(+o.total||0),0);
-    el.innerHTML = `<div style="font-size:28px;font-weight:800;color:var(--gold-dk);">Rs.${totalAmt.toLocaleString('en-IN')}</div>
-      <div style="font-size:13px;color:var(--ink3);">${fil.length} orders</div>`;
+    // Single total for Today/Yesterday
+    el.innerHTML = `
+      <div style="font-size:32px;font-weight:800;color:var(--gold-dk);">Rs.${totalAmt.toLocaleString('en-IN')}</div>
+      <div style="font-size:13px;color:var(--ink3);margin-top:4px;">${fil.length} order${fil.length!==1?'s':''}</div>`;
   }
 }
 
@@ -518,6 +692,10 @@ function renderSvcBars() {
 function renderDash() {
   setGreeting();
   document.getElementById('dashdate').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  // Day closed banner
+  const closed = isDayClosed(todayStr());
+  document.getElementById('day-closed-banner')?.classList.toggle('hidden', !closed);
 
   // Today's stats with payment breakdown
   const todayOrds = orders.filter(o => o.date === todayStr());
@@ -798,7 +976,7 @@ function orderCard(o, role) {
   const bal = (+(o.total||0)) - (+(o.advance||0));
   const svcs = [...new Set((o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]))];
   const payIcon = o.payMode==='UPI'?'📱':o.payMode==='Credit Card'?'💳':'💵';
-  return `<div class="order-card fade-in">
+  return `<div class="order-card fade-in" onclick="openOrderSheet('${o.id}')" style="cursor:pointer;">
     <div class="order-card-head">
       <div class="order-avatar">${svcs.slice(0,2).map(s=>SVC_ICONS[s]||'').join('')||'📦'}</div>
       <div style="flex:1;min-width:0;">
@@ -813,6 +991,7 @@ function orderCard(o, role) {
       </div>
     </div>
     <div class="order-tags">
+      ${o.billNo?`<span class="tag" style="background:#fff3e0;color:#e65100;font-weight:700;">🧾 ${o.billNo}</span>`:''}
       ${(o.cartItems||[]).map(i=>`<span class="tag">${(i.svcs||[i.svc]).map(s=>SVC_ICONS[s]||'').join('')} ${(i.svcs||[i.svc]).join('+')}${i.price?' '+inr(i.price):''}</span>`).join('')}
       ${o.discountPct&&+o.discountPct>0 ? `<span class="tag green">🏷️ ${o.discountPct}% OFF</span>` : ''}
       ${o.total ? `<span class="tag gold">Total ${inr(o.total)}</span>` : ''}
@@ -826,6 +1005,7 @@ function orderCard(o, role) {
       </select>
       <button class="btn btn-ghost btn-sm" onclick="editOrd('${o.id}')">✏️ Edit</button>
       <button class="btn btn-ghost btn-sm" onclick="billOrd('${o.id}')">🧾 Bill</button>
+      <button class="btn btn-ghost btn-sm" onclick="reprintBill('${o.id}')">🖨️ Reprint</button>
       <button class="btn btn-danger btn-sm" onclick="delOrd('${o.id}')">🗑️</button>
     </div>
   </div>`;
@@ -1098,19 +1278,22 @@ window.printBill = function() {
   w.document.close();
 };
 
-function buildReceipt(o) {
+function buildReceipt(o, isDuplicate=false) {
   const total    = +(o.total||0);
   const cartT    = +(o.cartTotal||total);
   const discAmt  = +(o.discountAmt||0);
   const adv      = +(o.advance||0);
   const bal      = total - adv;
-  const payIcon  = o.payMode==='UPI'?'📱':o.payMode==='Credit Card'?'💳':'💵';
+  const payIcon  = o.payMode==='UPI'?'📱':o.payMode==='Credit Card'?'💳':o.payMode==='Cash+UPI'?'💵📱':'💵';
+  const billNo   = o.billNo || o.id || '—';
   let rows = (o.cartItems||[]).map(item =>
     `<div class="receipt-row" style="font-weight:600;"><span>${(item.svcs||[item.svc]).map(s=>SVC_ICONS[s]||'').join('')} ${(item.svcs||[item.svc]).join('+')}</span><span>Rs.${item.price||0}</span></div>
      ${item.label?`<div class="receipt-row"><span style="padding-left:8px;font-size:10px;color:#555;">${item.label}</span></div>`:''}`
   ).join('');
 
-  return `<div class="receipt-header">
+  return `
+  ${isDuplicate?'<div style="text-align:center;background:#fff3cd;padding:4px;font-size:10px;font-weight:700;letter-spacing:.1em;border:1px dashed #f0a500;margin-bottom:8px;">⚠️ DUPLICATE COPY</div>':''}
+  <div class="receipt-header">
     <div style="width:50px;height:50px;background:linear-gradient(135deg,#9A6E1E,#C9973A);border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;">
       <svg width="34" height="34" viewBox="0 0 34 34"><text x="17" y="24" text-anchor="middle" font-family="serif" font-size="20" font-weight="700" fill="white">FV</text></svg>
     </div>
@@ -1119,11 +1302,12 @@ function buildReceipt(o) {
     <div style="font-size:9px;color:#bbb;margin-top:4px;">━━━━━━━━━━━━━━━━━</div>
   </div>
   <div class="receipt-div"></div>
-  <div class="receipt-row"><span><b>Bill No:</b> ${o.id}</span><span>${o.date}</span></div>
+  <div class="receipt-row"><span><b>Bill No:</b> ${billNo}</span><span>${o.date}</span></div>
   <div class="receipt-row"><span><b>Customer:</b> ${o.name}</span><span>${o.phone||''}</span></div>
   ${o.address?`<div class="receipt-row"><span><b>Addr:</b> ${o.address}</span></div>`:''}
   <div class="receipt-row"><span><b>Staff:</b> ${o.staff}</span><span><b>${o.orderType||'Instant'}</b></span></div>
   <div class="receipt-row"><span><b>Payment:</b> ${payIcon} ${o.payMode||'Cash'}</span></div>
+  ${o.payMode==='Cash+UPI'?`<div class="receipt-row"><span style="padding-left:8px;">💵 Cash</span><span>Rs.${o.splitCash||0}</span></div><div class="receipt-row"><span style="padding-left:8px;">📱 UPI</span><span>Rs.${o.splitUPI||0}</span></div>`:''}
   ${o.delivery?`<div class="receipt-row"><span><b>Due:</b> ${formatDatetime(o.delivery)}</span></div>`:''}
   <div class="receipt-div"></div>
   <div style="font-size:10px;font-weight:700;letter-spacing:.06em;margin-bottom:5px;">ORDER DETAILS</div>
@@ -1145,8 +1329,20 @@ function buildReceipt(o) {
   </div>`;
 }
 
+function billOrd(id, isDuplicate=false) {
+  const o = orders.find(x=>x.id===id); if(!o) return;
+  document.getElementById('bill-content').innerHTML = buildReceipt(o, isDuplicate);
+  document.getElementById('bill-modal').classList.remove('hidden');
+}
+window.reprintBill = function(id) { billOrd(id, true); };
+
 // ── Save Order ────────────────────────────────────────────────
 window.saveOrder = async function() {
+  // Check if day is closed
+  if (!window.editId && isDayClosed(todayStr())) {
+    toast('⚠️ Today is closed! Day End has been submitted. Contact owner to reopen.','error');
+    return;
+  }
   const name = document.getElementById('f-name')?.value.trim();
   if(!name) { toast('⚠️ Customer name required','error'); return; }
   if(cart.length===0) { toast('⚠️ Add at least one service','error'); return; }
@@ -1160,7 +1356,6 @@ window.saveOrder = async function() {
   const finalTotal= cartTotal - discAmt;
   const payMode   = document.querySelector('input[name="paymode"]:checked')?.value||'Cash';
 
-  // Validate Cash+UPI split
   let splitCash = 0, splitUPI = 0;
   if (payMode === 'Cash+UPI') {
     splitCash = +(document.getElementById('split-cash')?.value)||0;
@@ -1171,6 +1366,11 @@ window.saveOrder = async function() {
   }
 
   const advance = otype==='Instant' ? finalTotal : (+(document.getElementById('f-advance')?.value)||0);
+
+  // Generate bill number for new orders
+  const billNo = window.editId
+    ? (orders.find(x=>x.id===window.editId)?.billNo || '')
+    : await getNextBillNumber();
 
   const data = {
     name, phone: document.getElementById('f-phone')?.value||'',
@@ -1185,14 +1385,14 @@ window.saveOrder = async function() {
     total: finalTotal, advance, payMode,
     splitCash: payMode==='Cash+UPI'?splitCash:0,
     splitUPI:  payMode==='Cash+UPI'?splitUPI:0,
-    bookedBy: 'owner',
+    bookedBy: 'owner', billNo,
   };
 
   if(useLocal) {
     if(window.editId) {
       orders = orders.map(o=>o.id===window.editId?{...o,...data}:o);
     } else {
-      data.id = 'FV-'+String(Date.now()).slice(-6);
+      data.id = billNo || ('FV-'+String(Date.now()).slice(-6));
       data.created = Date.now();
       orders = [data, ...orders];
     }
@@ -1268,10 +1468,674 @@ window.ownerDeleteMoulding = async function(size, index) {
   toast('🗑️ Moulding deleted');
 };
 
+// ── Stock ─────────────────────────────────────────────────────
+window.renderStock = function() {
+  const el = document.getElementById('stock-list');
+  if(!el) return;
+  if(!window.stockItems?.length) {
+    el.innerHTML='<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-title">No stock items yet</div></div>';
+    return;
+  }
+  el.innerHTML = window.stockItems.map(item=>`
+    <div class="card" style="margin-bottom:10px;">
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:14px;">${item.name}</div>
+            <div style="font-size:12px;color:var(--ink3);">Code: ${item.code||'—'}</div>
+            <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+              <span style="background:#e8f5e9;color:#2e7d32;padding:3px 8px;border-radius:100px;font-size:12px;font-weight:700;">📦 Qty: ${item.qty||0}</span>
+              <span style="background:#fff3e0;color:#e65100;padding:3px 8px;border-radius:100px;font-size:12px;font-weight:700;">💰 Rs.${item.sellingPrice||0}</span>
+              <span style="background:#f3e5f5;color:#6a1b9a;padding:3px 8px;border-radius:100px;font-size:12px;font-weight:700;">💸 Cost Rs.${item.costPrice||0}</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <button onclick="ownerPrintLabels('${item.id}')" class="btn-outline" style="font-size:12px;padding:5px 10px;">🖨️ Labels</button>
+            <button onclick="ownerAddQty('${item.id}')" class="btn-outline" style="font-size:12px;padding:5px 10px;">+ Qty</button>
+            <button onclick="ownerDeleteStock('${item.id}')" style="background:#e53935;color:#fff;border:none;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px;">🗑️</button>
+          </div>
+        </div>
+      </div>
+    </div>`).join('');
+};
+
+window.ownerAddStock = async function() {
+  const code=document.getElementById('stock-code')?.value.trim();
+  const name=document.getElementById('stock-name')?.value.trim();
+  const qty=+(document.getElementById('stock-qty')?.value)||0;
+  const sell=+(document.getElementById('stock-sell')?.value)||0;
+  const cost=+(document.getElementById('stock-cost')?.value)||0;
+  if(!name){toast('⚠️ Enter item name','error');return;}
+  if(!sell){toast('⚠️ Enter selling price','error');return;}
+  const item={code,name,qty,sellingPrice:sell,costPrice:cost,created:Date.now()};
+  if(useLocal){item.id='STK-'+Date.now();window.stockItems.push(item);localStorage.setItem('fv_stock',JSON.stringify(window.stockItems));}
+  else{try{const ref=await window.db.collection('stock').add(item);item.id=ref.id;window.stockItems.push(item);}catch(e){toast('Error saving','error');return;}}
+  ['stock-code','stock-name','stock-qty','stock-sell','stock-cost'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  toast('✅ Stock item added!','success');
+  renderStock();
+};
+
+window.ownerAddQty = function(id) {
+  const n=prompt('Add how many units?');
+  if(!n||isNaN(+n))return;
+  const item=window.stockItems.find(x=>x.id===id);if(!item)return;
+  item.qty=(+item.qty||0)+(+n);
+  updateStockQty(id,item.qty);
+  renderStock();
+  toast(`✅ Added ${n} units`,'success');
+};
+
+window.ownerDeleteStock = async function(id) {
+  if(!confirm('Delete this stock item?'))return;
+  window.stockItems=window.stockItems.filter(x=>x.id!==id);
+  if(useLocal){localStorage.setItem('fv_stock',JSON.stringify(window.stockItems));}
+  else{try{await window.db.collection('stock').doc(id).delete();}catch(e){}}
+  renderStock();toast('🗑️ Deleted');
+};
+
+window.ownerPrintLabels = function(id) {
+  const item=window.stockItems.find(x=>x.id===id);if(!item)return;
+  const labelHTML=Array(12).fill(0).map(()=>`
+    <div style="width:63mm;height:38mm;border:1px solid #ccc;padding:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-sizing:border-box;">
+      <div style="font-size:9px;font-weight:900;letter-spacing:1px;margin-bottom:2px;">HARISH GAURI</div>
+      <svg class="barcode" jsbarcode-value="${item.code||item.name.replace(/\s/g,'_')}" jsbarcode-width="1.2" jsbarcode-height="25" jsbarcode-fontsize="7" jsbarcode-margin="2"></svg>
+      <div style="font-size:8px;font-weight:700;">${item.code||''}</div>
+      <div style="font-size:8px;">${item.name}</div>
+      <div style="font-size:8px;font-weight:700;">Sale Price: ${item.sellingPrice}</div>
+    </div>`).join('');
+  const w=window.open('','_blank','width=800,height=700');
+  w.document.write(`<!DOCTYPE html><html><head><title>Labels</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+    <style>body{margin:0;padding:8mm;}.grid{display:grid;grid-template-columns:repeat(3,63mm);gap:4mm;}@media print{@page{size:A4;margin:8mm;}}</style>
+    </head><body><div class="grid">${labelHTML}</div>
+    <script>JsBarcode(".barcode").init();window.onload=()=>{window.print();setTimeout(()=>window.close(),1500);}<\/script></body></html>`);
+  w.document.close();
+};
+
+// ── Order Detail Bottom Sheet ─────────────────────────────────
+window.openOrderSheet = function(id) {
+  const o=orders.find(x=>x.id===id);if(!o)return;
+  const bal=(+o.total||0)-(+o.advance||0);
+  const payIcon=o.payMode==='UPI'?'📱':o.payMode==='Cash+UPI'?'💵📱':'💵';
+  document.getElementById('ods-title').textContent=o.name+' · '+(o.billNo||o.id);
+  document.getElementById('ods-content').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+      <div style="background:var(--paper);border-radius:8px;padding:10px;"><div style="font-size:10px;color:var(--ink3);">📅 Date</div><div style="font-weight:600;font-size:13px;">${formatDate(o.date)}</div></div>
+      ${o.delivery?`<div style="background:#fff3e0;border-radius:8px;padding:10px;"><div style="font-size:10px;color:#e65100;">⏰ Delivery</div><div style="font-weight:700;font-size:13px;color:#e65100;">${formatDatetime(o.delivery)}</div></div>`:''}
+      <div style="background:var(--paper);border-radius:8px;padding:10px;"><div style="font-size:10px;color:var(--ink3);">👤 Staff</div><div style="font-weight:600;font-size:13px;">${o.staff||'—'}</div></div>
+      <div style="background:var(--paper);border-radius:8px;padding:10px;"><div style="font-size:10px;color:var(--ink3);">📦 Status</div><div style="font-weight:600;font-size:13px;">${STATUS_CFG[o.status]?.icon||''} ${o.status}</div></div>
+      <div style="background:var(--paper);border-radius:8px;padding:10px;"><div style="font-size:10px;color:var(--ink3);">💳 Payment</div><div style="font-weight:600;font-size:13px;">${payIcon} ${o.payMode||'Cash'}</div></div>
+      ${o.phone?`<div style="background:var(--paper);border-radius:8px;padding:10px;"><div style="font-size:10px;color:var(--ink3);">📞 Phone</div><div style="font-weight:600;font-size:13px;">${o.phone}</div></div>`:''}
+    </div>
+    <div style="font-weight:700;font-size:14px;margin-bottom:8px;">🛒 Services</div>
+    ${(o.cartItems||[]).map(item=>{
+      const svcs=item.svcs||[item.svc]||[];
+      const labelParts=(item.label||'').split('·').map(s=>s.trim()).filter(Boolean);
+      return `<div style="background:var(--paper);border-radius:10px;padding:12px;margin-bottom:8px;border-left:3px solid var(--gold-dk);">
+        <div style="font-weight:700;color:var(--gold-dk);margin-bottom:6px;">${svcs.map(s=>SVC_ICONS[s]||'📦').join('')} ${svcs.join(' + ')}</div>
+        ${labelParts.map(p=>`<div style="font-size:12px;color:var(--ink2);">• ${p}</div>`).join('')}
+        <div style="font-weight:700;color:var(--gold-dk);margin-top:6px;">Rs.${item.price||0}</div>
+      </div>`;
+    }).join('')}
+    <div style="background:var(--paper);border-radius:10px;padding:12px;margin-bottom:16px;">
+      ${o.discountPct&&+o.discountPct>0?`<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>Subtotal</span><span>Rs.${o.cartTotal||o.total}</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#388e3c;margin-bottom:4px;"><span>Discount ${o.discountPct}%</span><span>-Rs.${o.discountAmt||0}</span></div>`:''}
+      <div style="display:flex;justify-content:space-between;font-weight:700;font-size:15px;"><span>Total</span><span>Rs.${o.total}</span></div>
+      ${o.orderType==='Booking'?`<div style="display:flex;justify-content:space-between;font-size:13px;margin-top:4px;"><span>Advance</span><span>Rs.${o.advance||0}</span></div><div style="display:flex;justify-content:space-between;font-weight:700;font-size:14px;color:${bal>0?'#e53935':'#388e3c'};margin-top:4px;"><span>Balance Due</span><span>Rs.${bal}</span></div>`:''}
+    </div>
+    ${o.notes?`<div style="background:#fff3cd;border-radius:8px;padding:10px;margin-bottom:16px;font-size:13px;">📝 ${o.notes}</div>`:''}
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;gap:8px;">
+        <button onclick="editOrd('${o.id}');closeOrderSheet();" class="btn-outline" style="flex:1;padding:10px;font-size:13px;">✏️ Edit</button>
+        <button onclick="billOrd('${o.id}');closeOrderSheet();" class="btn-outline" style="flex:1;padding:10px;font-size:13px;">🧾 Bill</button>
+        <button onclick="reprintBill('${o.id}');closeOrderSheet();" class="btn-outline" style="flex:1;padding:10px;font-size:13px;">🖨️ Reprint</button>
+      </div>
+      ${o.status!=='Delivered'?`<div style="display:flex;gap:8px;">
+        ${o.status!=='Ready'?`<button onclick="chgStatus('${o.id}','Ready');closeOrderSheet();" style="flex:1;background:#388e3c;color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">✅ Mark Ready</button>`:''}
+        <button onclick="chgStatus('${o.id}','Delivered');closeOrderSheet();" style="flex:1;background:var(--gold-dk);color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">📦 Deliver</button>
+      </div>`:''}
+    </div>`;
+  const sheet=document.getElementById('order-detail-sheet');
+  const overlay=document.getElementById('ods-overlay');
+  sheet.style.display='block';overlay.style.display='block';
+  setTimeout(()=>{sheet.style.transform='translateY(0)';},10);
+};
+
+window.closeOrderSheet=function(){
+  const sheet=document.getElementById('order-detail-sheet');
+  const overlay=document.getElementById('ods-overlay');
+  if(sheet)sheet.style.transform='translateY(100%)';
+  setTimeout(()=>{if(sheet)sheet.style.display='none';if(overlay)overlay.style.display='none';},300);
+};
+
+// ── Day End Settlement ────────────────────────────────────────
+let dayReports = [];
+
+window.renderDayEnd = function() {
+  const today = todayStr();
+  const closed = isDayClosed(today);
+  document.getElementById('dayend-date').textContent = formatDate(today);
+
+  const todayOrds = orders.filter(o=>o.date===today);
+  const todayExps = expenses.filter(e=>e.date===today);
+
+  const totalSales    = todayOrds.reduce((s,o)=>s+(+o.total||0),0);
+  const totalExp      = todayExps.reduce((s,e)=>s+(+e.amount||0),0);
+  const cashSales     = todayOrds.reduce((s,o)=>{
+    if(o.payMode==='Cash') return s+(+o.total||0);
+    if(o.payMode==='Cash+UPI') return s+(+o.splitCash||0);
+    return s;
+  },0);
+  const upiSales      = todayOrds.reduce((s,o)=>{
+    if(o.payMode==='UPI') return s+(+o.total||0);
+    if(o.payMode==='Cash+UPI') return s+(+o.splitUPI||0);
+    return s;
+  },0);
+  const cashExp       = todayExps.filter(e=>e.paidBy==='Cash').reduce((s,e)=>s+(+e.amount||0),0);
+  const upiExp        = todayExps.filter(e=>e.paidBy==='UPI').reduce((s,e)=>s+(+e.amount||0),0);
+  const netCash       = cashSales - cashExp;
+
+  if(closed) {
+    document.getElementById('dayend-content').innerHTML=`
+      <div class="card"><div class="card-body" style="text-align:center;padding:32px;">
+        <div style="font-size:48px;margin-bottom:12px;">🔒</div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:8px;">Today is Closed</div>
+        <div style="color:var(--ink3);margin-bottom:16px;">Day End has already been submitted for today.</div>
+        <button onclick="reopenDay()" class="btn-outline" style="padding:10px 24px;">🔓 Reopen Today</button>
+      </div></div>`;
+    return;
+  }
+
+  document.getElementById('dayend-content').innerHTML=`
+    <!-- Summary -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><div class="card-title">📊 Today's Summary</div></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div style="background:var(--paper);border-radius:10px;padding:12px;">
+            <div style="font-size:11px;color:var(--ink3);">Total Orders</div>
+            <div style="font-size:22px;font-weight:800;color:var(--gold-dk);">${todayOrds.length}</div>
+          </div>
+          <div style="background:var(--paper);border-radius:10px;padding:12px;">
+            <div style="font-size:11px;color:var(--ink3);">Total Sales</div>
+            <div style="font-size:20px;font-weight:800;color:var(--gold-dk);">Rs.${totalSales.toLocaleString('en-IN')}</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+          <div style="background:#e8f5e9;border-radius:8px;padding:10px;text-align:center;">
+            <div style="font-size:10px;color:#388e3c;">💵 Cash Sales</div>
+            <div style="font-weight:700;color:#2e7d32;">Rs.${cashSales.toLocaleString('en-IN')}</div>
+          </div>
+          <div style="background:#e3f2fd;border-radius:8px;padding:10px;text-align:center;">
+            <div style="font-size:10px;color:#1976d2;">📱 UPI Sales</div>
+            <div style="font-weight:700;color:#1565c0;">Rs.${upiSales.toLocaleString('en-IN')}</div>
+          </div>
+          <div style="background:#fce4ec;border-radius:8px;padding:10px;text-align:center;">
+            <div style="font-size:10px;color:#c62828;">💵 Cash Exp</div>
+            <div style="font-weight:700;color:#b71c1c;">Rs.${cashExp.toLocaleString('en-IN')}</div>
+          </div>
+          <div style="background:#f3e5f5;border-radius:8px;padding:10px;text-align:center;">
+            <div style="font-size:10px;color:#6a1b9a;">📱 UPI Exp</div>
+            <div style="font-weight:700;color:#4a148c;">Rs.${upiExp.toLocaleString('en-IN')}</div>
+          </div>
+        </div>
+        <div style="background:var(--gold-dk);border-radius:10px;padding:14px;color:#fff;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:11px;opacity:.8;">Net Cash in Hand</div>
+            <div style="font-size:10px;opacity:.7;">(Cash Sales − Cash Expenses)</div>
+          </div>
+          <div style="font-size:24px;font-weight:800;">Rs.${netCash.toLocaleString('en-IN')}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cash Count -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><div class="card-title">💵 Count Your Cash</div></div>
+      <div class="card-body">
+        <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;">Physically count the cash in your drawer and enter the total:</div>
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+          <input class="form-input" id="cash-count-input" type="number" min="0" placeholder="Enter cash count (Rs.)" style="max-width:220px;" oninput="updateCashDiff(${netCash})">
+          <div id="cash-diff-display" style="font-size:15px;font-weight:700;"></div>
+        </div>
+        <div style="font-size:12px;color:var(--ink3);">Expected: <b>Rs.${netCash.toLocaleString('en-IN')}</b></div>
+      </div>
+    </div>
+
+    <!-- Remarks -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><div class="card-title">📝 Remarks (Optional)</div></div>
+      <div class="card-body">
+        <textarea class="form-input" id="dayend-remarks" placeholder="Any notes for today? e.g. Cash short due to change given, extra expense etc." rows="3"></textarea>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <button onclick="submitDayEnd(${totalSales},${totalExp},${cashSales},${upiSales},${cashExp},${upiExp},${netCash},${todayOrds.length})"
+      class="btn-gold" style="width:100%;padding:16px;font-size:16px;font-weight:700;border-radius:12px;">
+      ✅ Submit & Close Day
+    </button>`;
+};
+
+window.updateCashDiff = function(expected) {
+  const actual = +(document.getElementById('cash-count-input')?.value)||0;
+  const diff = actual - expected;
+  const el = document.getElementById('cash-diff-display');
+  if(!el || !actual) return;
+  if(diff===0) { el.innerHTML='<span style="color:#388e3c;">✅ Matched!</span>'; }
+  else if(diff>0) { el.innerHTML=`<span style="color:#f57c00;">⚠️ Excess Rs.${diff}</span>`; }
+  else { el.innerHTML=`<span style="color:#e53935;">⚠️ Short Rs.${Math.abs(diff)}</span>`; }
+};
+
+window.submitDayEnd = async function(sales,exp,cashS,upiS,cashE,upiE,netCash,ordCount) {
+  const cashCount = +(document.getElementById('cash-count-input')?.value)||0;
+  if(!cashCount && cashCount!==0) { toast('⚠️ Enter your cash count','error'); return; }
+  const diff = cashCount - netCash;
+  const remarks = document.getElementById('dayend-remarks')?.value||'';
+  const closedBy = 'Owner'; // owner page
+
+  const report = {
+    date: todayStr(),
+    closedBy,
+    totalSales: sales, totalExpenses: exp,
+    cashSales: cashS, upiSales: upiS,
+    cashExpenses: cashE, upiExpenses: upiE,
+    netCashExpected: netCash,
+    cashCounted: cashCount,
+    cashDifference: diff,
+    remarks,
+    ordersCount: ordCount,
+    closedAt: new Date().toISOString()
+  };
+
+  // Save to Firebase
+  if(!useLocal) {
+    try { await window.db.collection('dayReports').add(report); } catch(e) {}
+  }
+  // Mark day as closed locally
+  markDayClosed(todayStr(), report);
+  dayReports.unshift({...report, id:'DR-'+Date.now()});
+
+  toast('✅ Day closed successfully!','success');
+  showPage('dashboard');
+  renderDash();
+};
+
+window.reopenDay = function() {
+  if(!confirm('⚠️ Are you sure you want to reopen today? New orders will be allowed.')) return;
+  const closed = JSON.parse(localStorage.getItem('fv_day_closed')||'{}');
+  delete closed[todayStr()];
+  localStorage.setItem('fv_day_closed', JSON.stringify(closed));
+  toast('🔓 Today reopened','success');
+  renderDash();
+};
+
+window.renderDayReports = function() {
+  const el = document.getElementById('dayreports-list');
+  if(!el) return;
+  if(!dayReports.length) {
+    el.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No day reports yet</div><div class="empty-sub">Reports appear after day end is submitted</div></div>';
+    return;
+  }
+  el.innerHTML = dayReports.map(r => {
+    const diff = r.cashDifference||0;
+    const diffLabel = diff===0?'<span style="color:#388e3c;">✅ Matched</span>':diff>0?`<span style="color:#f57c00;">⚠️ Excess Rs.${diff}</span>`:`<span style="color:#e53935;">⚠️ Short Rs.${Math.abs(diff)}</span>`;
+    return `<div class="card" style="margin-bottom:12px;">
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+          <div>
+            <div style="font-weight:700;font-size:15px;">${formatDate(r.date)}</div>
+            <div style="font-size:12px;color:var(--ink3);">Closed by ${r.closedBy} · ${r.ordersCount||0} orders</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:700;color:var(--gold-dk);">Rs.${(r.totalSales||0).toLocaleString('en-IN')}</div>
+            <div style="font-size:11px;">${diffLabel}</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:12px;margin-bottom:8px;">
+          <div style="background:var(--paper);border-radius:6px;padding:8px;">
+            <div style="color:var(--ink3);">💵 Cash</div>
+            <div style="font-weight:700;">Rs.${(r.cashSales||0).toLocaleString('en-IN')}</div>
+          </div>
+          <div style="background:var(--paper);border-radius:6px;padding:8px;">
+            <div style="color:var(--ink3);">📱 UPI</div>
+            <div style="font-weight:700;">Rs.${(r.upiSales||0).toLocaleString('en-IN')}</div>
+          </div>
+          <div style="background:var(--paper);border-radius:6px;padding:8px;">
+            <div style="color:var(--ink3);">💸 Expenses</div>
+            <div style="font-weight:700;">Rs.${(r.totalExpenses||0).toLocaleString('en-IN')}</div>
+          </div>
+        </div>
+        ${r.remarks?`<div style="font-size:12px;color:var(--ink3);font-style:italic;">📝 ${r.remarks}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+};
+
+async function loadDayReports() {
+  if(useLocal) { dayReports = []; return; }
+  try {
+    window.db.collection('dayReports').orderBy('closedAt','desc')
+      .onSnapshot(snap => {
+        dayReports = snap.docs.map(d=>({id:d.id,...d.data()}));
+        // Show notification if new report today
+        const todayReport = dayReports.find(r=>r.date===todayStr()&&r.closedBy!=='Owner');
+        const banner = document.getElementById('new-day-report-banner');
+        if(banner) banner.classList.toggle('hidden', !todayReport);
+        if(currentPage==='dayreports') renderDayReports();
+      });
+  } catch(e) { dayReports = []; }
+}
+let expenses = [];
+let expFilter = 'today';
+let savedExpenseNames = [];
+
+function setExpDateInput() {
+  const el = document.getElementById('exp-date');
+  if(el) el.value = todayStr();
+  renderSavedExpenseChips();
+}
+
+function renderSavedExpenseChips() {
+  const el = document.getElementById('saved-expense-chips');
+  if(!el) return;
+  if(!savedExpenseNames.length) { el.innerHTML='<span style="font-size:12px;color:var(--ink3);">No saved names yet</span>'; return; }
+  el.innerHTML = savedExpenseNames.map(n=>
+    `<button onclick="quickSelectExpense('${n.replace(/'/g,"\\'")}')" style="background:var(--paper);border:1px solid var(--border);border-radius:100px;padding:5px 12px;font-size:12px;cursor:pointer;">${n}</button>`
+  ).join('');
+}
+
+window.quickSelectExpense = function(name) {
+  const el = document.getElementById('exp-desc');
+  if(el) el.value = name;
+};
+
+window.calcExpTotal = function() {
+  const qty = +(document.getElementById('exp-qty')?.value)||1;
+  const up  = +(document.getElementById('exp-unit-price')?.value)||0;
+  const el  = document.getElementById('exp-total-display');
+  if(el) el.value = up > 0 ? `Rs.${qty*up}` : '';
+};
+
+window.setExpFilter = function(f) {
+  expFilter = f;
+  ['today','yesterday','month'].forEach(x => document.getElementById('ef-'+x)?.classList.toggle('act', x===f));
+  if(f!=='date') document.getElementById('ef-date').value='';
+  renderExpenses();
+};
+
+window.addExpense = async function() {
+  const desc    = document.getElementById('exp-desc')?.value.trim();
+  const qty     = +(document.getElementById('exp-qty')?.value)||1;
+  const unitPrice = +(document.getElementById('exp-unit-price')?.value)||0;
+  const pay     = document.querySelector('input[name="exp-pay"]:checked')?.value||'Cash';
+  if(!desc) { toast('⚠️ Enter expense name','error'); return; }
+  if(!unitPrice) { toast('⚠️ Enter price','error'); return; }
+  const amt = qty * unitPrice;
+  const exp = { desc, qty, unitPrice, amount:amt, paidBy:pay, date:todayStr(), created:Date.now() };
+
+  // Auto-save name
+  if(!savedExpenseNames.includes(desc)) {
+    if(confirm(`💾 Save "${desc}" for quick access next time?`)) {
+      savedExpenseNames.push(desc);
+      localStorage.setItem('fv_saved_expenses', JSON.stringify(savedExpenseNames));
+      if(window.db) try{ await window.db.collection('savedExpenses').add({name:desc}); }catch(e){}
+    }
+  }
+
+  if(useLocal) {
+    expenses.unshift({...exp, id:'EXP-'+Date.now()});
+    localStorage.setItem('fv_expenses', JSON.stringify(expenses));
+  } else {
+    try { await window.db.collection('expenses').add(exp); }
+    catch(e) { toast('Error saving expense','error'); return; }
+  }
+  document.getElementById('exp-desc').value='';
+  document.getElementById('exp-qty').value='1';
+  document.getElementById('exp-unit-price').value='';
+  document.getElementById('exp-total-display').value='';
+  toast('✅ Expense added!','success');
+  renderExpenses();
+};
+
+window.deleteExpense = async function(id) {
+  if(!confirm('Delete this expense?')) return;
+  if(useLocal) {
+    expenses = expenses.filter(e=>e.id!==id);
+    localStorage.setItem('fv_expenses', JSON.stringify(expenses));
+  } else {
+    try { await window.db.collection('expenses').doc(id).delete(); }
+    catch(e) { toast('Error deleting','error'); return; }
+  }
+  renderExpenses();
+  toast('🗑️ Expense deleted');
+};
+
+window.deleteSavedExpenseName = async function(name) {
+  savedExpenseNames = savedExpenseNames.filter(n=>n!==name);
+  localStorage.setItem('fv_saved_expenses', JSON.stringify(savedExpenseNames));
+  renderSavedExpenseChips();
+  toast('🗑️ Removed from quick select');
+};
+
+function getFilteredExpenses() {
+  const today = todayStr(), yesterday = yesterdayStr(), month = thisMonthStr();
+  const fd = document.getElementById('ef-date')?.value||'';
+  if(expFilter==='today')     return expenses.filter(e=>e.date===today);
+  if(expFilter==='yesterday') return expenses.filter(e=>e.date===yesterday);
+  if(expFilter==='month')     return expenses.filter(e=>(e.date||'').startsWith(month));
+  if(expFilter==='date'&&fd)  return expenses.filter(e=>e.date===fd);
+  return expenses;
+}
+
+function renderExpenses() {
+  const el = document.getElementById('expenses-list');
+  if(!el) return;
+  const fil = getFilteredExpenses();
+  const total = fil.reduce((s,e)=>s+(+e.amount||0),0);
+  const cashTotal = fil.filter(e=>e.paidBy==='Cash').reduce((s,e)=>s+(+e.amount||0),0);
+  const upiTotal  = fil.filter(e=>e.paidBy==='UPI').reduce((s,e)=>s+(+e.amount||0),0);
+
+  let reportHTML = '';
+  if(expFilter==='month') {
+    const byDesc = {};
+    fil.forEach(e => { if(!byDesc[e.desc]) byDesc[e.desc]={total:0,count:0}; byDesc[e.desc].total+=(+e.amount||0); byDesc[e.desc].count++; });
+    const maxAmt = Math.max(...Object.values(byDesc).map(x=>x.total),1);
+    const rows = Object.entries(byDesc).sort((a,b)=>b[1].total-a[1].total).map(([d,v])=>`
+      <div style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px;">
+          <span>${d} <span style="color:var(--ink3);font-size:11px;">× ${v.count}</span></span>
+          <span style="font-weight:700;color:var(--gold-dk);">Rs.${v.total.toLocaleString('en-IN')}</span>
+        </div>
+        <div style="background:#eee;border-radius:4px;height:6px;"><div style="background:var(--gold-dk);height:6px;border-radius:4px;width:${Math.round(v.total/maxAmt*100)}%;"></div></div>
+      </div>`).join('');
+    reportHTML = `<div class="card" style="margin-bottom:12px;">
+      <div class="card-header"><div class="card-title">📊 Monthly Breakdown</div></div>
+      <div class="card-body">${rows||'<div style="color:var(--ink3);font-size:13px;">No expenses this month</div>'}</div>
+    </div>`;
+  }
+
+  el.innerHTML = reportHTML + `
+    <div class="card">
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--paper3);">
+          <div><span style="font-size:13px;color:var(--ink3);">Total</span><div style="font-size:22px;font-weight:800;color:var(--gold-dk);">Rs.${total.toLocaleString('en-IN')}</div></div>
+          ${cashTotal>0?`<div><span style="font-size:12px;color:var(--ink3);">💵 Cash</span><div style="font-size:16px;font-weight:700;">Rs.${cashTotal.toLocaleString('en-IN')}</div></div>`:''}
+          ${upiTotal>0 ?`<div><span style="font-size:12px;color:var(--ink3);">📱 UPI</span><div style="font-size:16px;font-weight:700;">Rs.${upiTotal.toLocaleString('en-IN')}</div></div>`:''}
+        </div>
+        ${fil.length ? fil.map(e=>`
+          <div style="padding:10px 0;border-bottom:1px solid var(--paper3);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:700;">💸 ${e.desc}</div>
+                <div style="font-size:11px;color:var(--ink3);margin-top:3px;">
+                  • Qty: ${e.qty||1} × Rs.${e.unitPrice||e.amount||0}<br>
+                  • Total: Rs.${(+e.amount||0).toLocaleString('en-IN')}<br>
+                  • ${e.paidBy==='Cash'?'💵':'📱'} ${e.paidBy} · ${e.date}
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+                <div style="font-weight:700;color:var(--gold-dk);">Rs.${(+e.amount||0).toLocaleString('en-IN')}</div>
+                <button onclick="deleteExpense('${e.id}')" style="background:none;border:none;color:#e53935;cursor:pointer;font-size:14px;">🗑️</button>
+              </div>
+            </div>
+          </div>`).join('')
+        : '<div style="text-align:center;padding:20px;color:var(--ink3);">No expenses for this period</div>'}
+      </div>
+    </div>`;
+}
+
+async function loadExpenses() {
+  savedExpenseNames = JSON.parse(localStorage.getItem('fv_saved_expenses')||'[]');
+  if(useLocal) {
+    expenses = JSON.parse(localStorage.getItem('fv_expenses')||'[]');
+    return;
+  }
+  try {
+    window.db.collection('expenses').orderBy('created','desc')
+      .onSnapshot(snap => {
+        expenses = snap.docs.map(d=>({id:d.id,...d.data()}));
+        if(currentPage==='expenses') renderExpenses();
+      });
+    // Load saved expense names from Firebase
+    window.db.collection('savedExpenses').onSnapshot(snap=>{
+      const fbNames = snap.docs.map(d=>d.data().name).filter(Boolean);
+      savedExpenseNames = [...new Set([...savedExpenseNames,...fbNames])];
+    });
+  } catch(e) {
+    expenses = JSON.parse(localStorage.getItem('fv_expenses')||'[]');
+  }
+}
+
+// ── Customer Database ─────────────────────────────────────────
+function buildCustomerDB() {
+  const custMap = {};
+  orders.forEach(o => {
+    const key = o.phone?.trim() || o.name?.trim() || 'unknown';
+    if(!custMap[key]) {
+      custMap[key] = {
+        name: o.name||'Unknown',
+        phone: o.phone||'',
+        orders: [],
+        totalSpent: 0,
+        firstVisit: o.date||'',
+        lastVisit: o.date||''
+      };
+    }
+    custMap[key].orders.push(o);
+    custMap[key].totalSpent += (+o.total||0);
+    if(o.date && o.date < custMap[key].firstVisit) custMap[key].firstVisit = o.date;
+    if(o.date && o.date > custMap[key].lastVisit)  custMap[key].lastVisit  = o.date;
+    // Keep most recent name/phone
+    if(o.name) custMap[key].name = o.name;
+    if(o.phone) custMap[key].phone = o.phone;
+  });
+  return Object.values(custMap).sort((a,b)=>b.lastVisit.localeCompare(a.lastVisit));
+}
+
+function renderCustomers() {
+  const el = document.getElementById('customers-list');
+  if(!el) return;
+  const q = (document.getElementById('cust-srch')?.value||'').toLowerCase();
+  let custs = buildCustomerDB();
+  if(q) custs = custs.filter(c=>c.name.toLowerCase().includes(q)||(c.phone||'').includes(q));
+  if(!custs.length) {
+    el.innerHTML='<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">No customers yet</div><div class="empty-sub">Customers appear automatically when orders are placed</div></div>';
+    return;
+  }
+  el.innerHTML = custs.map((c,i)=>`
+    <div class="order-card fade-in" onclick="openCustModal(${i},'${q}')" style="cursor:pointer;">
+      <div class="order-card-head">
+        <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--gold-dk),var(--gold));display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0;">
+          ${(c.name||'?')[0].toUpperCase()}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div class="order-name">${c.name}</div>
+          <div class="order-meta">📞 ${c.phone||'—'} · 🗓️ Last: ${formatDate(c.lastVisit)}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-weight:700;color:var(--gold-dk);">Rs.${c.totalSpent.toLocaleString('en-IN')}</div>
+          <div style="font-size:11px;color:var(--ink3);">${c.orders.length} order${c.orders.length!==1?'s':''}</div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+window.openCustModal = function(idx, q='') {
+  const custs = buildCustomerDB();
+  let filtered = custs;
+  if(q) filtered = custs.filter(c=>c.name.toLowerCase().includes(q)||(c.phone||'').includes(q));
+  const c = filtered[idx];
+  if(!c) return;
+  document.getElementById('cust-modal-title').textContent = c.name;
+  document.getElementById('cust-modal-body').innerHTML = `
+    <div style="padding:16px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div class="form-group"><label class="form-label">Name</label>
+          <input class="form-input" id="cust-edit-name" value="${c.name}"></div>
+        <div class="form-group"><label class="form-label">Phone</label>
+          <input class="form-input" id="cust-edit-phone" value="${c.phone||''}"></div>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+        <div style="flex:1;text-align:center;background:var(--paper);border-radius:10px;padding:12px;">
+          <div style="font-size:22px;font-weight:800;color:var(--gold-dk);">${c.orders.length}</div>
+          <div style="font-size:11px;color:var(--ink3);">Total Orders</div>
+        </div>
+        <div style="flex:1;text-align:center;background:var(--paper);border-radius:10px;padding:12px;">
+          <div style="font-size:18px;font-weight:800;color:var(--gold-dk);">Rs.${c.totalSpent.toLocaleString('en-IN')}</div>
+          <div style="font-size:11px;color:var(--ink3);">Total Spent</div>
+        </div>
+        <div style="flex:1;text-align:center;background:var(--paper);border-radius:10px;padding:12px;">
+          <div style="font-size:14px;font-weight:700;">${formatDate(c.firstVisit)}</div>
+          <div style="font-size:11px;color:var(--ink3);">First Visit</div>
+        </div>
+      </div>
+      <button onclick="saveCustEdit('${c.phone||c.name}')" class="btn-gold" style="width:100%;margin-bottom:16px;">💾 Save Changes</button>
+      <div style="font-weight:700;font-size:14px;margin-bottom:10px;">Order History</div>
+      ${c.orders.sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(o=>`
+        <div style="padding:10px;background:var(--paper);border-radius:8px;margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-size:13px;font-weight:600;">${o.id}</div>
+              <div style="font-size:11px;color:var(--ink3);">📅 ${o.date} · ${[...new Set((o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]))].join(', ')}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-weight:700;color:var(--gold-dk);">Rs.${o.total}</div>
+              <div style="font-size:11px;">${STATUS_CFG[o.status]?.icon||''} ${o.status}</div>
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+  document.getElementById('cust-modal').classList.remove('hidden');
+};
+
+window.saveCustEdit = async function(key) {
+  const newName  = document.getElementById('cust-edit-name')?.value.trim();
+  const newPhone = document.getElementById('cust-edit-phone')?.value.trim();
+  if(!newName) { toast('⚠️ Name cannot be empty','error'); return; }
+  // Update all orders with this customer key
+  const toUpdate = orders.filter(o=>(o.phone?.trim()||o.name?.trim())===key);
+  for(const o of toUpdate) {
+    const upd = { name:newName, phone:newPhone };
+    if(useLocal) { orders = orders.map(x=>x.id===o.id?{...x,...upd}:x); }
+    else { try { await updateDoc(doc(db,'orders',o.id),upd); } catch(e){} }
+  }
+  if(useLocal) saveLocal();
+  toast('✅ Customer updated!','success');
+  closeCustModal();
+  renderCustomers();
+};
+
+window.closeCustModal = function() {
+  document.getElementById('cust-modal').classList.add('hidden');
+};
+
 // ── Init ──────────────────────────────────────────────────────
 buildNav();
 initDB().then(async () => {
   await loadMouldings();
+  await loadExpenses();
+  await loadDayReports();
+  await loadStock();
   showPage('dashboard');
 });
 

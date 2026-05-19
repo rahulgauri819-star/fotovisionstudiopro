@@ -46,6 +46,7 @@ function getFormHTML(existing, role) {
       <label class="check-btn"><input type="checkbox" name="groupA" value="Photo Editing" onchange="onGroupA()"><span>🎨 Photo Editing</span></label>
       <label class="check-btn"><input type="checkbox" name="groupA" value="Printing" onchange="onGroupA()"><span>🖨️ Printing</span></label>
       <label class="check-btn"><input type="checkbox" name="groupA" value="Framing" onchange="onGroupA()"><span>🖼️ Framing</span></label>
+      <label class="check-btn"><input type="checkbox" name="groupA" value="Stock Items" onchange="onGroupA()"><span>📦 Stock Items</span></label>
     </div>
     <div class="warn-box" id="svc-warn-ab"></div>
 
@@ -55,6 +56,7 @@ function getFormHTML(existing, role) {
       <label class="pill-option"><input type="radio" name="groupB" value="Visa Photos" onchange="onGroupB(this)"><span>🛂 Visa Photos</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Collage Making" onchange="onGroupB(this)"><span>🖼️ Collage Making</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Scanning" onchange="onGroupB(this)"><span>🔍 Scanning</span></label>
+      <label class="pill-option"><input type="radio" name="groupB" value="Custom Order" onchange="onGroupB(this)"><span>✏️ Custom Order</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Album Printing" onchange="onGroupB(this)"><span>📚 Album Printing</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Portfolio Shoot" onchange="onGroupB(this)"><span>📸 Portfolio Shoot</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Video Editing" onchange="onGroupB(this)"><span>🎬 Video Editing</span></label>
@@ -430,6 +432,32 @@ function getSvcPanelHTML(svcs) {
     </div>`;
   }
 
+  if(svcs.includes('Stock Items')) html += `
+    <div class="svc-panel" id="panel-stock">
+      <div class="section-head" style="font-size:15px;">📦 Stock Items</div>
+      <div id="stock-items-form">
+        <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:flex-end;">
+          <div class="form-group" style="flex:2;min-width:140px;">
+            <label class="form-label">Item</label>
+            <select class="form-input" id="stock-item-select" onchange="onStockItemSelect()">
+              <option value="">— Select Item —</option>
+            </select>
+          </div>
+          <div class="form-group" style="max-width:90px;">
+            <label class="form-label">Qty</label>
+            <input class="form-input" id="stock-item-qty" type="number" min="1" value="1" oninput="calcStockItem()">
+          </div>
+          <div class="form-group" style="max-width:100px;">
+            <label class="form-label">Price</label>
+            <input class="form-input" id="stock-item-price" type="number" readonly style="background:#f5f5f5;">
+          </div>
+          <button type="button" onclick="addStockItemToCart()" class="btn-gold" style="padding:10px 14px;margin-bottom:2px;">➕ Add</button>
+        </div>
+        <div id="stock-item-total" class="price-info hidden"></div>
+        <div id="stock-items-added" style="margin-top:8px;"></div>
+      </div>
+    </div>`;
+
   return html;
 }
 
@@ -459,10 +487,31 @@ function getBPanelHTML(svc) {
 
   if(svc==='Visa Photos') return `<div class="svc-panel" id="panel-b">
     <div class="section-head" style="font-size:15px;">🛂 Visa Photos</div>
-    <div class="price-info" style="margin-bottom:10px;"><b>Rs.250</b> for 8 copies · <b>Rs.100</b> per extra 8 copies</div>
-    <div class="form-grid-2" style="margin-bottom:10px;">
-      <div class="form-group"><label class="form-label">Visa Type</label><select class="form-input" id="visa-type"><option>USA Visa</option><option>Schengen Visa</option><option>Singapore Visa</option><option>UK Visa</option><option>Other</option></select></div>
-      <div class="form-group"><label class="form-label">Number of Copies</label><input class="form-input" id="vp-copies" type="number" min="8" step="8" value="8" inputmode="numeric" oninput="calcVisa()"></div>
+    <div class="price-info" style="margin-bottom:10px;"><b>Rs.250</b> for first set · <b>Rs.100</b> per extra set</div>
+    <div class="form-group" style="margin-bottom:10px;">
+      <label class="form-label">Visa Country</label>
+      <select class="form-input" id="visa-type" onchange="onVisaCountryChange()" style="margin-bottom:8px;">
+        <option value="">— Select Country —</option>
+        <option value="USA|50×50mm|6">🇺🇸 USA</option>
+        <option value="Canada|50×70mm|4">🇨🇦 Canada</option>
+        <option value="UK|35×45mm|8-10">🇬🇧 UK</option>
+        <option value="Australia|35×45mm|8-10">🇦🇺 Australia</option>
+        <option value="Vietnam|40×60mm|4">🇻🇳 Vietnam</option>
+        <option value="Schengen (EU)|35×45mm|8-10">🇪🇺 Schengen (EU)</option>
+        <option value="China|33×48mm|8">🇨🇳 China</option>
+        <option value="Japan|35×45mm|8-10">🇯🇵 Japan</option>
+        <option value="Russia|35×45mm|8-10">🇷🇺 Russia</option>
+        <option value="UAE / Dubai|45×55mm|4">🇦🇪 UAE / Dubai</option>
+        <option value="Saudi Arabia|50×50mm|6">🇸🇦 Saudi Arabia</option>
+        <option value="Singapore|35×45mm|8-10">🇸🇬 Singapore</option>
+        <option value="Malaysia|35×50mm|6-8">🇲🇾 Malaysia</option>
+        <option value="South Korea|35×45mm|8-10">🇰🇷 South Korea</option>
+      </select>
+      <div id="visa-size-info" class="price-info hidden" style="font-size:12px;"></div>
+    </div>
+    <div class="form-group" style="max-width:200px;margin-bottom:10px;">
+      <label class="form-label">Number of Copies</label>
+      <input class="form-input" id="vp-copies" type="number" min="1" value="8" inputmode="numeric" oninput="calcVisa()">
     </div>
     <div id="vp-cost-tag" class="price-tag" style="margin-bottom:12px;">Rs.250</div>
     <label class="form-label" style="display:block;margin-bottom:8px;">Add Soft Copy? (Optional)</label>
@@ -489,6 +538,29 @@ function getBPanelHTML(svc) {
       <input class="form-input" id="scan-qty" type="number" min="1" value="1" inputmode="numeric" oninput="calcScanning()">
     </div>
     <div id="scan-cost-tag" class="price-tag">Rs.50</div>
+  </div>`;
+
+  if(svc==='Custom Order') return `<div class="svc-panel" id="panel-b">
+    <div class="section-head" style="font-size:15px;">✏️ Custom Order</div>
+    <div class="form-group" style="margin-bottom:10px;">
+      <label class="form-label">Service Name</label>
+      <input class="form-input" id="custom-name" placeholder="e.g. ID Card Printing, Lamination A4...">
+    </div>
+    <div class="form-group" style="margin-bottom:10px;">
+      <label class="form-label">Description (Optional)</label>
+      <input class="form-input" id="custom-desc" placeholder="Any special details...">
+    </div>
+    <div class="form-grid-2" style="margin-bottom:10px;">
+      <div class="form-group">
+        <label class="form-label">Quantity</label>
+        <input class="form-input" id="custom-qty" type="number" min="1" value="1" inputmode="numeric" oninput="calcCustom()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Price per unit (Rs.)</label>
+        <input class="form-input" id="custom-price" type="number" min="0" placeholder="0" oninput="calcCustom()">
+      </div>
+    </div>
+    <div id="custom-total-tag" class="price-tag hidden"></div>
   </div>`;
 
   if(svc==='Album Printing') return `<div class="svc-panel" id="panel-b">
@@ -568,7 +640,9 @@ window.onGroupA = function() {
   const sel = [...document.querySelectorAll('input[name="groupA"]:checked')].map(c=>c.value);
   document.querySelectorAll('input[name="groupB"]').forEach(r=>r.checked=false);
   document.getElementById('panel-b')?.remove();
+  window.stockItemsInCart = [];
   document.getElementById('svc-panel-area').innerHTML = getSvcPanelHTML(sel);
+  if(sel.includes('Stock Items')) { populateStockDropdown(); }
   calcPassport(); calcVisa(); calcDoorPassport(); calcDoorVisa();
 };
 
@@ -1018,6 +1092,16 @@ window.calcPassport = () => {
   if (soft && totalTag) { totalTag.classList.remove('hidden'); totalTag.textContent = `Total: Rs.${base} + Rs.${soft} (Soft Copy) = Rs.${total}`; }
   else if (totalTag) totalTag.classList.add('hidden');
 };
+window.onVisaCountryChange = function() {
+  const val = document.getElementById('visa-type')?.value;
+  const info = document.getElementById('visa-size-info');
+  if(!val || !info) return;
+  const [country, size, copies] = val.split('|');
+  info.classList.remove('hidden');
+  info.innerHTML = `📐 Photo Size: <b>${size}</b> &nbsp;·&nbsp; 📸 Number of Copies: <b>${copies}</b>`;
+  calcVisa();
+};
+
 window.calcVisa = () => {
   const c    = +(document.getElementById('vp-copies')?.value) || 8;
   const sets = Math.ceil(c / 8);
@@ -1031,6 +1115,76 @@ window.calcVisa = () => {
   else if (totalTag) totalTag.classList.add('hidden');
 };
 window.calcScanning    = () => { const q=+(document.getElementById('scan-qty')?.value)||1; const t=document.getElementById('scan-cost-tag'); if(t) t.textContent=`Total: Rs.${q*50} (${q} × Rs.50)`; };
+window.calcCustom      = () => {
+  const q=+(document.getElementById('custom-qty')?.value)||1;
+  const p=+(document.getElementById('custom-price')?.value)||0;
+  const t=document.getElementById('custom-total-tag');
+  if(t){ if(p>0){t.classList.remove('hidden');t.textContent=`Total: Rs.${q*p} (${q} × Rs.${p})`;}else t.classList.add('hidden'); }
+};
+
+// ── Stock Item Form Helpers ───────────────────────────────────
+window.stockItemsInCart = []; // temp list while filling
+
+function populateStockDropdown() {
+  const sel = document.getElementById('stock-item-select');
+  if(!sel) return;
+  const items = (window.stockItems||[]).filter(i=>(+i.qty||0)>0);
+  sel.innerHTML = '<option value="">— Select Item —</option>' +
+    items.map(i=>`<option value="${i.id}">${i.name} (Qty: ${i.qty}) — Rs.${i.sellingPrice}</option>`).join('');
+}
+
+window.onStockItemSelect = function() {
+  const id  = document.getElementById('stock-item-select')?.value;
+  const item = (window.stockItems||[]).find(x=>x.id===id);
+  const priceEl = document.getElementById('stock-item-price');
+  if(item && priceEl) { priceEl.value = item.sellingPrice; calcStockItem(); }
+};
+
+window.calcStockItem = function() {
+  const qty  = +(document.getElementById('stock-item-qty')?.value)||1;
+  const price= +(document.getElementById('stock-item-price')?.value)||0;
+  const el   = document.getElementById('stock-item-total');
+  if(el && price>0) { el.classList.remove('hidden'); el.textContent=`Total: Rs.${qty*price} (${qty} × Rs.${price})`; }
+};
+
+window.addStockItemToCart = function() {
+  const id   = document.getElementById('stock-item-select')?.value;
+  const qty  = +(document.getElementById('stock-item-qty')?.value)||1;
+  const price= +(document.getElementById('stock-item-price')?.value)||0;
+  const item = (window.stockItems||[]).find(x=>x.id===id);
+  if(!item) { toast('⚠️ Select a stock item','error'); return; }
+  if(qty > +item.qty) { toast(`⚠️ Only ${item.qty} in stock`,'error'); return; }
+  if(!price) { toast('⚠️ Price not set for this item','error'); return; }
+
+  if(!window.stockItemsInCart) window.stockItemsInCart = [];
+  window.stockItemsInCart.push({ id, name:item.name, qty, unitPrice:price, total:qty*price });
+
+  // Show added items
+  const el = document.getElementById('stock-items-added');
+  if(el) el.innerHTML = window.stockItemsInCart.map((s,i)=>
+    `<div style="display:flex;justify-content:space-between;padding:6px 8px;background:var(--paper);border-radius:6px;margin-bottom:4px;font-size:13px;">
+      <span>📦 ${s.name} × ${s.qty}</span>
+      <span style="font-weight:700;">Rs.${s.total} <button onclick="removeStockItem(${i})" style="background:none;border:none;color:#e53935;cursor:pointer;">✕</button></span>
+    </div>`).join('');
+
+  // Reset
+  document.getElementById('stock-item-select').value='';
+  document.getElementById('stock-item-qty').value='1';
+  document.getElementById('stock-item-price').value='';
+  document.getElementById('stock-item-total')?.classList.add('hidden');
+  toast(`✅ ${item.name} added`,'success');
+};
+
+window.removeStockItem = function(idx) {
+  if(!window.stockItemsInCart) return;
+  window.stockItemsInCart.splice(idx,1);
+  const el = document.getElementById('stock-items-added');
+  if(el) el.innerHTML = window.stockItemsInCart.map((s,i)=>
+    `<div style="display:flex;justify-content:space-between;padding:6px 8px;background:var(--paper);border-radius:6px;margin-bottom:4px;font-size:13px;">
+      <span>📦 ${s.name} × ${s.qty}</span>
+      <span style="font-weight:700;">Rs.${s.total} <button onclick="removeStockItem(${i})" style="background:none;border:none;color:#e53935;cursor:pointer;">✕</button></span>
+    </div>`).join('');
+};
 window.calcDoorPassport = ()=>{ const c=+(document.getElementById('dpp-copies')?.value)||8;const s=Math.ceil(c/8);const el=document.getElementById('dpp-total');if(el)el.value='Rs.'+(500+Math.max(0,s-1)*100);};
 window.calcDoorVisa     = ()=>{ const c=+(document.getElementById('dvp-copies')?.value)||8;const s=Math.ceil(c/8);const el=document.getElementById('dvp-total');if(el)el.value='Rs.'+(500+Math.max(0,s-1)*100);};
 
@@ -1104,6 +1258,20 @@ window.addToCart = function() {
       parts.push(`Print ${SIZE_LABELS[size]||size} ${qual} ×${qty}${extraLabel} ₹${pT}`);
       totalP += pT;
     }
+    if(groupAsel.includes('Stock Items')){
+      const items = window.stockItemsInCart||[];
+      if(!items.length){toast('⚠️ Add at least one stock item','error');return;}
+      items.forEach(s=>{
+        parts.push(`Stock: ${s.name} ×${s.qty} Rs.${s.total}`);
+        totalP+=s.total;
+        // Deduct stock qty
+        if(window.stockItems){
+          const si=window.stockItems.find(x=>x.id===s.id);
+          if(si){si.qty=Math.max(0,(+si.qty||0)-s.qty);updateStockQty(s.id,si.qty);}
+        }
+      });
+      window.stockItemsInCart=[];
+    }
     if(groupAsel.includes('Framing')){
       const lb = getFrameLB();
       if (!lb) { toast('⚠️ Enter print size for framing','error'); return; }
@@ -1156,12 +1324,14 @@ window.addToCart = function() {
     }
     else if(groupBsel==='Visa Photos'){
       const c    = +(document.getElementById('vp-copies')?.value)||8;
-      const vt   = document.getElementById('visa-type')?.value;
+      const vtVal= document.getElementById('visa-type')?.value||'';
+      const vt   = vtVal ? vtVal.split('|')[0] : 'Visa';
+      const vsz  = vtVal ? vtVal.split('|')[1] : '';
       const sets = Math.ceil(c/8);
       const base = 250+Math.max(0,sets-1)*100;
       const soft = document.querySelector('input[name="vpSoft"]:checked')?.value==='Yes'?100:0;
       price = base+soft;
-      label = `${vt} · ${c} copies${soft?' +SoftCopy Rs.100':''}`;
+      label = `${vt}${vsz?' ('+vsz+')':''} · ${c} copies${soft?' +SoftCopy Rs.100':''}`;
     }
     else if(groupBsel==='Collage Making'){
       price=+(document.getElementById('collage-charge')?.value)||0;
@@ -1173,7 +1343,16 @@ window.addToCart = function() {
       if(!q){toast('⚠️ Enter number of pictures','error');return;}
       price=q*50; label=`${q} pictures × Rs.50`;
     }
-    else if(groupBsel==='Album Printing'){const pg=+(document.getElementById('alb-pages')?.value)||1;price=+(document.getElementById('alb-cost')?.value)||0;label=`${pg} pages`;}
+    else if(groupBsel==='Custom Order'){
+      const name=document.getElementById('custom-name')?.value.trim();
+      const desc=document.getElementById('custom-desc')?.value.trim();
+      const qty=+(document.getElementById('custom-qty')?.value)||1;
+      const unitPrice=+(document.getElementById('custom-price')?.value)||0;
+      if(!name){toast('⚠️ Enter service name','error');return;}
+      if(!unitPrice){toast('⚠️ Enter price','error');return;}
+      price=qty*unitPrice;
+      label=`${name}${desc?' · '+desc:''} · Qty:${qty} × Rs.${unitPrice}`;
+    }
     else if(groupBsel==='Portfolio Shoot'){const ex=+(document.getElementById('port-extra')?.value)||0;price=1000+ex;const pt=document.getElementById('port-type')?.value;label=`${pt}${ex?' +Extra Rs.'+ex:''}`;}
     else if(groupBsel==='Video Editing'){price=+(document.getElementById('vid-edit-charge')?.value)||0;label=`Charge Rs.${price}`;}
     else if(groupBsel==='Video Converting'){price=+(document.getElementById('vid-conv-charge')?.value)||0;label=`Charge Rs.${price}`;}
@@ -1201,6 +1380,17 @@ window.removeFromCart = function(idx) {
   updateCartPanel();
 };
 
+window.duplicateCartItem = function(idx) {
+  const item = window.cart[idx];
+  if (!item) return;
+  // Add a copy of the item
+  const copy = JSON.parse(JSON.stringify(item));
+  window.cart.push(copy);
+  renderCart();
+  updateCartPanel();
+  toast(`📋 ${(item.svcs||[]).join('+')} duplicated — edit cart total if needed`,'info');
+};
+
 // ── Cart Panel (right side) ───────────────────────────────────
 function updateCartPanel() {
   const itemsEl  = document.getElementById('cart-panel-items');
@@ -1226,7 +1416,10 @@ function updateCartPanel() {
       </div>
       <div style="text-align:right;flex-shrink:0;">
         <div style="font-weight:700;color:var(--gold-dk);font-size:13px;">Rs.${(+item.price||0).toLocaleString('en-IN')}</div>
-        <button onclick="removeFromCart(${idx})" style="background:none;border:none;color:#e53935;font-size:11px;cursor:pointer;padding:2px 0;">❌ Remove</button>
+        <div style="display:flex;gap:4px;margin-top:4px;justify-content:flex-end;">
+          <button onclick="duplicateCartItem(${idx})" style="background:none;border:none;color:var(--gold-dk);font-size:11px;cursor:pointer;padding:2px 4px;">📋 Dup</button>
+          <button onclick="removeFromCart(${idx})" style="background:none;border:none;color:#e53935;font-size:11px;cursor:pointer;padding:2px 4px;">❌ Del</button>
+        </div>
       </div>
     </div>`).join('');
 
