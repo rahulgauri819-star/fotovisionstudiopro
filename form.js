@@ -25,12 +25,8 @@ function getFormHTML(existing, role) {
       <div class="form-group">
         <label class="form-label">Assign to Staff</label>
         <select class="form-input" id="f-staff">
-          <option>Ravi</option><option>Sunita</option><option>Kavita</option><option>Mohan</option><option>Framer Team</option>
+          <option>Abhik</option><option>Vishal</option><option>Rajesh</option>
         </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Special Notes</label>
-        <input class="form-input" id="f-notes" placeholder="Any special instructions…">
       </div>
     </div>
   </div>
@@ -46,7 +42,6 @@ function getFormHTML(existing, role) {
       <label class="check-btn"><input type="checkbox" name="groupA" value="Photo Editing" onchange="onGroupA()"><span>🎨 Photo Editing</span></label>
       <label class="check-btn"><input type="checkbox" name="groupA" value="Printing" onchange="onGroupA()"><span>🖨️ Printing</span></label>
       <label class="check-btn"><input type="checkbox" name="groupA" value="Framing" onchange="onGroupA()"><span>🖼️ Framing</span></label>
-      <label class="check-btn"><input type="checkbox" name="groupA" value="Stock Items" onchange="onGroupA()"><span>📦 Stock Items</span></label>
     </div>
     <div class="warn-box" id="svc-warn-ab"></div>
 
@@ -57,6 +52,9 @@ function getFormHTML(existing, role) {
       <label class="pill-option"><input type="radio" name="groupB" value="Collage Making" onchange="onGroupB(this)"><span>🖼️ Collage Making</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Scanning" onchange="onGroupB(this)"><span>🔍 Scanning</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Custom Order" onchange="onGroupB(this)"><span>✏️ Custom Order</span></label>
+      <label class="pill-option"><input type="radio" name="groupB" value="Readymade Frames" onchange="onGroupB(this)"><span>🖼️ Readymade Frames</span></label>
+      <label class="pill-option"><input type="radio" name="groupB" value="Slip In Albums" onchange="onGroupB(this)"><span>📒 Slip In Albums</span></label>
+      <label class="pill-option"><input type="radio" name="groupB" value="Gift Items" onchange="onGroupB(this)"><span>🎁 Gift Items</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Album Printing" onchange="onGroupB(this)"><span>📚 Album Printing</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Portfolio Shoot" onchange="onGroupB(this)"><span>📸 Portfolio Shoot</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Video Editing" onchange="onGroupB(this)"><span>🎬 Video Editing</span></label>
@@ -102,6 +100,10 @@ function getFormHTML(existing, role) {
     <div id="delivery-box" class="hidden" style="margin-top:14px;padding:14px;background:var(--paper);border-radius:var(--r-md);border:1px solid var(--paper3);">
       <label class="form-label" style="display:block;margin-bottom:8px;">Delivery Date &amp; Time</label>
       <input class="form-input" id="f-delivery" type="datetime-local" style="max-width:320px;">
+    </div>
+    <div style="margin-top:14px;">
+      <label class="form-label" style="display:block;margin-bottom:8px;">📝 Special Notes</label>
+      <input class="form-input" id="f-notes" placeholder="Any special instructions for staff or framer…">
     </div>
   </div>
 </div>
@@ -490,36 +492,36 @@ function getBPanelHTML(svc) {
     <div class="price-info" style="margin-bottom:10px;"><b>Rs.250</b> for first set · <b>Rs.100</b> per extra set</div>
     <div class="form-group" style="margin-bottom:10px;">
       <label class="form-label">Visa Country</label>
-      <select class="form-input" id="visa-type" onchange="onVisaCountryChange()" style="margin-bottom:8px;">
+      <select class="form-input" id="visa-type" onchange="onVisaCountryChange()">
         <option value="">— Select Country —</option>
-        <option value="USA|50×50mm|6">🇺🇸 USA</option>
-        <option value="Canada|50×70mm|4">🇨🇦 Canada</option>
-        <option value="UK|35×45mm|8-10">🇬🇧 UK</option>
-        <option value="Australia|35×45mm|8-10">🇦🇺 Australia</option>
-        <option value="Vietnam|40×60mm|4">🇻🇳 Vietnam</option>
-        <option value="Schengen (EU)|35×45mm|8-10">🇪🇺 Schengen (EU)</option>
-        <option value="China|33×48mm|8">🇨🇳 China</option>
-        <option value="Japan|35×45mm|8-10">🇯🇵 Japan</option>
-        <option value="Russia|35×45mm|8-10">🇷🇺 Russia</option>
-        <option value="UAE / Dubai|45×55mm|4">🇦🇪 UAE / Dubai</option>
-        <option value="Saudi Arabia|50×50mm|6">🇸🇦 Saudi Arabia</option>
-        <option value="Singapore|35×45mm|8-10">🇸🇬 Singapore</option>
-        <option value="Malaysia|35×50mm|6-8">🇲🇾 Malaysia</option>
-        <option value="South Korea|35×45mm|8-10">🇰🇷 South Korea</option>
+        <option value="USA|50×50mm|6">🇺🇸 USA · 50×50mm · 6 copies</option>
+        <option value="Canada|50×70mm|4">🇨🇦 Canada · 50×70mm · 4 copies</option>
+        <option value="UK|35×45mm|8">🇬🇧 UK · 35×45mm · 8 copies</option>
+        <option value="Australia|35×45mm|8">🇦🇺 Australia · 35×45mm · 8 copies</option>
+        <option value="Vietnam|40×60mm|4">🇻🇳 Vietnam · 40×60mm · 4 copies</option>
+        <option value="Schengen (EU)|35×45mm|8">🇪🇺 Schengen (EU) · 35×45mm · 8 copies</option>
+        <option value="China|33×48mm|8">🇨🇳 China · 33×48mm · 8 copies</option>
+        <option value="Japan|35×45mm|8">🇯🇵 Japan · 35×45mm · 8 copies</option>
+        <option value="Russia|35×45mm|8">🇷🇺 Russia · 35×45mm · 8 copies</option>
+        <option value="UAE / Dubai|45×55mm|4">🇦🇪 UAE / Dubai · 45×55mm · 4 copies</option>
+        <option value="Saudi Arabia|50×50mm|6">🇸🇦 Saudi Arabia · 50×50mm · 6 copies</option>
+        <option value="Singapore|35×45mm|8">🇸🇬 Singapore · 35×45mm · 8 copies</option>
+        <option value="Malaysia|35×50mm|6">🇲🇾 Malaysia · 35×50mm · 6 copies</option>
+        <option value="South Korea|35×45mm|8">🇰🇷 South Korea · 35×45mm · 8 copies</option>
       </select>
-      <div id="visa-size-info" class="price-info hidden" style="font-size:12px;"></div>
     </div>
-    <div class="form-group" style="max-width:200px;margin-bottom:10px;">
+    <div class="form-group" style="max-width:220px;margin-bottom:10px;" id="visa-copies-group" style="display:none;">
       <label class="form-label">Number of Copies</label>
-      <input class="form-input" id="vp-copies" type="number" min="1" value="8" inputmode="numeric" oninput="calcVisa()">
+      <select class="form-input" id="vp-copies" onchange="calcVisa()">
+        <option value="8">8 copies</option>
+      </select>
     </div>
-    <div id="vp-cost-tag" class="price-tag" style="margin-bottom:12px;">Rs.250</div>
+    <div id="vp-cost-tag" class="price-tag" style="margin-bottom:12px;"></div>
     <label class="form-label" style="display:block;margin-bottom:8px;">Add Soft Copy? (Optional)</label>
     <div class="toggle-group" style="margin-bottom:8px;">
       <label class="toggle-option"><input type="radio" name="vpSoft" value="No" checked onchange="calcVisa()"><span>❌ No</span></label>
       <label class="toggle-option"><input type="radio" name="vpSoft" value="Yes" onchange="calcVisa()"><span>✅ Yes (+Rs.100)</span></label>
     </div>
-    <div id="vp-total-tag" class="price-tag hidden"></div>
   </div>`;
 
   if(svc==='Collage Making') return `<div class="svc-panel" id="panel-b">
@@ -562,6 +564,35 @@ function getBPanelHTML(svc) {
     </div>
     <div id="custom-total-tag" class="price-tag hidden"></div>
   </div>`;
+
+  if(svc==='Readymade Frames'||svc==='Slip In Albums'||svc==='Gift Items') {
+    const icon = svc==='Readymade Frames'?'🖼️':svc==='Slip In Albums'?'📒':'🎁';
+    const cat  = svc==='Readymade Frames'?'frames':svc==='Slip In Albums'?'albums':'gifts';
+    return `<div class="svc-panel" id="panel-b">
+      <div class="section-head" style="font-size:15px;">${icon} ${svc}</div>
+      <div id="${cat}-items-form">
+        <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:flex-end;">
+          <div class="form-group" style="flex:2;min-width:140px;">
+            <label class="form-label">Item</label>
+            <select class="form-input" id="${cat}-item-select" onchange="onStockCatSelect('${cat}')">
+              <option value="">— Select Item —</option>
+            </select>
+          </div>
+          <div class="form-group" style="max-width:80px;">
+            <label class="form-label">Qty</label>
+            <input class="form-input" id="${cat}-item-qty" type="number" min="1" value="1" oninput="calcStockCatItem('${cat}')">
+          </div>
+          <div class="form-group" style="max-width:100px;">
+            <label class="form-label">Price</label>
+            <input class="form-input" id="${cat}-item-price" type="number" readonly style="background:#f5f5f5;">
+          </div>
+          <button type="button" onclick="addStockCatToList('${cat}','${svc}')" class="btn-gold" style="padding:10px 14px;">➕ Add</button>
+        </div>
+        <div id="${cat}-item-total" class="price-info hidden"></div>
+        <div id="${cat}-items-added" style="margin-top:8px;"></div>
+      </div>
+    </div>`;
+  }
 
   if(svc==='Album Printing') return `<div class="svc-panel" id="panel-b">
     <div class="section-head" style="font-size:15px;">📚 Album Printing</div>
@@ -640,19 +671,109 @@ window.onGroupA = function() {
   const sel = [...document.querySelectorAll('input[name="groupA"]:checked')].map(c=>c.value);
   document.querySelectorAll('input[name="groupB"]').forEach(r=>r.checked=false);
   document.getElementById('panel-b')?.remove();
-  window.stockItemsInCart = [];
-  document.getElementById('svc-panel-area').innerHTML = getSvcPanelHTML(sel);
-  if(sel.includes('Stock Items')) { populateStockDropdown(); }
-  calcPassport(); calcVisa(); calcDoorPassport(); calcDoorVisa();
+
+  const area = document.getElementById('svc-panel-area');
+  const ALL_A = ['Photo Editing','Printing','Framing','Readymade Frames','Slip In Albums','Gift Items'];
+
+  // Add panels for newly checked services (preserve existing ones)
+  ALL_A.forEach(svc => {
+    const panelId = 'panel-' + svc.toLowerCase().replace(/\s+/g,'-');
+    const existing = document.getElementById(panelId);
+    if (sel.includes(svc) && !existing) {
+      // Add new panel at end
+      const div = document.createElement('div');
+      div.innerHTML = getSinglePanelHTML(svc);
+      if (div.firstElementChild) area.appendChild(div.firstElementChild);
+      if(svc==='Readymade Frames') populateStockCategoryDropdown('frames');
+      if(svc==='Slip In Albums')   populateStockCategoryDropdown('albums');
+      if(svc==='Gift Items')       populateStockCategoryDropdown('gifts');
+    } else if (!sel.includes(svc) && existing) {
+      // Remove unchecked panel
+      existing.remove();
+    }
+  });
 };
+
+// Get HTML for a single service panel
+function getSinglePanelHTML(svc) {
+  const dummy = getSvcPanelHTML([svc]);
+  return dummy;
+}
 
 window.onGroupB = function(el) {
   document.querySelectorAll('input[name="groupA"]').forEach(c=>c.checked=false);
   document.getElementById('svc-panel-area').innerHTML = getBPanelHTML(el.value);
-  if(el.value==='Passport Photos') calcPassport();
-  if(el.value==='Visa Photos')     calcVisa();
+  if(el.value==='Passport Photos')   calcPassport();
+  if(el.value==='Visa Photos')       { onVisaCountryChange(); }
   if(el.value==='Doorstep Passport') calcDoorPassport();
-  if(el.value==='Doorstep Visa')   calcDoorVisa();
+  if(el.value==='Doorstep Visa')     calcDoorVisa();
+  if(el.value==='Readymade Frames')  populateStockCategoryDropdown('frames');
+  if(el.value==='Slip In Albums')    populateStockCategoryDropdown('albums');
+  if(el.value==='Gift Items')        populateStockCategoryDropdown('gifts');
+};
+
+// ── Stock Category Helpers ────────────────────────────────────
+window.stockCatCarts = { frames:[], albums:[], gifts:[] };
+
+function getCatItems(cat) {
+  const catMap = { frames:'Readymade Frames', albums:'Slip In Albums', gifts:'Gift Items' };
+  return (window.stockItems||[]).filter(i=>i.category===catMap[cat] && (+i.qty||0)>0);
+}
+
+window.populateStockCategoryDropdown = function(cat) {
+  const sel = document.getElementById(cat+'-item-select');
+  if(!sel) return;
+  const items = getCatItems(cat);
+  sel.innerHTML = '<option value="">— Select Item —</option>' +
+    items.map(i=>`<option value="${i.id}">${i.name} (Qty: ${i.qty}) — Rs.${i.sellingPrice}</option>`).join('');
+};
+
+window.onStockCatSelect = function(cat) {
+  const id = document.getElementById(cat+'-item-select')?.value;
+  const item = (window.stockItems||[]).find(x=>x.id===id);
+  const priceEl = document.getElementById(cat+'-item-price');
+  if(item && priceEl) { priceEl.value = item.sellingPrice; calcStockCatItem(cat); }
+};
+
+window.calcStockCatItem = function(cat) {
+  const qty   = +(document.getElementById(cat+'-item-qty')?.value)||1;
+  const price = +(document.getElementById(cat+'-item-price')?.value)||0;
+  const el    = document.getElementById(cat+'-item-total');
+  if(el && price>0) { el.classList.remove('hidden'); el.textContent=`Total: Rs.${qty*price} (${qty} × Rs.${price})`; }
+};
+
+window.addStockCatToList = function(cat, svcName) {
+  const id    = document.getElementById(cat+'-item-select')?.value;
+  const qty   = +(document.getElementById(cat+'-item-qty')?.value)||1;
+  const price = +(document.getElementById(cat+'-item-price')?.value)||0;
+  const item  = (window.stockItems||[]).find(x=>x.id===id);
+  if(!item){toast('⚠️ Select an item','error');return;}
+  if(qty>+item.qty){toast(`⚠️ Only ${item.qty} in stock`,'error');return;}
+  if(!price){toast('⚠️ Price not set','error');return;}
+  if(!window.stockCatCarts) window.stockCatCarts={frames:[],albums:[],gifts:[]};
+  window.stockCatCarts[cat].push({id,name:item.name,qty,unitPrice:price,total:qty*price,svc:svcName});
+  const el=document.getElementById(cat+'-items-added');
+  if(el) el.innerHTML=window.stockCatCarts[cat].map((s,i)=>
+    `<div style="display:flex;justify-content:space-between;padding:6px 8px;background:var(--paper);border-radius:6px;margin-bottom:4px;font-size:13px;">
+      <span>${s.name} × ${s.qty}</span>
+      <span style="font-weight:700;">Rs.${s.total} <button onclick="removeStockCatItem('${cat}',${i})" style="background:none;border:none;color:#e53935;cursor:pointer;">✕</button></span>
+    </div>`).join('');
+  document.getElementById(cat+'-item-select').value='';
+  document.getElementById(cat+'-item-qty').value='1';
+  document.getElementById(cat+'-item-price').value='';
+  document.getElementById(cat+'-item-total')?.classList.add('hidden');
+  toast(`✅ ${item.name} added`,'success');
+};
+
+window.removeStockCatItem = function(cat, idx) {
+  if(!window.stockCatCarts?.[cat]) return;
+  window.stockCatCarts[cat].splice(idx,1);
+  const el=document.getElementById(cat+'-items-added');
+  if(el) el.innerHTML=window.stockCatCarts[cat].map((s,i)=>
+    `<div style="display:flex;justify-content:space-between;padding:6px 8px;background:var(--paper);border-radius:6px;margin-bottom:4px;font-size:13px;">
+      <span>${s.name} × ${s.qty}</span>
+      <span style="font-weight:700;">Rs.${s.total} <button onclick="removeStockCatItem('${cat}',${i})" style="background:none;border:none;color:#e53935;cursor:pointer;">✕</button></span>
+    </div>`).join('');
 };
 
 window.onOrderType      = onOrderType;
@@ -1094,25 +1215,32 @@ window.calcPassport = () => {
 };
 window.onVisaCountryChange = function() {
   const val = document.getElementById('visa-type')?.value;
-  const info = document.getElementById('visa-size-info');
-  if(!val || !info) return;
-  const [country, size, copies] = val.split('|');
-  info.classList.remove('hidden');
-  info.innerHTML = `📐 Photo Size: <b>${size}</b> &nbsp;·&nbsp; 📸 Number of Copies: <b>${copies}</b>`;
+  if(!val) return;
+  const [country, size, base] = val.split('|');
+  const baseNum = parseInt(base)||8;
+
+  // Populate copies dropdown with 10 multiples
+  const copiesSel = document.getElementById('vp-copies');
+  if(copiesSel) {
+    copiesSel.innerHTML = Array.from({length:10},(_,i)=>{
+      const n = baseNum*(i+1);
+      return `<option value="${n}">${n} copies</option>`;
+    }).join('');
+  }
+
+  // Show copies group
+  document.getElementById('visa-copies-group')?.removeAttribute('style');
+
   calcVisa();
 };
 
 window.calcVisa = () => {
-  const c    = +(document.getElementById('vp-copies')?.value) || 8;
-  const sets = Math.ceil(c / 8);
-  const base = 250 + Math.max(0, sets - 1) * 100;
-  const soft = document.querySelector('input[name="vpSoft"]:checked')?.value === 'Yes' ? 100 : 0;
-  const total = base + soft;
-  const costTag  = document.getElementById('vp-cost-tag');
-  const totalTag = document.getElementById('vp-total-tag');
-  if (costTag) costTag.textContent = `Print Cost: Rs.${base}`;
-  if (soft && totalTag) { totalTag.classList.remove('hidden'); totalTag.textContent = `Total: Rs.${base} + Rs.${soft} (Soft Copy) = Rs.${total}`; }
-  else if (totalTag) totalTag.classList.add('hidden');
+  const c    = +(document.getElementById('vp-copies')?.value)||8;
+  const base = 250 + Math.max(0, Math.ceil(c/8)-1)*100;
+  const soft = document.querySelector('input[name="vpSoft"]:checked')?.value==='Yes'?100:0;
+  const total = base+soft;
+  const ct = document.getElementById('vp-cost-tag');
+  if(ct) ct.textContent = soft ? `Total: Rs.${total} (Print Rs.${base} + Soft Copy Rs.${soft})` : `Total: Rs.${base}`;
 };
 window.calcScanning    = () => { const q=+(document.getElementById('scan-qty')?.value)||1; const t=document.getElementById('scan-cost-tag'); if(t) t.textContent=`Total: Rs.${q*50} (${q} × Rs.50)`; };
 window.calcCustom      = () => {
@@ -1342,6 +1470,19 @@ window.addToCart = function() {
       const q=+(document.getElementById('scan-qty')?.value)||0;
       if(!q){toast('⚠️ Enter number of pictures','error');return;}
       price=q*50; label=`${q} pictures × Rs.50`;
+    }
+    else if(['Readymade Frames','Slip In Albums','Gift Items'].includes(groupBsel)){
+      const cat = groupBsel==='Readymade Frames'?'frames':groupBsel==='Slip In Albums'?'albums':'gifts';
+      const items = window.stockCatCarts?.[cat]||[];
+      if(!items.length){toast('⚠️ Add at least one item','error');return;}
+      price = items.reduce((s,i)=>s+i.total,0);
+      label = items.map(i=>`${i.name} ×${i.qty}`).join(' · ');
+      // Deduct stock
+      items.forEach(s=>{
+        const si=(window.stockItems||[]).find(x=>x.id===s.id);
+        if(si){si.qty=Math.max(0,(+si.qty||0)-s.qty);updateStockQty(s.id,si.qty);}
+      });
+      window.stockCatCarts[cat]=[];
     }
     else if(groupBsel==='Custom Order'){
       const name=document.getElementById('custom-name')?.value.trim();

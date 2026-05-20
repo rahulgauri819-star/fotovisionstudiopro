@@ -50,7 +50,7 @@
 
 <header class="hdr">
   <a href="../index.html" class="hdr-logo">
-    <div style="background:#111;border-radius:10px;padding:4px 12px;"><img src="../logo.png" alt="FV" style="height:38px;display:block;"></div>
+    <img src="../logo.png" alt="FV" style="height:42px;border-radius:10px;display:block;">
   </a>
   <div class="hdr-right">
     <div class="role-pill">🖼️ Framer</div>
@@ -64,10 +64,11 @@
   <div class="framer-hero">
     <div class="framer-hero-title">Framing Workshop</div>
     <div class="framer-hero-sub">Live view of all framing, sunboard & MDF jobs assigned to your station</div>
-    <div class="framer-stats">
-      <div class="framer-stat"><div class="framer-stat-val" id="fs-active">0</div><div class="framer-stat-lbl">Active Jobs</div></div>
-      <div class="framer-stat"><div class="framer-stat-val" id="fs-total">0</div><div class="framer-stat-lbl">Total Jobs</div></div>
-      <div class="framer-stat"><div class="framer-stat-val" id="fs-done">0</div><div class="framer-stat-lbl">Completed</div></div>
+    <div class="framer-stats" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+      <div class="framer-stat"><div class="framer-stat-val" id="fs-today">0</div><div class="framer-stat-lbl">Today's Jobs</div></div>
+      <div class="framer-stat"><div class="framer-stat-val" id="fs-active">0</div><div class="framer-stat-lbl">Total Due</div></div>
+      <div class="framer-stat"><div class="framer-stat-val" id="fs-duetoday">0</div><div class="framer-stat-lbl">Due Today</div></div>
+      <div class="framer-stat" style="background:#e53935;"><div class="framer-stat-val" id="fs-overdue">0</div><div class="framer-stat-lbl">Overdue</div></div>
     </div>
   </div>
 
@@ -160,8 +161,10 @@ window.framerTab = function(tab) {
 };
 
 function framerCard(o, showActions) {
-  const isReady = o.status === 'Ready';
-  return `<div class="job-card${o.status==='Delivered'?' delivered':''}">
+  const isReady   = o.status==='Ready';
+  const isOD      = o.delivery && o.delivery.slice(0,10) < todayStr() && o.status!=='Delivered';
+  const cardStyle = isOD ? 'background:linear-gradient(135deg,#fff5f5,#ffe8e8);border-left:3px solid #e53935;' : '';
+  return `<div class="job-card${o.status==='Delivered'?' delivered':''}" style="${cardStyle}">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;">
       <div>
         <div style="font-size:16px;font-weight:700;margin-bottom:2px;">${o.name||''}</div>
@@ -193,27 +196,59 @@ function framerCard(o, showActions) {
 
 function framerRender() {
   try {
-    const fo     = framerOrders.filter(o=>orderNeedsFramer(o));
+    const today = todayStr();
+    const fo = framerOrders.filter(o=>orderNeedsFramer(o));
+    // Only show Pending + In Progress + Ready (not Delivered)
     const active = fo.filter(o=>o.status!=='Delivered').sort((a,b)=>(b.created||0)-(a.created||0));
     const done   = fo.filter(o=>o.status==='Delivered').sort((a,b)=>(b.created||0)-(a.created||0));
 
-    document.getElementById('fs-active').textContent = active.length;
-    document.getElementById('fs-total').textContent  = fo.length;
-    document.getElementById('fs-done').textContent   = done.length;
+    const todayJobs = active.filter(o=>o.date===today);
+    const dueToday  = active.filter(o=>o.delivery&&o.delivery.startsWith(today));
+    const overdue   = active.filter(o=>o.delivery&&o.delivery.slice(0,10)<today&&o.status!=='Delivered');
+
+    document.getElementById('fs-today').textContent   = todayJobs.length;
+    document.getElementById('fs-active').textContent  = active.length;
+    document.getElementById('fs-duetoday').textContent= dueToday.length;
+    document.getElementById('fs-overdue').textContent = overdue.length;
 
     const badge = document.getElementById('active-badge');
     if(badge) badge.textContent = active.length>0 ? active.length : '';
 
     if(framerCurrentTab==='active') {
+      // Alerts — active jobs
       document.getElementById('framer-notifs').innerHTML = active.length
-        ? active.map(o=>`<div class="job-notif"><div class="job-dot"></div><div>
-            <div class="job-text"><b>${o.name}</b> · ${o.id} · <b>${o.status}</b></div>
-            <div class="job-time">👤 ${o.staff||''}${o.delivery?' · ⏰ '+formatDatetime(o.delivery):''}</div>
-          </div></div>`).join('')
+        ? active.slice(0,5).map(o=>`<div class="job-notif" style="${o.delivery&&o.delivery.slice(0,10)<today?'color:#e53935;':''}">
+            <div class="job-dot" style="${o.delivery&&o.delivery.slice(0,10)<today?'background:#e53935;':''}"></div>
+            <div>
+              <div class="job-text"><b>${o.name}</b> · <b>${o.status}</b></div>
+              <div class="job-time">👤 ${o.staff||''}${o.delivery?' · ⏰ '+formatDatetime(o.delivery):''}</div>
+            </div>
+          </div>`).join('')
         : '<div style="font-size:13px;color:#9C8060;">No active framing jobs 🎉</div>';
-      document.getElementById('framer-orders').innerHTML = active.length
-        ? active.map(o=>framerCard(o,true)).join('')
-        : '<div class="empty-state"><div class="empty-icon">🎉</div><div class="empty-title">All caught up!</div><div class="empty-sub">No active framing orders</div></div>';
+
+      if(!active.length) {
+        document.getElementById('framer-orders').innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><div class="empty-title">All caught up!</div><div class="empty-sub">No active framing orders</div></div>';
+        return;
+      }
+
+      // Sections: Overdue → Due Today → Upcoming → No due date
+      const upcoming  = active.filter(o=>o.delivery&&o.delivery.slice(0,10)>today);
+      const nodue     = active.filter(o=>!o.delivery);
+
+      const section = (title,color,bg,list) => {
+        if(!list.length) return '';
+        return `<div style="margin-bottom:14px;">
+          <div style="font-weight:700;font-size:12px;color:${color};padding:5px 10px;background:${bg};border-radius:8px;margin-bottom:8px;border-left:3px solid ${color};">${title}</div>
+          ${list.map(o=>framerCard(o,true)).join('')}
+        </div>`;
+      };
+
+      document.getElementById('framer-orders').innerHTML =
+        section('🔴 OVERDUE','#e53935','#ffe8e8',overdue) +
+        section('🟡 DUE TODAY','#e65100','#fff3e0',dueToday.filter(o=>!overdue.includes(o))) +
+        section('🔵 UPCOMING','#1976d2','#e3f2fd',upcoming) +
+        section('📋 NO DUE DATE','#666','#f5f5f5',nodue);
+
     } else {
       document.getElementById('framer-done').innerHTML = done.length
         ? done.map(o=>framerCard(o,false)).join('')
