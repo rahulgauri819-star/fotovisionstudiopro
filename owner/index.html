@@ -175,6 +175,42 @@
   </div>
 </div>
 
+<!-- ═══ REPORTS ═══ -->
+<div id="pg-reports" class="hidden">
+  <div class="page-header">
+    <div class="page-title">📊 Reports</div>
+    <div class="page-sub">Generate & download reports</div>
+  </div>
+
+  <!-- Report Type Selector -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+    <button onclick="setReportType('daily')" id="rt-daily" class="btn-gold" style="padding:12px;border-radius:12px;font-size:13px;font-weight:700;">📅 Daily</button>
+    <button onclick="setReportType('monthly')" id="rt-monthly" class="btn-outline" style="padding:12px;border-radius:12px;font-size:13px;font-weight:700;">📅 Monthly</button>
+    <button onclick="setReportType('yearly')" id="rt-yearly" class="btn-outline" style="padding:12px;border-radius:12px;font-size:13px;font-weight:700;">📅 Yearly</button>
+    <button onclick="setReportType('fy')" id="rt-fy" class="btn-outline" style="padding:12px;border-radius:12px;font-size:13px;font-weight:700;">📅 Financial Year</button>
+    <button onclick="setReportType('service')" id="rt-service" class="btn-outline" style="padding:12px;border-radius:12px;font-size:13px;font-weight:700;">🛒 Services</button>
+    <button onclick="setReportType('expense')" id="rt-expense" class="btn-outline" style="padding:12px;border-radius:12px;font-size:13px;font-weight:700;">💸 Expenses</button>
+    <button onclick="setReportType('pl')" id="rt-pl" class="btn-outline" style="padding:12px;border-radius:12px;font-size:13px;font-weight:700;">💰 Profit & Loss</button>
+    <button onclick="setReportType('staff')" id="rt-staff" class="btn-outline" style="padding:12px;border-radius:12px;font-size:13px;font-weight:700;">👤 Staff Report</button>
+  </div>
+
+  <!-- Date Selector -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-body">
+      <div id="report-date-selector"></div>
+    </div>
+  </div>
+
+  <!-- Report Preview -->
+  <div id="report-preview"></div>
+
+  <!-- Download Buttons -->
+  <div id="report-actions" class="hidden" style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+    <button onclick="downloadReportPDF()" style="flex:1;background:#e53935;color:#fff;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;">📄 Download PDF</button>
+    <button onclick="downloadReportExcel()" style="flex:1;background:#388e3c;color:#fff;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;">📊 Download Excel</button>
+  </div>
+</div>
+
 <!-- ═══ READYMADE STOCK ═══ -->
 <div id="pg-readymade-stock" class="hidden">
   <div class="page-header">
@@ -218,7 +254,7 @@
   <div class="card" style="margin-bottom:16px;">
     <div class="card-header"><div class="card-title">➕ Add Moulding Stock</div></div>
     <div class="card-body">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
         <div class="form-group">
           <label class="form-label">Moulding Size</label>
           <select class="form-input" id="ms-size">
@@ -228,12 +264,25 @@
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Moulding Type/Color</label>
-          <select class="form-input" id="ms-type"></select>
-        </div>
-        <div class="form-group">
           <label class="form-label">Qty (lengths)</label>
           <input class="form-input" id="ms-qty" type="number" min="1" value="1" placeholder="1">
+        </div>
+      </div>
+      <!-- Vendor selection -->
+      <div class="form-group" style="margin-bottom:10px;">
+        <label class="form-label">Vendor</label>
+        <div id="ms-vendor-pills" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
+        <div id="ms-others-box" class="hidden">
+          <input class="form-input" id="ms-others-name" placeholder="Enter vendor name..." style="max-width:200px;">
+        </div>
+      </div>
+      <!-- Moulding Type (filtered by vendor) -->
+      <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label">Moulding Type/Color</label>
+        <select class="form-input" id="ms-type"></select>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <input class="form-input" id="ms-new-type" placeholder="Or add new type..." style="font-size:12px;padding:6px 10px;">
+          <button onclick="addTypeFromStock()" class="btn-outline" style="font-size:12px;padding:6px 12px;">+ Add</button>
         </div>
       </div>
       <button onclick="addMouldingStock()" class="btn-gold" style="padding:10px 24px;">➕ Add Stock</button>
@@ -248,14 +297,26 @@
     <div class="page-title">⚙️ Settings</div>
     <div class="page-sub">Manage staff names and app settings</div>
   </div>
-  <div class="card">
+  <div class="card" style="margin-bottom:16px;">
     <div class="card-header"><div class="card-title">👥 Staff Names</div></div>
     <div class="card-body">
-      <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;">Used in: Assign to Staff dropdown & Expenses Added By</div>
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;">Used in: Assign to Staff & Expenses Added By</div>
       <div id="staff-names-list" style="margin-bottom:16px;"></div>
       <div style="display:flex;gap:8px;">
         <input class="form-input" id="new-staff-name" placeholder="Add new name..." style="max-width:240px;" onkeydown="if(event.key==='Enter')addStaffName()">
         <button onclick="addStaffName()" class="btn-gold" style="padding:10px 20px;">+ Add</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">🏪 Vendor & Moulding Types</div></div>
+    <div class="card-body">
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;">Each vendor has their own moulding types/colors</div>
+      <div id="vendor-list" style="margin-bottom:16px;"></div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <input class="form-input" id="new-vendor-name" placeholder="Add new vendor..." style="max-width:240px;" onkeydown="if(event.key==='Enter')addVendor()">
+        <button onclick="addVendor()" class="btn-gold" style="padding:10px 20px;">+ Add Vendor</button>
       </div>
     </div>
   </div>
@@ -525,6 +586,7 @@ async function initDB() {
   try {
     const app = initializeApp(FIREBASE_CONFIG);
     db = getFirestore(app);
+    window.db = db;
     const q = query(collection(db, 'orders'), orderBy('created', 'desc'));
     unsubscribe = onSnapshot(q, snap => {
       orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -556,22 +618,27 @@ document.getElementById('role-pill').textContent = getCurrentIcon() + ' ' + getC
 
 // ── Nav ───────────────────────────────────────────────────────
 const TABS = [
-  { id:'dashboard',      label:'Dashboard',       icon:'📊', name:'Dash' },
-  { id:'bookings',       label:'Bookings',        icon:'📅', name:'Book' },
-  { id:'orders',         label:'Orders',          icon:'📋', name:'Orders' },
-  { id:'expenses',       label:'Expenses',        icon:'💸', name:'Expense' },
-  { id:'readymade-stock',label:'Readymade Stock', icon:'📦', name:'Stock' },
-  { id:'moulding-stock', label:'Moulding Stock',  icon:'📐', name:'Moulds' },
-  { id:'customers',      label:'Customers',       icon:'👥', name:'Clients' },
-  { id:'dayreports',     label:'Day Reports',     icon:'📋', name:'Reports' },
-  { id:'mouldings',      label:'Mouldings',       icon:'🖼️', name:'Moulds' },
-  { id:'framer',         label:'Framing',         icon:'🔨', name:'Framing' },
-  { id:'settings',       label:'Settings',        icon:'⚙️', name:'Settings' },
+  { id:'dashboard',      label:'Dashboard',   icon:'📊', name:'Dash' },
+  { id:'bookings',       label:'Bookings',    icon:'📅', name:'Book' },
+  { id:'orders',         label:'Orders',      icon:'📋', name:'Orders' },
+  { id:'expenses',       label:'Expenses',    icon:'💸', name:'Expense' },
+  { id:'readymade-stock',label:'Stock',       icon:'📦', name:'Stock' },
+  { id:'moulding-stock', label:'Moulds',      icon:'📐', name:'Moulds' },
+  { id:'reports',        label:'Reports',     icon:'📊', name:'Reports' },
+  { id:'settings',       label:'Settings',    icon:'⚙️', name:'Settings' },
+];
+// Extra tabs accessible via More menu
+const MORE_TABS = [
+  { id:'customers',  label:'Customers',   icon:'👥' },
+  { id:'dayreports', label:'Day Reports',  icon:'📋' },
+  { id:'mouldings',  label:'Mouldings',   icon:'🖼️' },
+  { id:'framer',     label:'Framing',     icon:'🔨' },
 ];
 
 function buildNav() {
+  const allTabs = [...TABS, ...MORE_TABS];
   const dn = document.getElementById('desktop-nav');
-  dn.innerHTML = TABS.map(t =>
+  dn.innerHTML = allTabs.map(t =>
     `<button class="hdr-nav-btn" id="nav-${t.id}" onclick="showPage('${t.id}')">${t.icon} ${t.label}${t.id==='bookings'?'<span id="bookings-badge" style="background:#e53935;color:#fff;border-radius:100px;font-size:10px;padding:1px 5px;margin-left:4px;"></span>':''}</button>`
   ).join('');
 
@@ -585,11 +652,36 @@ function buildNav() {
   TABS.slice(half).forEach(t =>
     html += `<button class="tab-btn" id="tnb-${t.id}" onclick="showPage('${t.id}')"><span class="tab-icon">${t.icon}</span>${t.name}</button>`
   );
+  // More button
+  html += `<button class="tab-btn" id="tnb-more" onclick="toggleMoreMenu()"><span class="tab-icon">☰</span>More</button>`;
   ti.innerHTML = html;
+
+  // More menu (hidden by default)
+  const moreMenu = document.createElement('div');
+  moreMenu.id = 'more-menu';
+  moreMenu.style.cssText = 'position:fixed;bottom:70px;right:8px;background:#fff;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,.18);z-index:2000;padding:8px;min-width:160px;display:none;';
+  moreMenu.innerHTML = MORE_TABS.map(t=>
+    `<button onclick="showPage('${t.id}');toggleMoreMenu();" id="nav-${t.id}"
+      style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:none;background:none;font-size:14px;font-weight:600;cursor:pointer;border-radius:8px;text-align:left;"
+      onmouseover="this.style.background='var(--paper)'" onmouseout="this.style.background='none'">
+      <span>${t.icon}</span> ${t.label}
+    </button>`
+  ).join('');
+  document.body.appendChild(moreMenu);
 }
 
+window.toggleMoreMenu = function() {
+  const m = document.getElementById('more-menu');
+  if(m) m.style.display = m.style.display==='none'?'block':'none';
+};
+// Close more menu when clicking outside
+document.addEventListener('click', e=>{
+  const m=document.getElementById('more-menu');
+  if(m&&!m.contains(e.target)&&!e.target.closest('#tnb-more')) m.style.display='none';
+});
+
 window.showPage = function(p) {
-  ['dashboard','orders','framer','form','mouldings','bookings','expenses','customers','dayend','dayreports','stock','readymade-stock','moulding-stock','settings'].forEach(x => {
+  ['dashboard','orders','framer','form','mouldings','bookings','expenses','customers','dayend','dayreports','stock','readymade-stock','moulding-stock','settings','reports'].forEach(x => {
     document.getElementById('pg-'+x)?.classList.add('hidden');
   });
   document.getElementById('pg-'+p)?.classList.remove('hidden');
@@ -606,6 +698,7 @@ window.showPage = function(p) {
   if(p==='bookings')   renderBookings();
   if(p==='expenses')   { setExpDateInput(); renderExpenses(); }
   if(p==='customers')  renderCustomers();
+  if(p==='reports')         renderReports();
   if(p==='dayend')          renderDayEnd();
   if(p==='dayreports')      renderDayReports();
   if(p==='stock')           renderStock();
@@ -827,11 +920,14 @@ function renderDash() {
 function recentRow(o) {
   const sc = STATUS_CFG[o.status] || STATUS_CFG['Pending'];
   const svcs = [...new Set((o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]))];
-  return `<div style="display:flex;align-items:center;gap:12px;padding:10px 20px;border-bottom:1px solid var(--paper2);">
+  const dispId = o.billNo || ('#'+o.id.slice(0,8));
+  const dispDate = formatDate(normDate(o.date||'')) || o.date || '—';
+  const overdueStyle = isOverdue(o) ? 'background:#ffcdd2;border-left:4px solid #c62828;' : '';
+  return `<div onclick="openOrderSheet('${o.id}')" style="display:flex;align-items:center;gap:12px;padding:10px 20px;border-bottom:1px solid var(--paper2);cursor:pointer;${overdueStyle}">
     <div style="font-size:22px;width:30px;">${svcs.slice(0,2).map(s=>SVC_ICONS[s]||'').join('')||'📦'}</div>
     <div style="flex:1;min-width:0;">
-      <div style="font-size:13px;font-weight:600;">${o.name}</div>
-      <div style="font-size:11px;color:var(--ink3);">${o.id} · ${o.date} · ${inr(o.total||0)}</div>
+      <div style="font-size:13px;font-weight:600;">${o.name}${isOverdue(o)?' <span style="color:#c62828;font-size:10px;font-weight:700;">⚠️ OVERDUE</span>':''}</div>
+      <div style="font-size:11px;color:var(--ink3);">${dispId} · ${dispDate} · ${inr(o.total||0)}</div>
     </div>
     <span class="${sc.cls}" style="padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;white-space:nowrap;">${o.status}</span>
   </div>`;
@@ -857,10 +953,10 @@ function renderOrders() {
     return;
   }
   const byDate = {};
-  fil.forEach(o => { const d=o.date||'Unknown'; if(!byDate[d]) byDate[d]=[]; byDate[d].push(o); });
+  fil.forEach(o => { const d=normDate(o.date||'')||'Unknown'; if(!byDate[d]) byDate[d]=[]; byDate[d].push(o); });
   const sortedDates = Object.keys(byDate).sort((a,b)=>b.localeCompare(a));
   document.getElementById('order-list').innerHTML = sortedDates.map(d => {
-    const label = d===todayStr()?'📅 Today':d===yesterdayStr()?'📅 Yesterday':`📅 ${formatDate(d)}`;
+    const label = d==='Unknown'?'📅 Unknown Date':d===todayStr()?'📅 Today':d===yesterdayStr()?'📅 Yesterday':`📅 ${formatDate(d)}`;
     return `<div style="margin-bottom:6px;"><span class="t-label" style="color:var(--gold-dk);font-size:13px;">${label} <span style="color:var(--ink3);font-weight:400;">(${byDate[d].length} order${byDate[d].length>1?'s':''})</span></span></div>
     ${byDate[d].map(o=>orderCard(o,'owner')).join('')}`;
   }).join('');
@@ -911,10 +1007,11 @@ window.renderBookings = function() {
     const isDone = o.status==='Delivered';
     const isReady = o.status==='Ready';
     const svcs = [...new Set((o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]))].join(', ');
-    return `<div class="order-card fade-in" onclick="openOrderSheet('${o.id}')" style="cursor:pointer;${isDone?'opacity:.6;':''}${isOverdue(o)?'background:linear-gradient(135deg,#fff5f5,#ffe8e8);border-left:4px solid #e53935;':''} margin-bottom:10px;">
+    return `<div class="order-card fade-in" onclick="openOrderSheet('${o.id}')" style="cursor:pointer;${isDone?'opacity:.6;':''}${isOverdue(o)?'background:#ffcdd2;border-left:5px solid #c62828;border-top:1px solid #ef9a9a;':''} margin-bottom:10px;">
       <div class="order-card-head">
         <div style="flex:1;">
-          <div class="order-name">${isDone?`<s>${o.name}</s>`:o.name} <span style="font-size:11px;color:var(--ink3);">#${o.id}</span></div>
+          <div class="order-name">${isDone?`<s>${o.name}</s>`:o.name} ${isOverdue(o)?'<span style="background:#c62828;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;">⚠️ OVERDUE</span>':''}</div>
+          <div style="font-size:11px;color:var(--ink3);">${o.billNo||('#'+o.id.slice(0,8))}</div>
           <div class="order-meta">⏰ ${formatDatetime(o.delivery)} · 👤 ${o.staff||'—'}</div>
           <div class="order-meta">${svcs}</div>
           ${o.notes?`<div class="order-meta">📝 ${o.notes}</div>`:''}
@@ -1041,13 +1138,13 @@ function orderCard(o, role) {
   const bal = (+(o.total||0)) - (+(o.advance||0));
   const svcs = [...new Set((o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]))];
   const payIcon = o.payMode==='UPI'?'📱':o.payMode==='Credit Card'?'💳':'💵';
-  const overdueStyle = isOverdue(o) ? 'background:linear-gradient(135deg,#fff5f5,#ffe8e8);border-left:4px solid #e53935;' : '';
+  const overdueStyle = isOverdue(o) ? 'background:#ffcdd2;border-left:5px solid #c62828;border-top:1px solid #ef9a9a;' : '';
   return `<div class="order-card fade-in" onclick="openOrderSheet('${o.id}')" style="cursor:pointer;${overdueStyle}">
     <div class="order-card-head">
       <div class="order-avatar">${svcs.slice(0,2).map(s=>SVC_ICONS[s]||'').join('')||'📦'}</div>
       <div style="flex:1;min-width:0;">
-        <div class="order-name">${o.name}</div>
-        <div class="order-id">${o.id}</div>
+        <div class="order-name">${o.name} ${isOverdue(o)?'<span style="background:#c62828;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;">⚠️ OVERDUE</span>':''}</div>
+        <div class="order-id">${o.billNo||('#'+o.id.slice(0,8))}</div>
         <div class="order-meta">
           📞 ${o.phone||'—'} &nbsp;·&nbsp; 👤 ${o.staff} &nbsp;·&nbsp; 📅 ${o.date}
           ${o.orderType ? ` &nbsp;·&nbsp; ${o.orderType==='Instant'?'⚡ Instant':'📅 Booking'}` : ''}
@@ -1534,7 +1631,306 @@ window.ownerDeleteMoulding = async function(size, index) {
   toast('🗑️ Moulding deleted');
 };
 
-// ── Settings — Staff Names ────────────────────────────────────
+// ── Reports ───────────────────────────────────────────────────
+let currentReportType = 'daily';
+let currentReportData = null;
+
+window.setReportType = function(type) {
+  currentReportType = type;
+  // Update button styles
+  ['daily','monthly','yearly','fy','service','expense','pl','staff'].forEach(t => {
+    const btn = document.getElementById('rt-'+t);
+    if(btn) { btn.className = t===type ? 'btn-gold' : 'btn-outline'; btn.style.cssText='padding:12px;border-radius:12px;font-size:13px;font-weight:700;'; }
+  });
+  renderReportDateSelector();
+};
+
+function renderReportDateSelector() {
+  const el = document.getElementById('report-date-selector');
+  if(!el) return;
+  const now = new Date();
+  if(currentReportType==='daily') {
+    el.innerHTML = `<label class="form-label">Select Date</label>
+      <input type="date" class="form-input" id="rpt-date" value="${todayStr()}" style="max-width:220px;">
+      <button onclick="generateReport()" class="btn-gold" style="padding:10px 20px;margin-top:10px;">Generate Report</button>`;
+  } else if(currentReportType==='monthly') {
+    const months = [];
+    for(let i=0;i<24;i++) { const d=new Date(now.getFullYear(),now.getMonth()-i,1); months.push({val:d.toISOString().slice(0,7),label:d.toLocaleDateString('en-IN',{month:'long',year:'numeric'})}); }
+    el.innerHTML = `<label class="form-label">Select Month</label>
+      <select class="form-input" id="rpt-month" style="max-width:220px;">${months.map(m=>`<option value="${m.val}">${m.label}</option>`).join('')}</select>
+      <button onclick="generateReport()" class="btn-gold" style="padding:10px 20px;margin-top:10px;">Generate Report</button>`;
+  } else if(currentReportType==='yearly') {
+    const years = Array.from({length:5},(_,i)=>now.getFullYear()-i);
+    el.innerHTML = `<label class="form-label">Select Year</label>
+      <select class="form-input" id="rpt-year" style="max-width:140px;">${years.map(y=>`<option>${y}</option>`).join('')}</select>
+      <button onclick="generateReport()" class="btn-gold" style="padding:10px 20px;margin-top:10px;">Generate Report</button>`;
+  } else if(currentReportType==='fy') {
+    const fys = Array.from({length:5},(_,i)=>{const y=now.getFullYear()-i;return{val:`${y-1}-${y}`,label:`FY ${y-1}-${String(y).slice(-2)}`};});
+    el.innerHTML = `<label class="form-label">Select Financial Year (Apr–Mar)</label>
+      <select class="form-input" id="rpt-fy" style="max-width:160px;">${fys.map(f=>`<option value="${f.val}">${f.label}</option>`).join('')}</select>
+      <button onclick="generateReport()" class="btn-gold" style="padding:10px 20px;margin-top:10px;">Generate Report</button>`;
+  } else {
+    const months = [];
+    for(let i=0;i<24;i++) { const d=new Date(now.getFullYear(),now.getMonth()-i,1); months.push({val:d.toISOString().slice(0,7),label:d.toLocaleDateString('en-IN',{month:'long',year:'numeric'})}); }
+    el.innerHTML = `<label class="form-label">Select Period</label>
+      <select class="form-input" id="rpt-month" style="max-width:220px;">${months.map(m=>`<option value="${m.val}">${m.label}</option>`).join('')}</select>
+      <button onclick="generateReport()" class="btn-gold" style="padding:10px 20px;margin-top:10px;">Generate Report</button>`;
+  }
+}
+
+window.renderReports = function() {
+  setReportType('daily');
+};
+
+function normDate(d) {
+  if(!d) return '';
+  if(d.includes('-') && d.length===10) return d;
+  if(d.includes('/')) {
+    const parts = d.split('/');
+    if(parts.length===3) {
+      const [dd,mm,yyyy] = parts;
+      return `${yyyy.padStart(4,'20')}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
+    }
+  }
+  return d;
+}
+
+function getReportOrders(filter) {
+  return orders.filter(o => {
+    const nd = normDate(o.date||'');
+    return nd.startsWith(filter);
+  });
+}
+
+window.generateReport = function() {
+  const preview = document.getElementById('report-preview');
+  const actions = document.getElementById('report-actions');
+  if(!preview) return;
+
+  let filteredOrders=[], filteredExpenses=[], periodLabel='', filterKey='';
+
+  if(currentReportType==='daily') {
+    const d = document.getElementById('rpt-date')?.value || todayStr();
+    filterKey = d;
+    filteredOrders = orders.filter(o=>normDate(o.date||'')===d);
+    filteredExpenses = expenses.filter(e=>normDate(e.date||'')===d);
+    periodLabel = formatDate(d);
+  } else if(currentReportType==='monthly'||currentReportType==='service'||currentReportType==='expense'||currentReportType==='pl'||currentReportType==='staff') {
+    const m = document.getElementById('rpt-month')?.value || thisMonthStr();
+    filterKey = m;
+    filteredOrders = orders.filter(o=>normDate(o.date||'').startsWith(m));
+    filteredExpenses = expenses.filter(e=>normDate(e.date||'').startsWith(m));
+    const [yr,mo] = m.split('-');
+    periodLabel = new Date(+yr,+mo-1,1).toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+  } else if(currentReportType==='yearly') {
+    const y = document.getElementById('rpt-year')?.value || new Date().getFullYear();
+    filterKey = String(y);
+    filteredOrders = orders.filter(o=>normDate(o.date||'').startsWith(String(y)));
+    filteredExpenses = expenses.filter(e=>normDate(e.date||'').startsWith(String(y)));
+    periodLabel = `Year ${y}`;
+  } else if(currentReportType==='fy') {
+    const fy = document.getElementById('rpt-fy')?.value;
+    const [y1,y2] = (fy||'2025-2026').split('-');
+    filteredOrders = orders.filter(o=>{
+      const nd=normDate(o.date||'');
+      return (nd>= `${y1}-04-01` && nd<=`${y2}-03-31`);
+    });
+    filteredExpenses = expenses.filter(e=>{
+      const nd=normDate(e.date||'');
+      return (nd>=`${y1}-04-01`&&nd<=`${y2}-03-31`);
+    });
+    periodLabel = `FY ${y1}-${String(y2).slice(-2)}`;
+  }
+
+  const totalSales = filteredOrders.reduce((s,o)=>s+(+o.total||0),0);
+  const totalExp   = filteredExpenses.reduce((s,e)=>s+(+e.amount||0),0);
+  const netRev     = totalSales - totalExp;
+  const cashSales  = filteredOrders.reduce((s,o)=>o.payMode==='Cash'?s+(+o.total||0):o.payMode==='Cash+UPI'?s+(+o.splitCash||0):s,0);
+  const upiSales   = filteredOrders.reduce((s,o)=>o.payMode==='UPI'?s+(+o.total||0):o.payMode==='Cash+UPI'?s+(+o.splitUPI||0):s,0);
+
+  // Service breakdown
+  const svcTotals = {};
+  filteredOrders.forEach(o=>(o.cartItems||[]).forEach(item=>{
+    (item.svcs||[item.svc]).forEach(s=>{svcTotals[s]=(svcTotals[s]||0)+(+item.price||0);});
+  }));
+
+  // Staff breakdown
+  const staffTotals = {};
+  filteredOrders.forEach(o=>{
+    const st=o.staff||'Unknown';
+    staffTotals[st]=(staffTotals[st]||0)+(+o.total||0);
+  });
+
+  currentReportData = {filteredOrders, filteredExpenses, periodLabel, totalSales, totalExp, netRev, cashSales, upiSales, svcTotals, staffTotals};
+
+  let html = `
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-header"><div class="card-title">📊 ${periodLabel} — Summary</div></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div style="background:var(--paper);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:11px;color:var(--ink3);">Total Orders</div>
+            <div style="font-size:22px;font-weight:800;color:var(--gold-dk);">${filteredOrders.length}</div>
+          </div>
+          <div style="background:var(--paper);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:11px;color:var(--ink3);">Total Sales</div>
+            <div style="font-size:18px;font-weight:800;color:var(--gold-dk);">Rs.${totalSales.toLocaleString('en-IN')}</div>
+          </div>
+          <div style="background:#e8f5e9;border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:11px;color:#388e3c;">💵 Cash Sales</div>
+            <div style="font-size:16px;font-weight:700;color:#2e7d32;">Rs.${cashSales.toLocaleString('en-IN')}</div>
+          </div>
+          <div style="background:#e3f2fd;border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:11px;color:#1976d2;">📱 UPI Sales</div>
+            <div style="font-size:16px;font-weight:700;color:#1565c0;">Rs.${upiSales.toLocaleString('en-IN')}</div>
+          </div>
+          <div style="background:#fce4ec;border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:11px;color:#c62828;">💸 Expenses</div>
+            <div style="font-size:16px;font-weight:700;color:#b71c1c;">Rs.${totalExp.toLocaleString('en-IN')}</div>
+          </div>
+          <div style="background:${netRev>=0?'#e8f5e9':'#fce4ec'};border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:11px;color:${netRev>=0?'#388e3c':'#c62828'};">💰 Net Revenue</div>
+            <div style="font-size:16px;font-weight:700;color:${netRev>=0?'#2e7d32':'#b71c1c'};">Rs.${netRev.toLocaleString('en-IN')}</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  // Service breakdown
+  if(Object.keys(svcTotals).length) {
+    html += `<div class="card" style="margin-bottom:12px;">
+      <div class="card-header"><div class="card-title">🛒 Service Breakdown</div></div>
+      <div class="card-body">
+        ${Object.entries(svcTotals).sort((a,b)=>b[1]-a[1]).map(([s,a])=>
+          `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--paper3);">
+            <span>${SVC_ICONS[s]||'📦'} ${s}</span>
+            <span style="font-weight:700;color:var(--gold-dk);">Rs.${a.toLocaleString('en-IN')}</span>
+          </div>`).join('')}
+      </div></div>`;
+  }
+
+  // Staff breakdown
+  if(Object.keys(staffTotals).length) {
+    html += `<div class="card" style="margin-bottom:12px;">
+      <div class="card-header"><div class="card-title">👤 Staff Breakdown</div></div>
+      <div class="card-body">
+        ${Object.entries(staffTotals).sort((a,b)=>b[1]-a[1]).map(([s,a])=>
+          `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--paper3);">
+            <span>👤 ${s}</span>
+            <span style="font-weight:700;color:var(--gold-dk);">Rs.${a.toLocaleString('en-IN')}</span>
+          </div>`).join('')}
+      </div></div>`;
+  }
+
+  // Orders list
+  if(filteredOrders.length) {
+    html += `<div class="card" style="margin-bottom:12px;">
+      <div class="card-header"><div class="card-title">📋 Orders (${filteredOrders.length})</div></div>
+      <div class="card-body" style="max-height:300px;overflow-y:auto;">
+        ${filteredOrders.map(o=>`
+          <div style="padding:8px 0;border-bottom:1px solid var(--paper3);">
+            <div style="display:flex;justify-content:space-between;">
+              <div>
+                <div style="font-weight:600;font-size:13px;">${o.name} <span style="color:var(--ink3);font-size:11px;">${o.billNo||('#'+o.id.slice(0,8))}</span></div>
+                <div style="font-size:11px;color:var(--ink3);">${formatDate(normDate(o.date||''))} · ${o.staff||'—'} · ${o.payMode||'Cash'}</div>
+                ${(o.cartItems||[]).map(item=>`<div style="font-size:11px;color:var(--ink2);padding-left:8px;">• ${(item.svcs||[item.svc]).join('+')} — Rs.${item.price||0}</div>`).join('')}
+              </div>
+              <div style="text-align:right;flex-shrink:0;">
+                <div style="font-weight:700;color:var(--gold-dk);">Rs.${o.total||0}</div>
+                <div style="font-size:11px;color:var(--ink3);">${o.status}</div>
+              </div>
+            </div>
+          </div>`).join('')}
+      </div></div>`;
+  }
+
+  preview.innerHTML = html;
+  actions?.classList.remove('hidden');
+  document.getElementById('report-actions').style.display = 'flex';
+};
+
+window.downloadReportPDF = function() {
+  if(!currentReportData) { toast('⚠️ Generate a report first','error'); return; }
+  const {filteredOrders,filteredExpenses,periodLabel,totalSales,totalExp,netRev,cashSales,upiSales,svcTotals,staffTotals} = currentReportData;
+  const w = window.open('','_blank','width=900,height=700');
+  const rows = filteredOrders.map(o=>`
+    <tr>
+      <td>${formatDate(normDate(o.date||''))}</td>
+      <td>${o.name}</td>
+      <td>${o.billNo||o.id.slice(0,10)}</td>
+      <td>${(o.cartItems||[]).map(i=>`${(i.svcs||[i.svc]).join('+')} Rs.${i.price||0}`).join('<br>')}</td>
+      <td>${o.staff||'—'}</td>
+      <td>${o.payMode||'Cash'}</td>
+      <td style="font-weight:700;">Rs.${o.total||0}</td>
+      <td>${o.status}</td>
+    </tr>`).join('');
+  const expRows = filteredExpenses.map(e=>`
+    <tr><td>${formatDate(normDate(e.date||''))}</td><td>${e.desc}</td><td>${e.qty||1}</td><td>Rs.${e.unitPrice||e.amount||0}</td><td>Rs.${e.amount||0}</td><td>${e.paidBy||'Cash'}</td><td>${e.addedBy||'—'}</td></tr>`).join('');
+  const svcRows = Object.entries(svcTotals).sort((a,b)=>b[1]-a[1]).map(([s,a])=>`<tr><td>${s}</td><td style="font-weight:700;">Rs.${a.toLocaleString('en-IN')}</td></tr>`).join('');
+  const stfRows = Object.entries(staffTotals).sort((a,b)=>b[1]-a[1]).map(([s,a])=>`<tr><td>${s}</td><td style="font-weight:700;">Rs.${a.toLocaleString('en-IN')}</td></tr>`).join('');
+  w.document.write(`<!DOCTYPE html><html><head><title>Report — ${periodLabel}</title>
+  <style>
+    body{font-family:'Segoe UI',Arial,sans-serif;margin:0;padding:20px;color:#333;}
+    .header{background:linear-gradient(135deg,#9A6E1E,#C9973A);color:#fff;padding:24px;border-radius:12px;margin-bottom:20px;display:flex;align-items:center;gap:16px;}
+    .header h1{margin:0;font-size:22px;} .header p{margin:4px 0;opacity:.85;font-size:13px;}
+    .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+    .stat{background:#f9f9f9;border-radius:8px;padding:14px;text-align:center;border:1px solid #eee;}
+    .stat-val{font-size:20px;font-weight:800;color:#C9973A;} .stat-lbl{font-size:11px;color:#888;margin-top:4px;}
+    h2{font-size:15px;color:#C9973A;border-bottom:2px solid #C9973A;padding-bottom:6px;margin:20px 0 10px;}
+    table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px;}
+    th{background:#C9973A;color:#fff;padding:8px;text-align:left;font-size:11px;}
+    td{padding:7px 8px;border-bottom:1px solid #eee;}tr:nth-child(even){background:#fafafa;}
+    .footer{text-align:center;color:#aaa;font-size:11px;margin-top:30px;border-top:1px solid #eee;padding-top:12px;}
+    @media print{@page{margin:15mm;}}
+  </style></head><body>
+  <div class="header">
+    <div>
+      <h1>📊 FOTOVISION STUDIO PRO</h1>
+      <p>${periodLabel} Report</p>
+      <p>Generated: ${new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}</p>
+    </div>
+  </div>
+  <div class="summary">
+    <div class="stat"><div class="stat-val">${filteredOrders.length}</div><div class="stat-lbl">Total Orders</div></div>
+    <div class="stat"><div class="stat-val">Rs.${totalSales.toLocaleString('en-IN')}</div><div class="stat-lbl">Total Sales</div></div>
+    <div class="stat"><div class="stat-val">Rs.${netRev.toLocaleString('en-IN')}</div><div class="stat-lbl">Net Revenue</div></div>
+    <div class="stat"><div class="stat-val">Rs.${cashSales.toLocaleString('en-IN')}</div><div class="stat-lbl">💵 Cash Sales</div></div>
+    <div class="stat"><div class="stat-val">Rs.${upiSales.toLocaleString('en-IN')}</div><div class="stat-lbl">📱 UPI Sales</div></div>
+    <div class="stat"><div class="stat-val">Rs.${totalExp.toLocaleString('en-IN')}</div><div class="stat-lbl">💸 Expenses</div></div>
+  </div>
+  ${svcRows?`<h2>🛒 Service Breakdown</h2><table><tr><th>Service</th><th>Revenue</th></tr>${svcRows}</table>`:''}
+  ${stfRows?`<h2>👤 Staff Performance</h2><table><tr><th>Staff</th><th>Sales</th></tr>${stfRows}</table>`:''}
+  ${rows?`<h2>📋 Order Details</h2><table><tr><th>Date</th><th>Customer</th><th>Bill No</th><th>Services</th><th>Staff</th><th>Payment</th><th>Amount</th><th>Status</th></tr>${rows}</table>`:''}
+  ${expRows?`<h2>💸 Expense Details</h2><table><tr><th>Date</th><th>Description</th><th>Qty</th><th>Unit Price</th><th>Total</th><th>Paid By</th><th>Added By</th></tr>${expRows}</table>`:''}
+  <div class="footer">Fotovision Studio Pro — Confidential Report</div>
+  <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),2000);}<\/script>
+  </body></html>`);
+  w.document.close();
+};
+
+window.downloadReportExcel = function() {
+  if(!currentReportData){toast('⚠️ Generate a report first','error');return;}
+  const {filteredOrders,filteredExpenses,periodLabel,totalSales,totalExp,netRev,cashSales,upiSales} = currentReportData;
+  // Build CSV
+  let csv = `FOTOVISION STUDIO PRO — ${periodLabel} Report\n\n`;
+  csv += `SUMMARY\nTotal Orders,${filteredOrders.length}\nTotal Sales,Rs.${totalSales}\nCash Sales,Rs.${cashSales}\nUPI Sales,Rs.${upiSales}\nTotal Expenses,Rs.${totalExp}\nNet Revenue,Rs.${netRev}\n\n`;
+  csv += `ORDER DETAILS\nDate,Customer,Bill No,Services,Details,Amount,Staff,Payment,Status\n`;
+  filteredOrders.forEach(o=>{
+    (o.cartItems||[]).forEach(item=>{
+      csv += `${formatDate(normDate(o.date||''))},"${o.name}",${o.billNo||o.id.slice(0,10)},"${(item.svcs||[item.svc]).join('+')}","${item.label||''}",${item.price||0},"${o.staff||''}","${o.payMode||''}","${o.status}"\n`;
+    });
+  });
+  csv += `\nEXPENSE DETAILS\nDate,Description,Qty,Unit Price,Total,Paid By,Added By\n`;
+  filteredExpenses.forEach(e=>{
+    csv += `${formatDate(normDate(e.date||''))},"${e.desc||''}",${e.qty||1},${e.unitPrice||0},${e.amount||0},"${e.paidBy||''}","${e.addedBy||''}"\n`;
+  });
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=`FotoVision_Report_${periodLabel.replace(/\s/g,'_')}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  toast('✅ Excel/CSV downloaded!','success');
+};
 let staffNames = ['Abhik','Vishal','Rajesh'];
 
 async function loadStaffNames() {
@@ -1570,9 +1966,105 @@ window.renderSettings = function() {
   el.innerHTML = staffNames.map((n,i)=>`
     <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--paper3);">
       <div style="flex:1;font-weight:600;">${n}</div>
-      <button onclick="deleteStaffName(${i})" style="background:#e53935;color:#fff;border:none;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:12px;">🗑️ Delete</button>
+      <button onclick="deleteStaffName(${i})" style="background:#e53935;color:#fff;border:none;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:12px;">🗑️</button>
     </div>`).join('');
+  renderVendorList();
 };
+
+// ── Vendor Management ─────────────────────────────────────────
+let vendors = {}; // { 'Vendor A': ['M1 Golden Oak', 'M2 Matte Black'] }
+
+async function loadVendors() {
+  const local = JSON.parse(localStorage.getItem('fv_vendors')||'null');
+  if(local) vendors = local;
+  if(!useLocal) {
+    try {
+      window.db.collection('vendors').onSnapshot(snap=>{
+        vendors={};
+        snap.docs.forEach(d=>{vendors[d.id]=d.data().types||[];});
+        if(currentPage==='settings') renderVendorList();
+        updateMouldingStockDropdowns();
+      });
+    } catch(e) {}
+  }
+}
+
+function saveVendors() {
+  localStorage.setItem('fv_vendors', JSON.stringify(vendors));
+}
+
+function renderVendorList() {
+  const el = document.getElementById('vendor-list');
+  if(!el) return;
+  if(!Object.keys(vendors).length) {
+    el.innerHTML='<div style="color:var(--ink3);font-size:13px;">No vendors yet. Add one below.</div>';
+    return;
+  }
+  el.innerHTML = Object.entries(vendors).map(([vendor, types])=>`
+    <div style="margin-bottom:14px;padding:12px;background:var(--paper);border-radius:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="font-weight:700;font-size:14px;">🏪 ${vendor}</div>
+        <button onclick="deleteVendor('${vendor}')" style="background:#e53935;color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px;">🗑️ Delete</button>
+      </div>
+      ${types.map((t,i)=>`
+        <div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px;">
+          <span style="flex:1;">📐 ${t}</span>
+          <button onclick="deleteVendorType('${vendor}',${i})" style="background:none;border:none;color:#e53935;cursor:pointer;font-size:12px;">✕</button>
+        </div>`).join('')}
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <input class="form-input" id="vt-input-${vendor.replace(/\s/g,'_')}" placeholder="Add moulding type..." style="font-size:12px;padding:6px 10px;" onkeydown="if(event.key==='Enter')addVendorType('${vendor}')">
+        <button onclick="addVendorType('${vendor}')" class="btn-outline" style="font-size:12px;padding:6px 12px;">+ Type</button>
+      </div>
+    </div>`).join('');
+}
+
+window.addVendor = async function() {
+  const name = document.getElementById('new-vendor-name')?.value.trim();
+  if(!name){toast('⚠️ Enter vendor name','error');return;}
+  if(vendors[name]){toast('⚠️ Vendor already exists','error');return;}
+  vendors[name] = [];
+  saveVendors();
+  if(!useLocal) try{await window.db.collection('vendors').doc(name).set({types:[]});}catch(e){}
+  document.getElementById('new-vendor-name').value='';
+  renderVendorList();
+  toast('✅ Vendor added','success');
+};
+
+window.deleteVendor = function(name) {
+  if(!confirm(`Delete vendor "${name}" and all their moulding types?`)) return;
+  delete vendors[name];
+  saveVendors();
+  renderVendorList();
+  toast('🗑️ Vendor deleted');
+};
+
+window.addVendorType = async function(vendor) {
+  const inp = document.getElementById('vt-input-'+vendor.replace(/\s/g,'_'));
+  const type = inp?.value.trim();
+  if(!type){toast('⚠️ Enter moulding type name','error');return;}
+  if(!vendors[vendor]) vendors[vendor]=[];
+  vendors[vendor].push(type);
+  saveVendors();
+  if(!useLocal) try{await window.db.collection('vendors').doc(vendor).set({types:vendors[vendor]});}catch(e){}
+  renderVendorList();
+  updateMouldingStockDropdowns();
+  toast('✅ Moulding type added','success');
+};
+
+window.deleteVendorType = function(vendor, idx) {
+  vendors[vendor].splice(idx,1);
+  saveVendors();
+  renderVendorList();
+  updateMouldingStockDropdowns();
+};
+
+function updateMouldingStockDropdowns() {
+  // Update vendor pills in moulding stock form
+  ['ms-vendor-pills','sms-vendor-pills'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) renderVendorPills(el.dataset.target||id);
+  });
+}
 
 window.addStaffName = async function() {
   const name = document.getElementById('new-staff-name')?.value.trim();
@@ -1729,43 +2221,34 @@ function saveMouldingStock() {
 }
 
 window.renderMouldingStock = function() {
-  // Populate type dropdown from mouldings cache
-  const sizeSel = document.getElementById('ms-size');
-  const typeSel = document.getElementById('ms-type');
-  if(sizeSel && typeSel) {
-    sizeSel.onchange = () => populateMouldingTypeDropdown();
-    populateMouldingTypeDropdown();
-  }
+  // Render vendor pills
+  renderMouldingVendorPills();
 
   const el = document.getElementById('moulding-stock-list');
   if(!el) return;
 
-  const sizes = Object.keys(window.mouldingsCache||{});
-  if(!sizes.length && !Object.keys(mouldingStock).length) {
-    el.innerHTML='<div class="empty-state"><div class="empty-icon">📐</div><div class="empty-title">No moulding stock yet</div><div class="empty-sub">Add stock using the form above</div></div>';
+  const allKeys = [...new Set([...Object.keys(window.mouldingsCache||{}),...Object.keys(mouldingStock||{})])];
+  if(!allKeys.length && !Object.keys(mouldingStock||{}).length) {
+    el.innerHTML='<div class="empty-state"><div class="empty-icon">📐</div><div class="empty-title">No moulding stock yet</div></div>';
     return;
   }
 
-  // Show all sizes that have stock
-  const allKeys = [...new Set([...sizes, ...Object.keys(mouldingStock)])];
-  el.innerHTML = allKeys.map(size=>{
-    const typesStock = mouldingStock[size]||{};
+  el.innerHTML = Object.entries(mouldingStock||{}).map(([size, typesStock])=>{
     const typeKeys = Object.keys(typesStock);
     if(!typeKeys.length) return '';
     return `<div class="card" style="margin-bottom:12px;">
       <div class="card-header"><div class="card-title">📐 ${size} Moulding</div></div>
       <div class="card-body">
         ${typeKeys.map(typeKey=>{
-          const pieces = typesStock[typeKey]||[];
-          const FULL = 114;
-          const WASTE = 4;
-          const usable = pieces.filter(p=>p>WASTE);
-          const full = usable.filter(p=>p===FULL).length;
-          const partial = usable.filter(p=>p<FULL);
+          const pieces=typesStock[typeKey]||[];
+          const FULL=114,WASTE=4;
+          const usable=pieces.filter(p=>p>WASTE);
+          const full=usable.filter(p=>p===FULL).length;
+          const partial=usable.filter(p=>p<FULL);
           return `<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--paper3);">
             <div style="font-weight:700;font-size:13px;margin-bottom:6px;">${typeKey}</div>
             ${full>0?`<div style="font-size:13px;color:var(--ink2);margin-bottom:3px;">📏 ${full} Full Length${full>1?'s':''}</div>`:''}
-            ${partial.map((p,i)=>`<div style="font-size:13px;color:var(--ink2);margin-bottom:3px;">📏 1 Length — ${p}" remaining</div>`).join('')}
+            ${partial.map(p=>`<div style="font-size:13px;color:var(--ink2);margin-bottom:3px;">📏 1 Length — ${p}" remaining</div>`).join('')}
             ${usable.length===0?`<div style="font-size:12px;color:#e53935;">No usable stock</div>`:''}
             <button onclick="addMouldingStockFor('${size}','${typeKey}')" class="btn-outline" style="font-size:12px;padding:5px 10px;margin-top:6px;">+ Add Stock</button>
           </div>`;
@@ -1775,30 +2258,80 @@ window.renderMouldingStock = function() {
   }).filter(Boolean).join('') || '<div class="empty-state"><div class="empty-icon">📐</div><div class="empty-title">No moulding stock yet</div></div>';
 };
 
-function populateMouldingTypeDropdown() {
-  const size = document.getElementById('ms-size')?.value;
-  const typeSel = document.getElementById('ms-type');
-  if(!typeSel) return;
-  const mouldings = window.mouldingsCache?.[size]||[];
-  typeSel.innerHTML = mouldings.length
-    ? mouldings.map((m,i)=>`<option value="${size}-${m.code||m.name}">${m.code||'M'+(i+1)} — ${m.name}</option>`).join('')
-    : '<option value="default">Default</option>';
+let selectedMouldingVendor = '';
+
+function renderMouldingVendorPills() {
+  const el = document.getElementById('ms-vendor-pills');
+  if(!el) return;
+  const vendorNames = [...Object.keys(vendors), 'Others'];
+  el.innerHTML = vendorNames.map(v=>`
+    <button onclick="selectMouldingVendor('${v}')" id="mv-pill-${v.replace(/\s/g,'_')}"
+      style="padding:7px 14px;border:2px solid var(--paper3);border-radius:100px;font-size:12px;font-weight:600;cursor:pointer;background:#fff;color:var(--ink2);">
+      ${v}
+    </button>`).join('');
+  if(!vendorNames.length) el.innerHTML='<div style="font-size:13px;color:var(--ink3);">Add vendors in Settings first</div>';
 }
+
+window.selectMouldingVendor = function(vendor) {
+  selectedMouldingVendor = vendor;
+  document.querySelectorAll('[id^="mv-pill-"]').forEach(b=>{
+    b.style.background='#fff';b.style.color='var(--ink2)';b.style.borderColor='var(--paper3)';
+  });
+  const btn=document.getElementById('mv-pill-'+vendor.replace(/\s/g,'_'));
+  if(btn){btn.style.background='var(--gold-dk)';btn.style.color='#fff';btn.style.borderColor='var(--gold-dk)';}
+  const othersBox=document.getElementById('ms-others-box');
+  if(othersBox) othersBox.classList.toggle('hidden',vendor!=='Others');
+
+  // Update type dropdown based on vendor
+  const typeSel=document.getElementById('ms-type');
+  if(typeSel) {
+    const types = vendor==='Others'?[]:( vendors[vendor]||[]);
+    typeSel.innerHTML = types.length
+      ? types.map(t=>`<option value="${vendor}|${t}">${t}</option>`).join('')
+      : `<option value="${vendor}|default">No types — add below</option>`;
+  }
+};
+
+window.addTypeFromStock = async function() {
+  const typeName = document.getElementById('ms-new-type')?.value.trim();
+  if(!typeName){toast('⚠️ Enter type name','error');return;}
+  const vendor = selectedMouldingVendor==='Others'
+    ? (document.getElementById('ms-others-name')?.value.trim()||'Others')
+    : selectedMouldingVendor;
+  if(!vendor){toast('⚠️ Select a vendor first','error');return;}
+  if(!vendors[vendor]) vendors[vendor]=[];
+  if(!vendors[vendor].includes(typeName)) {
+    vendors[vendor].push(typeName);
+    saveVendors();
+    if(!useLocal) try{await window.db.collection('vendors').doc(vendor).set({types:vendors[vendor]});}catch(e){}
+  }
+  // Re-select this vendor to refresh dropdown
+  selectMouldingVendor(selectedMouldingVendor);
+  document.getElementById('ms-new-type').value='';
+  toast('✅ Type added','success');
+};
 
 window.addMouldingStock = async function() {
   const size = document.getElementById('ms-size')?.value;
-  const type = document.getElementById('ms-type')?.value || 'default';
+  const typeVal = document.getElementById('ms-type')?.value || 'default';
   const qty  = +(document.getElementById('ms-qty')?.value)||1;
+  const vendor = selectedMouldingVendor==='Others'
+    ? (document.getElementById('ms-others-name')?.value.trim()||'Others')
+    : selectedMouldingVendor;
   if(!size){toast('⚠️ Select size','error');return;}
+
+  // Type key = "Vendor|TypeName" or just typeVal
+  const typeKey = typeVal.includes('|') ? typeVal : (vendor ? `${vendor}|${typeVal}` : typeVal);
+  const displayKey = typeKey.includes('|') ? typeKey.split('|').join(' — ') : typeKey;
+
   if(!mouldingStock[size]) mouldingStock[size]={};
-  if(!mouldingStock[size][type]) mouldingStock[size][type]=[];
-  // Add qty full-length pieces (114" each)
-  for(let i=0;i<qty;i++) mouldingStock[size][type].push(114);
+  if(!mouldingStock[size][displayKey]) mouldingStock[size][displayKey]=[];
+  for(let i=0;i<qty;i++) mouldingStock[size][displayKey].push(114);
   saveMouldingStock();
   if(!useLocal) {
-    try { await window.db.collection('mouldingStock').doc(size+'-'+type).set({pieces:mouldingStock[size][type],size,type}); } catch(e){}
+    try { await window.db.collection('mouldingStock').doc(size+'-'+displayKey.replace(/\s/g,'_')).set({pieces:mouldingStock[size][displayKey],size,type:displayKey}); } catch(e){}
   }
-  toast(`✅ Added ${qty} length${qty>1?'s':''} to ${size} moulding`,'success');
+  toast(`✅ Added ${qty} length${qty>1?'s':''} to ${size} — ${displayKey}`,'success');
   renderMouldingStock();
 };
 
@@ -2615,6 +3148,7 @@ initDB().then(async () => {
   await loadStock();
   await loadStaffNames();
   await loadMouldingStock();
+  await loadVendors();
   showPage('dashboard');
 });
 
