@@ -60,6 +60,21 @@ function yesterdayStr() { const d=new Date(); d.setDate(d.getDate()-1); return d
 function thisMonthStr() { return new Date().toISOString().slice(0,7); }
 function formatDate(d) { if(!d) return ''; const dt=new Date(d+'T00:00:00'); return dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}); }
 
+function normDate(d) {
+  if(!d) return '';
+  if(d.includes('-') && d.length===10) return d;
+  if(d.includes('/')) {
+    const parts = d.split('/');
+    if(parts.length===3) {
+      const [dd,mm,yyyy] = parts;
+      return `${yyyy.length===2?'20'+yyyy:yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
+    }
+  }
+  const dt = new Date(d);
+  if(!isNaN(dt)) return dt.toISOString().slice(0,10);
+  return d;
+}
+
 // ── Bill Number Generation ────────────────────────────────────
 // Format: FV-DDMMYY-001
 function getBillDatePrefix() {

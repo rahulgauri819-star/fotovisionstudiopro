@@ -673,32 +673,27 @@ window.onGroupA = function() {
   document.getElementById('panel-b')?.remove();
 
   const area = document.getElementById('svc-panel-area');
-  const ALL_A = ['Photo Editing','Printing','Framing','Readymade Frames','Slip In Albums','Gift Items'];
 
-  // Add panels for newly checked services (preserve existing ones)
-  ALL_A.forEach(svc => {
-    const panelId = 'panel-' + svc.toLowerCase().replace(/\s+/g,'-');
+  // Map service name → panel ID
+  const panelMap = {
+    'Photo Editing': 'panel-editing',
+    'Printing':      'panel-printing',
+    'Framing':       'panel-framing',
+  };
+
+  Object.entries(panelMap).forEach(([svc, panelId]) => {
     const existing = document.getElementById(panelId);
-    if (sel.includes(svc) && !existing) {
-      // Add new panel at end
-      const div = document.createElement('div');
-      div.innerHTML = getSinglePanelHTML(svc);
-      if (div.firstElementChild) area.appendChild(div.firstElementChild);
-      if(svc==='Readymade Frames') populateStockCategoryDropdown('frames');
-      if(svc==='Slip In Albums')   populateStockCategoryDropdown('albums');
-      if(svc==='Gift Items')       populateStockCategoryDropdown('gifts');
-    } else if (!sel.includes(svc) && existing) {
-      // Remove unchecked panel
+    if(sel.includes(svc) && !existing) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = getSvcPanelHTML([svc]);
+      const newPanel = tmp.querySelector('#'+panelId);
+      if(newPanel) area.appendChild(newPanel);
+      else if(tmp.firstElementChild) area.appendChild(tmp.firstElementChild);
+    } else if(!sel.includes(svc) && existing) {
       existing.remove();
     }
   });
 };
-
-// Get HTML for a single service panel
-function getSinglePanelHTML(svc) {
-  const dummy = getSvcPanelHTML([svc]);
-  return dummy;
-}
 
 window.onGroupB = function(el) {
   document.querySelectorAll('input[name="groupA"]').forEach(c=>c.checked=false);
