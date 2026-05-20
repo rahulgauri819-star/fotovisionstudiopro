@@ -294,6 +294,7 @@ async function initDB() {
   try {
     const app=initializeApp(FIREBASE_CONFIG);
     db=getFirestore(app);
+    window.db=db;
     const q=query(collection(db,'orders'),orderBy('created','desc'));
     onSnapshot(q,snap=>{orders=snap.docs.map(d=>({id:d.id,...d.data()}));refreshCurrentPage();});
   } catch(e) { useLocal=true; orders=JSON.parse(localStorage.getItem('fv_orders')||'[]'); }
@@ -411,12 +412,12 @@ function staffOrderCard(o){
   const bal=(+(o.total||0))-(+(o.advance||0));
   const svcs=[...new Set((o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]))];
   const payIcon=o.payMode==='UPI'?'📱':o.payMode==='Credit Card'?'💳':o.payMode==='Cash+UPI'?'💵📱':'💵';
-  return `<div class="order-card fade-in" onclick="openOrderSheet('${o.id}')" style="cursor:pointer;${isOverdue(o)?'background:linear-gradient(135deg,#fff5f5,#ffe8e8);border-left:4px solid #e53935;':''}">
+  return `<div class="order-card fade-in" onclick="openOrderSheet('${o.id}')" style="cursor:pointer;${isOverdue(o)?'background:#ffcdd2;border-left:5px solid #c62828;border-top:1px solid #ef9a9a;':''}">
     <div class="order-card-head">
       <div class="order-avatar">${svcs.slice(0,2).map(s=>SVC_ICONS[s]||'').join('')||'📦'}</div>
       <div style="flex:1;min-width:0;">
-        <div class="order-name">${o.name}</div>
-        <div class="order-id">${o.id}</div>
+        <div class="order-name">${o.name} ${isOverdue(o)?'<span style="background:#c62828;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;">⚠️ OVERDUE</span>':''}</div>
+        <div class="order-id">${o.billNo||('#'+o.id.slice(0,8))}</div>
         <div class="order-meta">📞 ${o.phone||'—'} · 📅 ${o.date||''}${o.orderType?` · ${o.orderType==='Instant'?'⚡':'📅'} ${o.orderType}`:''}${o.payMode?` · ${payIcon} ${o.payMode}`:''}${o.delivery?`<br>⏰ ${formatDatetime(o.delivery)}`:''}</div>
       </div>
     </div>
@@ -450,10 +451,10 @@ function renderOrders(){
   });
   if(!fil.length){document.getElementById('order-list').innerHTML=`<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No orders found</div></div>`;return;}
   const byDate={};
-  fil.forEach(o=>{const d=o.date||'Unknown';if(!byDate[d])byDate[d]=[];byDate[d].push(o);});
+  fil.forEach(o=>{const d=normDate(o.date||'')||'Unknown';if(!byDate[d])byDate[d]=[];byDate[d].push(o);});
   const sortedDates=Object.keys(byDate).sort((a,b)=>b.localeCompare(a));
   document.getElementById('order-list').innerHTML=sortedDates.map(d=>{
-    const label=d===todayStr()?'📅 Today':d===yesterdayStr()?'📅 Yesterday':`📅 ${formatDate(d)}`;
+    const label=d==='Unknown'?'📅 Unknown Date':d===todayStr()?'📅 Today':d===yesterdayStr()?'📅 Yesterday':`📅 ${formatDate(d)}`;
     return `<div style="margin-bottom:6px;"><span class="t-label" style="color:var(--gold-dk);font-size:13px;">${label} <span style="color:var(--ink3);font-weight:400;">(${byDate[d].length} order${byDate[d].length>1?'s':''})</span></span></div>${byDate[d].map(o=>staffOrderCard(o)).join('')}`;
   }).join('');
   } catch(err) {
@@ -486,7 +487,7 @@ window.renderBookings = function(){
     if(!list.length)return'';
     return`<div style="margin-bottom:16px;"><div style="font-weight:700;font-size:13px;color:${color};margin-bottom:8px;padding:6px 10px;background:${color}18;border-radius:8px;border-left:4px solid ${color};">${title}</div>
     ${list.map(o=>{const bal=(+o.total||0)-(+o.advance||0);const isDone=o.status==='Delivered';
-      return`<div class="order-card fade-in" onclick="openOrderSheet('${o.id}')" style="cursor:pointer;${isDone?'opacity:.6;':''}${isOverdue(o)?'background:linear-gradient(135deg,#fff5f5,#ffe8e8);border-left:4px solid #e53935;':''}">
+      return`<div class="order-card fade-in" onclick="openOrderSheet('${o.id}')" style="cursor:pointer;${isDone?'opacity:.6;':''}${isOverdue(o)?'background:#ffcdd2;border-left:5px solid #c62828;border-top:1px solid #ef9a9a;':''}">
         <div class="order-card-head"><div style="flex:1;">
           <div class="order-name">${o.name} <span style="font-size:11px;color:var(--ink3);">#${o.id}</span></div>
           <div class="order-meta">⏰ ${formatDatetime(o.delivery)} · 👤 ${o.staff}</div>
