@@ -299,33 +299,26 @@
 
 <script src="../shared.js"></script>
 <script>
-window._navCalls=[]; window._moduleReady=false;
-window.showPage=function(p){
-  if(window._moduleReady&&window._realShowPage){window._realShowPage(p);}
-  else{
-    window._navCalls.push(p);
-    if(!window._navRetryTimer){
-      window._navRetryTimer=setInterval(function(){
-        if(window._moduleReady&&window._realShowPage&&window._navCalls.length){
-          const last=window._navCalls[window._navCalls.length-1];
-          window._navCalls=[];clearInterval(window._navRetryTimer);window._navRetryTimer=null;
-          window._realShowPage(last);
-        }
-      },100);
-    }
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('act'));
-    const tb=document.getElementById('tnb-'+p);if(tb)tb.classList.add('act');
-  }
-};
-window.openForm=function(){if(window._moduleReady&&window._realOpenForm)window._realOpenForm();else window._navCalls.push('form');};
-window.staffToggleMore=function(){const m=document.getElementById('staff-more-menu');const o=document.getElementById('staff-more-overlay');if(!m||!o)return;const open=m.style.display==='none'||!m.style.display;m.style.display=open?'block':'none';o.style.display=open?'block':'none';};
-window.staffCloseMore=function(){const m=document.getElementById('staff-more-menu');const o=document.getElementById('staff-more-overlay');if(m)m.style.display='none';if(o)o.style.display='none';};
+// Simple nav stubs - replaced by real functions defined below
+window.showPage=function(p){if(window._realShowPage)window._realShowPage(p);else setTimeout(()=>window.showPage(p),100);};
+window.openForm=function(){if(window._realOpenForm)window._realOpenForm();else setTimeout(()=>window.openForm(),100);};
+window.staffToggleMore=function(){const m=document.getElementById('staff-more-menu'),o=document.getElementById('staff-more-overlay');if(!m||!o)return;const open=!m.style.display||m.style.display==='none';m.style.display=open?'block':'none';o.style.display=open?'block':'none';};
+window.staffCloseMore=function(){['staff-more-menu','staff-more-overlay'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});};
 </script>
-<script type="module">
-import { initializeApp }    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, doc, addDoc, updateDoc,
-         onSnapshot, query, orderBy, serverTimestamp }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+// Firebase Compat polyfills
+function initializeApp(cfg){ return firebase.initializeApp(cfg); }
+function getFirestore(app){ return firebase.firestore(); }
+function collection(db,name){ return db.collection(name); }
+function doc(db,col,id){ return db.collection(col).doc(id); }
+function addDoc(ref,data){ return ref.add(data); }
+function updateDoc(ref,data){ return ref.update(data); }
+function onSnapshot(q,cb){ return q.onSnapshot(cb); }
+function query(col,...args){ let q=col; args.forEach(a=>{if(a&&a.__type==='orderBy')q=q.orderBy(a.field,a.dir||'asc');}); return q; }
+function orderBy(field,dir){ return {__type:'orderBy',field,dir}; }
+function serverTimestamp(){ return firebase.firestore.FieldValue.serverTimestamp(); }
 
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAerxTK5t5tYqDJ-AZg5_BMZJEk3pRD0uI",
@@ -359,7 +352,7 @@ let currentPage='dashboard';
 let lastReadyIds = new Set();
 
 // Register real showPage - replaces stub from plain script
-window._realShowPage = function(p) {
+window.showPage = window._realShowPage = function(p) {
   try {
     currentPage=p;
     ['dashboard','orders','framer','form','bookings','expenses','dayend','readymade-stock','moulding-stock'].forEach(x=>document.getElementById('pg-'+x)?.classList.add('hidden'));
@@ -378,19 +371,13 @@ window._realShowPage = function(p) {
     if(p==='moulding-stock')  renderStaffMouldingStock();
   } catch(err) { console.error('showPage error:',err); }
 };
-window.showPage = window._realShowPage;
 window._realOpenForm = window.openForm = function(){
   window.editId=null;window.cart=[];
   try{document.getElementById('ftit').textContent='+ New Order';document.getElementById('fsubt').textContent='Fill in customer & service details';}catch(e){}
   if(typeof renderFormContent==='function')renderFormContent();
   window._realShowPage('form');
 };
-window._moduleReady=true;
-if(window._navCalls&&window._navCalls.length){
-  const last=window._navCalls[window._navCalls.length-1];
-  window._navCalls=[];if(window._navRetryTimer){clearInterval(window._navRetryTimer);window._navRetryTimer=null;}
-  window._realShowPage(last);
-}else{window._realShowPage('dashboard');}
+window.showPage('dashboard');
 
 function refreshCurrentPage(){
   try {
