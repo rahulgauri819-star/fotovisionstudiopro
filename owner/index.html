@@ -675,47 +675,67 @@
 <!-- CRITICAL: Define nav functions in plain script so they work IMMEDIATELY -->
 <!-- Module scripts are deferred - this runs synchronously before module loads -->
 <script>
-// Queue for calls made before module loads
-window._pageQueue = null;
+// Nav functions available IMMEDIATELY - no waiting for module
+window._navCalls = [];
 window._moduleReady = false;
 
-// Stub showPage - queues call if module not ready yet
 window.showPage = function(p) {
   if(window._moduleReady && window._realShowPage) {
     window._realShowPage(p);
   } else {
-    window._pageQueue = p;
-    // Highlight active tab immediately for visual feedback
+    // Store call and retry every 100ms until module ready
+    window._navCalls.push(p);
+    if(!window._navRetryTimer) {
+      window._navRetryTimer = setInterval(function() {
+        if(window._moduleReady && window._realShowPage && window._navCalls.length) {
+          const last = window._navCalls[window._navCalls.length - 1];
+          window._navCalls = [];
+          clearInterval(window._navRetryTimer);
+          window._navRetryTimer = null;
+          window._realShowPage(last);
+        }
+      }, 100);
+    }
+    // Visual feedback - highlight tab immediately
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('act'));
     const tb = document.getElementById('tnb-'+p);
     if(tb) tb.classList.add('act');
   }
 };
 window.openForm = function() {
-  if(window._moduleReady && window._realOpenForm) window._realOpenForm();
-  else window._pageQueue = 'form';
+  if(window._moduleReady && window._realOpenForm) {
+    window._realOpenForm();
+  } else {
+    window._navCalls.push('form');
+  }
 };
 window.ownerToggleMore = function() {
   const m=document.getElementById('owner-more-menu');
   const o=document.getElementById('owner-more-overlay');
-  if(m&&o){const open=m.style.display==='none'||!m.style.display;m.style.display=open?'block':'none';o.style.display=open?'block':'none';}
+  if(!m||!o)return;
+  const open=m.style.display==='none'||!m.style.display;
+  m.style.display=open?'block':'none';
+  o.style.display=open?'block':'none';
 };
 window.ownerCloseMore = function() {
   const m=document.getElementById('owner-more-menu');
   const o=document.getElementById('owner-more-overlay');
-  if(m) m.style.display='none';
-  if(o) o.style.display='none';
+  if(m)m.style.display='none';
+  if(o)o.style.display='none';
 };
 window.staffToggleMore = function() {
   const m=document.getElementById('staff-more-menu');
   const o=document.getElementById('staff-more-overlay');
-  if(m&&o){const open=m.style.display==='none'||!m.style.display;m.style.display=open?'block':'none';o.style.display=open?'block':'none';}
+  if(!m||!o)return;
+  const open=m.style.display==='none'||!m.style.display;
+  m.style.display=open?'block':'none';
+  o.style.display=open?'block':'none';
 };
 window.staffCloseMore = function() {
   const m=document.getElementById('staff-more-menu');
   const o=document.getElementById('staff-more-overlay');
-  if(m) m.style.display='none';
-  if(o) o.style.display='none';
+  if(m)m.style.display='none';
+  if(o)o.style.display='none';
 };
 window.toggleMoreMenu = window.ownerToggleMore;
 </script>
@@ -884,7 +904,15 @@ window._realOpenForm = window.openForm = function() {
   window._realShowPage('form');
 };
 window._moduleReady = true;
-if(window._pageQueue) { const q=window._pageQueue; window._pageQueue=null; window._realShowPage(q); }
+// Flush any queued navigation
+if(window._navCalls && window._navCalls.length) {
+  const last = window._navCalls[window._navCalls.length-1];
+  window._navCalls = [];
+  if(window._navRetryTimer) { clearInterval(window._navRetryTimer); window._navRetryTimer=null; }
+  window._realShowPage(last);
+} else {
+  window._realShowPage('dashboard');
+}
 
 function refreshCurrentPage() {
   if(currentPage==='dashboard') renderDash();
