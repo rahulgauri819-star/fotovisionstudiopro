@@ -28,7 +28,17 @@
 </header>
 
 <div class="tab-nav" id="tab-nav">
-  <div class="tab-nav-inner" id="tab-nav-inner"></div>
+  <div class="tab-nav-inner" id="tab-nav-inner">
+    <button class="tab-btn" id="tnb-dashboard" onclick="showPage('dashboard')"><span class="tab-icon">📊</span><span>Dash</span></button>
+    <button class="tab-btn" id="tnb-bookings" onclick="showPage('bookings')"><span class="tab-icon">📅</span><span>Book</span></button>
+    <button class="tab-btn" id="tnb-orders" onclick="showPage('orders')"><span class="tab-icon">📋</span><span>Orders</span></button>
+    <button class="tab-btn" id="tnb-expenses" onclick="showPage('expenses')"><span class="tab-icon">💸</span><span>Expense</span></button>
+    <button class="tab-btn-fab" onclick="openForm()">+</button>
+    <button class="tab-btn" id="tnb-readymade-stock" onclick="showPage('readymade-stock')"><span class="tab-icon">📦</span><span>Stock</span></button>
+    <button class="tab-btn" id="tnb-moulding-stock" onclick="showPage('moulding-stock')"><span class="tab-icon">📐</span><span>Moulds</span></button>
+    <button class="tab-btn" id="tnb-dayend" onclick="showPage('dayend')"><span class="tab-icon">🌙</span><span>DayEnd</span></button>
+    <button class="tab-btn" id="tnb-framer" onclick="showPage('framer')"><span class="tab-icon">🖼️</span><span>Framing</span></button>
+  </div>
 </div>
 
 <!-- Owner approval banner (same-session simulation) -->

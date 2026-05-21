@@ -36,9 +36,20 @@
   </div>
 </header>
 
-<!-- BOTTOM TAB NAV -->
+<!-- BOTTOM TAB NAV - hardcoded for reliability -->
 <div class="tab-nav" id="tab-nav">
-  <div class="tab-nav-inner" id="tab-nav-inner"></div>
+  <div class="tab-nav-inner" id="tab-nav-inner">
+    <button class="tab-btn" id="tnb-dashboard" onclick="showPage('dashboard')"><span class="tab-icon">📊</span><span>Dash</span></button>
+    <button class="tab-btn" id="tnb-bookings" onclick="showPage('bookings')"><span class="tab-icon">📅</span><span>Book</span></button>
+    <button class="tab-btn" id="tnb-orders" onclick="showPage('orders')"><span class="tab-icon">📋</span><span>Orders</span></button>
+    <button class="tab-btn" id="tnb-expenses" onclick="showPage('expenses')"><span class="tab-icon">💸</span><span>Expense</span></button>
+    <button class="tab-btn-fab" onclick="openForm()">+</button>
+    <button class="tab-btn" id="tnb-readymade-stock" onclick="showPage('readymade-stock')"><span class="tab-icon">📦</span><span>Stock</span></button>
+    <button class="tab-btn" id="tnb-moulding-stock" onclick="showPage('moulding-stock')"><span class="tab-icon">📐</span><span>Moulds</span></button>
+    <button class="tab-btn" id="tnb-reports" onclick="showPage('reports')"><span class="tab-icon">📊</span><span>Reports</span></button>
+    <button class="tab-btn" id="tnb-settings" onclick="showPage('settings')"><span class="tab-icon">⚙️</span><span>Settings</span></button>
+    <button class="tab-btn" id="tnb-more" onclick="toggleMoreMenu()"><span class="tab-icon">☰</span><span>More</span></button>
+  </div>
 </div>
 
 <!-- OWNER APPROVAL BANNER -->
@@ -722,32 +733,17 @@ function buildNav() {
     const allTabs = [...TABS, ...MORE_TABS];
     const dn = document.getElementById('desktop-nav');
     if(dn) dn.innerHTML = allTabs.map(t =>
-      `<button class="hdr-nav-btn" id="nav-${t.id}" onclick="showPage('${t.id}')">${t.icon} ${t.label}${t.id==='bookings'?'<span id="bookings-badge" style="background:#e53935;color:#fff;border-radius:100px;font-size:10px;padding:1px 5px;margin-left:4px;display:none;"></span>':''}</button>`
+      `<button class="hdr-nav-btn" id="nav-${t.id}" onclick="showPage('${t.id}')">${t.icon} ${t.label}</button>`
     ).join('');
 
-    const ti = document.getElementById('tab-nav-inner');
-    if(ti) {
-      const half = Math.floor(TABS.length/2);
-      let html = '';
-      TABS.slice(0,half).forEach(t =>
-        html += `<button class="tab-btn" id="tnb-${t.id}" onclick="showPage('${t.id}')"><span class="tab-icon">${t.icon}</span><span>${t.name}</span></button>`
-      );
-      html += `<button class="tab-btn-fab" onclick="openForm()">+</button>`;
-      TABS.slice(half).forEach(t =>
-        html += `<button class="tab-btn" id="tnb-${t.id}" onclick="showPage('${t.id}')"><span class="tab-icon">${t.icon}</span><span>${t.name}</span></button>`
-      );
-      html += `<button class="tab-btn" id="tnb-more" onclick="toggleMoreMenu()"><span class="tab-icon">☰</span><span>More</span></button>`;
-      ti.innerHTML = html;
-    }
-
-    // Add More menu
+    // More menu
     if(!document.getElementById('more-menu')) {
       const moreMenu = document.createElement('div');
       moreMenu.id = 'more-menu';
       moreMenu.style.cssText = 'position:fixed;bottom:70px;right:8px;background:#fff;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,.18);z-index:9999;padding:8px;min-width:180px;display:none;border:1px solid #eee;';
       moreMenu.innerHTML = MORE_TABS.map(t=>
-        `<button onclick="showPage('${t.id}');document.getElementById('more-menu').style.display='none';" id="morenav-${t.id}"
-          style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:none;background:none;font-size:14px;font-weight:600;cursor:pointer;border-radius:8px;text-align:left;color:#333;">
+        `<button onclick="showPage('${t.id}');document.getElementById('more-menu').style.display='none';"
+          style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:none;background:none;font-size:14px;font-weight:600;cursor:pointer;border-radius:8px;color:#333;">
           <span style="font-size:18px;">${t.icon}</span> ${t.label}
         </button>`
       ).join('');
