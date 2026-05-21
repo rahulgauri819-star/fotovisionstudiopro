@@ -672,80 +672,34 @@
 
 <script src="../shared.js"></script>
 
-<!-- CRITICAL: Define nav functions in plain script so they work IMMEDIATELY -->
-<!-- Module scripts are deferred - this runs synchronously before module loads -->
+<!-- Nav stubs - real functions defined below in plain script -->
 <script>
-// Nav functions available IMMEDIATELY - no waiting for module
-window._navCalls = [];
-window._moduleReady = false;
-
-window.showPage = function(p) {
-  if(window._moduleReady && window._realShowPage) {
-    window._realShowPage(p);
-  } else {
-    // Store call and retry every 100ms until module ready
-    window._navCalls.push(p);
-    if(!window._navRetryTimer) {
-      window._navRetryTimer = setInterval(function() {
-        if(window._moduleReady && window._realShowPage && window._navCalls.length) {
-          const last = window._navCalls[window._navCalls.length - 1];
-          window._navCalls = [];
-          clearInterval(window._navRetryTimer);
-          window._navRetryTimer = null;
-          window._realShowPage(last);
-        }
-      }, 100);
-    }
-    // Visual feedback - highlight tab immediately
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('act'));
-    const tb = document.getElementById('tnb-'+p);
-    if(tb) tb.classList.add('act');
-  }
-};
-window.openForm = function() {
-  if(window._moduleReady && window._realOpenForm) {
-    window._realOpenForm();
-  } else {
-    window._navCalls.push('form');
-  }
-};
-window.ownerToggleMore = function() {
-  const m=document.getElementById('owner-more-menu');
-  const o=document.getElementById('owner-more-overlay');
-  if(!m||!o)return;
-  const open=m.style.display==='none'||!m.style.display;
-  m.style.display=open?'block':'none';
-  o.style.display=open?'block':'none';
-};
-window.ownerCloseMore = function() {
-  const m=document.getElementById('owner-more-menu');
-  const o=document.getElementById('owner-more-overlay');
-  if(m)m.style.display='none';
-  if(o)o.style.display='none';
-};
-window.staffToggleMore = function() {
-  const m=document.getElementById('staff-more-menu');
-  const o=document.getElementById('staff-more-overlay');
-  if(!m||!o)return;
-  const open=m.style.display==='none'||!m.style.display;
-  m.style.display=open?'block':'none';
-  o.style.display=open?'block':'none';
-};
-window.staffCloseMore = function() {
-  const m=document.getElementById('staff-more-menu');
-  const o=document.getElementById('staff-more-overlay');
-  if(m)m.style.display='none';
-  if(o)o.style.display='none';
-};
-window.toggleMoreMenu = window.ownerToggleMore;
+// Simple stubs - real functions defined below once page scripts load
+window.showPage=function(p){if(window._realShowPage)window._realShowPage(p);else setTimeout(()=>window.showPage(p),100);};
+window.openForm=function(){if(window._realOpenForm)window._realOpenForm();else setTimeout(()=>window.openForm(),100);};
+window.ownerToggleMore=function(){const m=document.getElementById('owner-more-menu'),o=document.getElementById('owner-more-overlay');if(!m||!o)return;const open=!m.style.display||m.style.display==='none';m.style.display=open?'block':'none';o.style.display=open?'block':'none';};
+window.ownerCloseMore=function(){['owner-more-menu','owner-more-overlay'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});};
+window.staffToggleMore=window.ownerToggleMore;
+window.staffCloseMore=window.ownerCloseMore;
+window.toggleMoreMenu=window.ownerToggleMore;
 </script>
 
-<script type="module">
-// ── Firebase Setup ────────────────────────────────────────────
-import { initializeApp }    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc,
-         onSnapshot, query, orderBy, serverTimestamp }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+// ── Firebase Setup (Compat SDK - no module needed) ────────────
+// Polyfill Firebase modular API names to compat equivalents
+function initializeApp(cfg){ return firebase.initializeApp(cfg); }
+function getFirestore(app){ return firebase.firestore(); }
+function collection(db,name){ return db.collection(name); }
+function doc(db,col,id){ return db.collection(col).doc(id); }
+function addDoc(ref,data){ return ref.add(data); }
+function updateDoc(ref,data){ return ref.update(data); }
+function deleteDoc(ref){ return ref.delete(); }
+function onSnapshot(q,cb){ return q.onSnapshot(cb); }
+function query(col,...args){ let q=col; args.forEach(a=>{if(a&&a.__type==='orderBy')q=q.orderBy(a.field,a.dir||'asc');}); return q; }
+function orderBy(field,dir){ return {__type:'orderBy',field,dir}; }
+function serverTimestamp(){ return firebase.firestore.FieldValue.serverTimestamp(); }
 
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAerxTK5t5tYqDJ-AZg5_BMZJEk3pRD0uI",
@@ -868,7 +822,7 @@ setTimeout(()=>{
 // Register real showPage when module loads - flush any queued taps
 let currentPage = 'dashboard';
 
-window._realShowPage = function(p) {
+window.showPage = window._realShowPage = function(p) {
   try {
     currentPage = p;
     ['dashboard','orders','framer','form','mouldings','bookings','expenses','customers','dayend','dayreports','stock','readymade-stock','moulding-stock','settings','reports','credit','production'].forEach(x => {
@@ -896,23 +850,14 @@ window._realShowPage = function(p) {
     if(p==='settings')        renderSettings();
   } catch(err) { console.error('showPage error:', err); }
 };
-window.showPage = window._realShowPage;
 window._realOpenForm = window.openForm = function() {
   window.editId=null; window.cart=[];
   try { document.getElementById('ftit').textContent='+ New Order'; document.getElementById('fsubt').textContent='Fill in customer & service details'; } catch(e){}
   if(typeof renderFormContent==='function') renderFormContent();
   window._realShowPage('form');
 };
-window._moduleReady = true;
-// Flush any queued navigation
-if(window._navCalls && window._navCalls.length) {
-  const last = window._navCalls[window._navCalls.length-1];
-  window._navCalls = [];
-  if(window._navRetryTimer) { clearInterval(window._navRetryTimer); window._navRetryTimer=null; }
-  window._realShowPage(last);
-} else {
-  window._realShowPage('dashboard');
-}
+// Show dashboard on load
+window.showPage('dashboard');
 
 function refreshCurrentPage() {
   if(currentPage==='dashboard') renderDash();
