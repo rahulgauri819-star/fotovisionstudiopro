@@ -23,7 +23,7 @@ function getFormHTML(existing, role) {
     </div>
     <div class="form-grid-2">
       <div class="form-group">
-        <label class="form-label">Assign to Staff</label>
+        <label class="form-label">Order Taken By</label>
         <select class="form-input" id="f-staff">
           <option>Abhik</option><option>Vishal</option><option>Rajesh</option>
         </select>
@@ -86,6 +86,18 @@ function getFormHTML(existing, role) {
       <div style="font-size:13px;font-weight:600;opacity:.9;">Cart Total</div>
       <div style="font-family:'DM Serif Display',serif;font-size:26px;" id="cart-total-amt">₹0</div>
     </div>
+  </div>
+</div>
+
+<!-- 3.5 REFERENCE PHOTOS -->
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-header"><div class="card-title">📸 Reference Photos <span style="font-size:11px;color:var(--ink3);font-weight:400;">(Optional)</span></div></div>
+  <div class="card-body">
+    <input type="file" id="f-photos" accept="image/*" multiple capture="environment" style="display:none;" onchange="onPhotosSelected()">
+    <button type="button" onclick="document.getElementById('f-photos').click()" class="btn-outline" style="padding:10px 20px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:18px;">📷</span> Take Photo / Upload
+    </button>
+    <div id="photo-preview" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
   </div>
 </div>
 
@@ -185,7 +197,8 @@ function getFormHTML(existing, role) {
 <!-- ACTIONS (bottom of form) -->
 <div style="display:flex;gap:12px;padding-bottom:20px;">
   <button class="btn btn-secondary btn-lg" style="flex:1;" onclick="requestCancelOrder()">✕ Cancel</button>
-  <button class="btn btn-primary btn-lg" style="flex:2;" onclick="saveOrder()">💾 Save Order</button>
+  <button class="btn btn-primary btn-lg" style="flex:2;" onclick="saveOrder()">📅 Book Order</button>
+  <button class="btn btn-outline btn-lg" style="flex:1;border:2px solid var(--gold-dk);color:var(--gold-dk);background:#fff;" onclick="saveEstimate()">💰 Estimate</button>
 </div>
 
 </div><!-- /form left column -->
@@ -212,7 +225,11 @@ function getFormHTML(existing, role) {
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
-        <button class="btn btn-primary btn-lg" style="width:100%;" onclick="saveOrder()">💾 Save Order</button>
+        <button class="btn btn-primary btn-lg" style="width:100%;margin-bottom:8px;" onclick="saveOrder()">📅 Book Order</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline btn-lg" style="flex:1;border:2px solid var(--gold-dk);color:var(--gold-dk);background:#fff;" onclick="saveEstimate()">💰 Estimate</button>
+          <button class="btn btn-outline btn-lg" style="flex:1;border:2px solid #e65100;color:#e65100;background:#fff;" onclick="saveComplimentary()">🎁 Complimentary</button>
+        </div>
         <button class="btn btn-secondary" style="width:100%;" onclick="requestCancelOrder()">✕ Cancel</button>
       </div>
     </div>
@@ -1653,10 +1670,208 @@ function updateBillingSummary(cartTotal, discPct) {
 }
 
 window.onDiscountChange = function(pct) {
-  const role = typeof getCurrentRole==='function' ? getCurrentRole() : 'owner';
-  onDiscountSelect(pct, window.cart.reduce((s,i)=>s+(+i.price||0),0), role,
-    applyDiscount,
-    ()=>{ const nd=document.querySelector('input[name="disc"][value="0"]');if(nd)nd.checked=true; applyDiscount(0); }
+  if(pct > 0) {
+    // Require owner password for discount
+    showOwnerPasswordModal(
+      `Apply ${pct}% discount?`,
+      () => applyDiscount(pct),
+      () => { const nd=document.querySelector('input[name="disc"][value="0"]');if(nd)nd.checked=true; applyDiscount(0); }
+    );
+  } else {
+    applyDiscount(0);
+  }
+};
+
+// ── Owner Password Modal ──────────────────────────────────────
+window.showOwnerPasswordModal = function(message, onApprove, onCancel) {
+  const existing = document.getElementById('owner-pwd-modal');
+  if(existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'owner-pwd-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:16px;padding:24px;max-width:320px;width:100%;">
+      <div style="font-size:18px;font-weight:700;margin-bottom:8px;">🔐 Owner Approval</div>
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:16px;">${message}</div>
+      <input type="password" id="owner-pwd-input" class="form-input" placeholder="Enter owner password" style="margin-bottom:8px;" onkeydown="if(event.key==='Enter')checkOwnerPassword()">
+      <div id="owner-pwd-error" style="color:#e53935;font-size:12px;margin-bottom:10px;display:none;">⚠️ Incorrect password. Try again.</div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="checkOwnerPassword()" style="flex:1;background:#388e3c;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">✅ Approve</button>
+        <button onclick="cancelOwnerPassword()" style="flex:1;background:#e53935;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">❌ Cancel</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  window._ownerPwdApprove = onApprove;
+  window._ownerPwdCancel = onCancel;
+  setTimeout(()=>document.getElementById('owner-pwd-input')?.focus(),100);
+};
+
+window.checkOwnerPassword = function() {
+  const pwd = document.getElementById('owner-pwd-input')?.value;
+  const stored = localStorage.getItem('fv_owner_password') || 'owner123';
+  if(pwd === stored) {
+    document.getElementById('owner-pwd-modal')?.remove();
+    if(window._ownerPwdApprove) window._ownerPwdApprove();
+  } else {
+    const err = document.getElementById('owner-pwd-error');
+    if(err) err.style.display='block';
+    document.getElementById('owner-pwd-input').value='';
+    document.getElementById('owner-pwd-input').focus();
+  }
+};
+
+window.cancelOwnerPassword = function() {
+  document.getElementById('owner-pwd-modal')?.remove();
+  if(window._ownerPwdCancel) window._ownerPwdCancel();
+};
+
+// ── Photo Upload ──────────────────────────────────────────────
+window._orderPhotos = [];
+
+window.onPhotosSelected = function() {
+  const input = document.getElementById('f-photos');
+  if(!input?.files?.length) return;
+  Array.from(input.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      // Compress image
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const MAX = 1200;
+        let w = img.width, h = img.height;
+        if(w>MAX||h>MAX) { if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;} }
+        canvas.width=w; canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        const compressed = canvas.toDataURL('image/jpeg', 0.7);
+        window._orderPhotos.push(compressed);
+        renderPhotoPreview();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value=''; // reset so same file can be selected again
+};
+
+function renderPhotoPreview() {
+  const el = document.getElementById('photo-preview');
+  if(!el) return;
+  el.innerHTML = window._orderPhotos.map((src,i)=>`
+    <div style="position:relative;width:80px;height:80px;">
+      <img src="${src}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid var(--paper3);">
+      <button onclick="removePhoto(${i})" style="position:absolute;top:-6px;right:-6px;background:#e53935;color:#fff;border:none;border-radius:100%;width:20px;height:20px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>`).join('');
+}
+
+window.removePhoto = function(idx) {
+  window._orderPhotos.splice(idx,1);
+  renderPhotoPreview();
+};
+
+// ── Save Estimate ─────────────────────────────────────────────
+window.saveEstimate = async function() {
+  if(!window.cart?.length){toast('⚠️ Add at least one service','error');return;}
+  const name = document.getElementById('f-name')?.value.trim();
+  if(!name){toast('⚠️ Enter customer name','error');return;}
+  const total = window.cart.reduce((s,i)=>s+(+i.price||0),0);
+  const estNo = await getNextEstimateNumber();
+  const estimate = {
+    estNo, name,
+    phone: document.getElementById('f-phone')?.value||'',
+    staff: document.getElementById('f-staff')?.value||'',
+    notes: document.getElementById('f-notes')?.value||'',
+    cartItems: window.cart,
+    total, photos: window._orderPhotos||[],
+    date: todayStr(), created: Date.now(),
+    expires: new Date(Date.now()+30*24*60*60*1000).toISOString().slice(0,10),
+    status: 'Active'
+  };
+  // Save to localStorage
+  const estimates = JSON.parse(localStorage.getItem('fv_estimates')||'[]');
+  estimate.id = 'EST-'+Date.now();
+  estimates.unshift(estimate);
+  localStorage.setItem('fv_estimates', JSON.stringify(estimates));
+  // Try Firebase
+  try { if(window.db) await window.db.collection('estimates').add(estimate); } catch(e){}
+
+  toast('✅ Estimate saved!','success');
+  // Show print option
+  showEstimateSavedModal(estimate);
+};
+
+async function getNextEstimateNumber() {
+  const today = todayStr().split('-').reverse().join('').slice(0,6);
+  const estimates = JSON.parse(localStorage.getItem('fv_estimates')||'[]');
+  const todayEsts = estimates.filter(e=>e.date===todayStr()).length;
+  return `FV-EST-${today}-${String(todayEsts+1).padStart(3,'0')}`;
+}
+
+function showEstimateSavedModal(est) {
+  const modal = document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML=`
+    <div style="background:#fff;border-radius:16px;padding:24px;max-width:320px;width:100%;text-align:center;">
+      <div style="font-size:40px;margin-bottom:8px;">✅</div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:4px;">Estimate Saved!</div>
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:20px;">${est.estNo}</div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="printEstimate(${JSON.stringify(est).replace(/"/g,'&quot;')})" style="flex:1;background:var(--gold-dk);color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;">🖨️ Print</button>
+        <button onclick="this.closest('[style*=fixed]').remove();resetForm();" style="flex:1;background:#f0ede6;color:#333;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;">✅ OK</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+window.printEstimate = function(est) {
+  if(typeof est === 'string') est = JSON.parse(est);
+  const w = window.open('','_blank','width=400,height=600');
+  const rows = (est.cartItems||[]).map(item=>
+    `<tr><td>${(item.svcs||[item.svc]).join('+')}</td><td style="text-align:right;font-weight:700;">Rs.${item.price||0}</td></tr>`
+  ).join('');
+  w.document.write(`<!DOCTYPE html><html><head><title>Estimate</title>
+  <style>body{font-family:Arial,sans-serif;padding:20px;max-width:320px;margin:0 auto;}
+  h1{font-size:16px;text-align:center;} .center{text-align:center;}
+  hr{border:none;border-top:1px dashed #ccc;margin:12px 0;}
+  table{width:100%;font-size:13px;} td{padding:4px 0;}
+  .total{font-size:16px;font-weight:900;} @media print{@page{margin:5mm;}}
+  </style></head><body>
+  <div class="center"><h1>FOTOVISION STUDIO PRO</h1></div>
+  <hr>
+  <div class="center" style="font-size:18px;font-weight:700;margin-bottom:4px;">💰 ESTIMATE</div>
+  <div class="center" style="font-size:12px;color:#666;">${est.estNo} · ${formatDate(est.date)}</div>
+  <hr>
+  <div style="font-size:13px;"><b>Customer:</b> ${est.name}</div>
+  <div style="font-size:13px;"><b>Phone:</b> ${est.phone||'—'}</div>
+  <hr>
+  <table>${rows}</table>
+  <hr>
+  <div style="display:flex;justify-content:space-between;" class="total">
+    <span>TOTAL</span><span>Rs.${est.total||0}</span>
+  </div>
+  <hr>
+  <div class="center" style="font-size:11px;color:#888;margin-top:8px;">This is an estimate only.<br>Not a tax invoice.</div>
+  <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1500);}<\/script>
+  </body></html>`);
+  w.document.close();
+};
+
+// ── Complimentary Order ───────────────────────────────────────
+window.saveComplimentary = function() {
+  if(!window.cart?.length){toast('⚠️ Add at least one service','error');return;}
+  const name=document.getElementById('f-name')?.value.trim();
+  if(!name){toast('⚠️ Enter customer name','error');return;}
+  const originalTotal=window.cart.reduce((s,i)=>s+(+i.price||0),0);
+  showOwnerPasswordModal(
+    `Mark this order as Complimentary?\nOriginal value: Rs.${originalTotal}`,
+    async()=>{
+      window._isComplimentary=true;
+      window._originalTotal=originalTotal;
+      document.getElementById('f-charge').value='0';
+      await saveOrder();
+      window._isComplimentary=false;
+    },
+    ()=>{}
   );
 };
 

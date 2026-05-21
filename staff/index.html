@@ -40,19 +40,15 @@
 
 <!-- Staff More Menu -->
 <div id="staff-more-menu" style="display:none;position:fixed;bottom:70px;left:0;right:0;background:#fff;border-top:1px solid #eee;border-radius:16px 16px 0 0;box-shadow:0 -4px 24px rgba(0,0,0,.12);z-index:9999;padding:16px;">
+  <div style="font-size:11px;font-weight:700;color:#9A6E1E;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;">More Options</div>
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:8px;">
-    <button onclick="showPage('readymade-stock');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;">
-      <span style="font-size:22px;">📦</span>Stock
-    </button>
-    <button onclick="showPage('moulding-stock');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;">
-      <span style="font-size:22px;">📐</span>Moulds
-    </button>
-    <button onclick="showPage('dayend');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;">
-      <span style="font-size:22px;">🌙</span>Day End
-    </button>
-    <button onclick="showPage('framer');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;">
-      <span style="font-size:22px;">🖼️</span>Framing
-    </button>
+    <button onclick="showPage('readymade-stock');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">📦</span>Stock</button>
+    <button onclick="showPage('moulding-stock');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">📐</span>Moulds</button>
+    <button onclick="showPage('dayend');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">🌙</span>Day End</button>
+    <button onclick="showPage('framer');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">🖼️</span>Framing</button>
+    <button onclick="showPage('estimates');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">💰</span>Estimates</button>
+    <button onclick="showPage('purchases');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">🛒</span>Purchases</button>
+    <button onclick="showPage('production');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">🏭</span>Production</button>
   </div>
   <button onclick="staffCloseMore()" style="width:100%;padding:12px;border:none;background:#f0ede6;border-radius:10px;font-size:14px;font-weight:700;color:#666;cursor:pointer;">✕ Close</button>
 </div>
@@ -201,6 +197,59 @@
     </div>
   </div>
   <div id="staff-moulding-stock-list"></div>
+</div>
+
+<!-- ESTIMATES -->
+<div id="pg-estimates" class="hidden">
+  <div class="page-header"><div class="page-title">💰 Estimates</div><div class="page-sub">Saved quotes for customers</div></div>
+  <div style="margin-bottom:12px;"><input class="form-input" id="est-search" placeholder="🔍 Search..." oninput="if(typeof renderEstimates==='function')renderEstimates()"></div>
+  <div id="estimates-list"></div>
+</div>
+
+<!-- PURCHASES -->
+<div id="pg-purchases" class="hidden">
+  <div class="page-header"><div class="page-title">🛒 Purchases</div><div class="page-sub">Track all purchases</div></div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">
+    <button id="pt-moulding" onclick="if(typeof setPurchaseType==='function')setPurchaseType('moulding')" style="padding:10px;border-radius:10px;font-size:12px;font-weight:700;background:var(--gold-dk);color:#fff;border:none;cursor:pointer;">📐 Moulding</button>
+    <button id="pt-raw" onclick="if(typeof setPurchaseType==='function')setPurchaseType('raw')" style="padding:10px;border-radius:10px;font-size:12px;font-weight:700;background:#f0ede6;color:#333;border:none;cursor:pointer;">🎨 Raw Material</button>
+    <button id="pt-stock" onclick="if(typeof setPurchaseType==='function')setPurchaseType('stock')" style="padding:10px;border-radius:10px;font-size:12px;font-weight:700;background:#f0ede6;color:#333;border:none;cursor:pointer;">📦 Stock</button>
+  </div>
+  <div id="purchase-form-area"></div>
+  <div id="purchase-history" style="margin-top:16px;"></div>
+</div>
+
+<!-- PRODUCTION -->
+<div id="pg-production" class="hidden">
+  <div class="page-header"><div class="page-title">🏭 Production Orders</div><div class="page-sub">Frame production jobs</div></div>
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header"><div class="card-title">➕ New Production Order</div></div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group"><label class="form-label">Frame Name</label><input class="form-input" id="po-name" placeholder="e.g. 5×7 White Frame"></div>
+        <div class="form-group"><label class="form-label">Item Code</label><input class="form-input" id="po-code" placeholder="e.g. F5X7WHITE"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group"><label class="form-label">Width (inches)</label><input class="form-input" id="po-fw" type="number" placeholder="5"></div>
+        <div class="form-group"><label class="form-label">Height (inches)</label><input class="form-input" id="po-fh" type="number" placeholder="7"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group"><label class="form-label">Moulding Size</label>
+          <select class="form-input" id="po-msize"><option>0.5"</option><option>0.75"</option><option selected>1"</option><option>1.25"</option><option>1.5"</option><option>2"</option><option>2.5"</option><option>3"</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Moulding Type</label><select class="form-input" id="po-mtype"></select></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group"><label class="form-label">Mount</label>
+          <select class="form-input" id="po-mount" onchange="togglePOMount()"><option value="No">No Mount</option><option value="Yes">With Mount</option></select>
+        </div>
+        <div class="form-group" id="po-mount-size-group" style="display:none;"><label class="form-label">Mount Size</label><input class="form-input" id="po-msize-val" type="number" placeholder="2"></div>
+        <div class="form-group"><label class="form-label">Quantity</label><input class="form-input" id="po-qty" type="number" min="1" value="1"></div>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;"><label class="form-label">Notes for Framer</label><input class="form-input" id="po-notes" placeholder="Any special instructions..."></div>
+      <button onclick="staffCreatePO()" class="btn-gold" style="padding:12px 24px;">📤 Send to Framer</button>
+    </div>
+  </div>
+  <div id="production-orders-list"></div>
 </div>
 
 <!-- BOOKINGS -->
@@ -355,7 +404,7 @@ let lastReadyIds = new Set();
 window.showPage = window._realShowPage = function(p) {
   try {
     currentPage=p;
-    ['dashboard','orders','framer','form','bookings','expenses','dayend','readymade-stock','moulding-stock'].forEach(x=>document.getElementById('pg-'+x)?.classList.add('hidden'));
+    ['dashboard','orders','framer','form','bookings','expenses','dayend','readymade-stock','moulding-stock','estimates','purchases','production'].forEach(x=>document.getElementById('pg-'+x)?.classList.add('hidden'));
     document.getElementById('pg-'+p)?.classList.remove('hidden');
     document.querySelectorAll('.hdr-nav-btn, .tab-btn').forEach(b=>b.classList.remove('act'));
     document.getElementById('nav-'+p)?.classList.add('act');
@@ -369,6 +418,9 @@ window.showPage = window._realShowPage = function(p) {
     if(p==='dayend')          renderStaffDayEnd();
     if(p==='readymade-stock') renderStaffReadymadeStock();
     if(p==='moulding-stock')  renderStaffMouldingStock();
+    if(p==='estimates')       { if(typeof renderEstimates==='function') renderEstimates(); }
+    if(p==='purchases')       { if(typeof renderPurchases==='function') renderPurchases(); }
+    if(p==='production')      { if(typeof renderProductionOrders==='function') renderProductionOrders(); }
   } catch(err) { console.error('showPage error:',err); }
 };
 window._realOpenForm = window.openForm = function(){
@@ -424,15 +476,22 @@ function renderDash(){
   document.getElementById('dashdate').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   document.getElementById('s-tot').textContent=orders.length;
   ['Pending','In Progress','Ready'].forEach((s,i)=>document.getElementById(['s-pnd','s-prg','s-rdy'][i]).textContent=orders.filter(o=>o.status===s).length);
-  const rec=[...orders].slice(0,6);
+  const rec=[...orders].sort((a,b)=>(b.created||0)-(a.created||0)).slice(0,6);
   document.getElementById('recent-list').innerHTML=rec.length
-    ?rec.map(o=>{const sc=STATUS_CFG[o.status]||STATUS_CFG['Pending'];const svcs=[...new Set((o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]))];
-      return `<div style="display:flex;align-items:center;gap:12px;padding:10px 20px;border-bottom:1px solid var(--paper2);">
+    ?rec.map(o=>{
+      const sc=STATUS_CFG[o.status]||STATUS_CFG['Pending'];
+      const svcs=[...new Set((o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]))];
+      const isOD=typeof isOverdue==='function'&&isOverdue(o);
+      const dispId=o.billNo||('#'+o.id.slice(0,8));
+      return `<div onclick="openOrderSheet('${o.id}')" style="display:flex;align-items:center;gap:12px;padding:10px 20px;border-bottom:1px solid var(--paper2);cursor:pointer;${isOD?'background:#ffcdd2;border-left:4px solid #c62828;':''}">
         <div style="font-size:22px;width:30px;">${svcs.slice(0,2).map(s=>SVC_ICONS[s]||'').join('')||'📦'}</div>
-        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;">${o.name}</div><div style="font-size:11px;color:var(--ink3);">${o.id} · ${o.date}</div></div>
-        <span class="${sc.cls}" style="padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;">${o.status}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;">${o.name}${isOD?' <span style="background:#c62828;color:#fff;font-size:9px;padding:1px 4px;border-radius:3px;">⚠️ OVERDUE</span>':''}</div>
+          <div style="font-size:11px;color:var(--ink3);">${dispId} · ${formatDate(normDate(o.date||''))}</div>
+        </div>
+        <span class="${sc.cls}" style="padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;white-space:nowrap;">${o.status}</span>
       </div>`;}).join('')
-    :'<div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px;">No orders yet</div>';
+    :'<div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px;">No orders yet — tap + to begin</div>';
   const today=new Date().toISOString().slice(0,10);
   const due=orders.filter(o=>o.delivery&&o.delivery.startsWith(today)&&o.status!=='Delivered');
   document.getElementById('due-today').innerHTML=due.length
@@ -1034,6 +1093,16 @@ window.staffAddMouldingStockFor = async function(size,type) {
   renderStaffMouldingStock();
 };
 
+window.staffCreatePO = function() {
+  if(typeof showOwnerPasswordModal==='function') {
+    showOwnerPasswordModal('Create production order?\nMoulding stock will be deducted.',
+      ()=>{ if(typeof createProductionOrder==='function') _doCreateProductionOrder(); },
+      ()=>{}
+    );
+  } else if(typeof createProductionOrder==='function') {
+    createProductionOrder();
+  }
+};
 window.cancelForm=()=>{window.cart=[];window.editId=null;showPage('orders');};
 window.chgStatus=chgStatus;window.editOrd=editOrd;window.billOrd=billOrd;window.requestDelete=requestDelete;window.doLogout=doLogout;
 

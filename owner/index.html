@@ -58,6 +58,8 @@
     <button onclick="showPage('settings');ownerCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">⚙️</span>Settings</button>
     <button onclick="showPage('credit');ownerCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">🏢</span>Credit</button>
     <button onclick="showPage('production');ownerCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">🏭</span>Produce</button>
+    <button onclick="showPage('estimates');ownerCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">💰</span>Estimates</button>
+    <button onclick="showPage('purchases');ownerCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">🛒</span>Purchases</button>
     <button onclick="showPage('customers');ownerCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">👥</span>Customers</button>
     <button onclick="showPage('framer');ownerCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">🔨</span>Framing</button>
     <button onclick="showPage('dayreports');ownerCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">📋</span>Day Rpts</button>
@@ -199,6 +201,34 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- ═══ ESTIMATES ═══ -->
+<div id="pg-estimates" class="hidden">
+  <div class="page-header">
+    <div class="page-title">💰 Estimates</div>
+    <div class="page-sub">Saved quotes for customers</div>
+  </div>
+  <div style="margin-bottom:12px;">
+    <input class="form-input" id="est-search" placeholder="🔍 Search by name or estimate number..." oninput="renderEstimates()">
+  </div>
+  <div id="estimates-list"></div>
+</div>
+
+<!-- ═══ PURCHASES ═══ -->
+<div id="pg-purchases" class="hidden">
+  <div class="page-header">
+    <div class="page-title">🛒 Purchases</div>
+    <div class="page-sub">Track all stock & material purchases</div>
+  </div>
+  <!-- Type selector -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">
+    <button id="pt-moulding" onclick="setPurchaseType('moulding')" class="btn-gold" style="padding:10px;border-radius:10px;font-size:12px;font-weight:700;">📐 Moulding</button>
+    <button id="pt-raw" onclick="setPurchaseType('raw')" class="btn-outline" style="padding:10px;border-radius:10px;font-size:12px;font-weight:700;">🎨 Raw Material</button>
+    <button id="pt-stock" onclick="setPurchaseType('stock')" class="btn-outline" style="padding:10px;border-radius:10px;font-size:12px;font-weight:700;">📦 Readymade Stock</button>
+  </div>
+  <div id="purchase-form-area"></div>
+  <div id="purchase-history" style="margin-top:16px;"></div>
 </div>
 
 <!-- ═══ CREDIT LEDGER ═══ -->
@@ -398,11 +428,22 @@
   <div class="card" style="margin-bottom:16px;">
     <div class="card-header"><div class="card-title">👥 Staff Names</div></div>
     <div class="card-body">
-      <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;">Used in: Assign to Staff & Expenses Added By</div>
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;">Used in: Order Taken By & Expenses Added By</div>
       <div id="staff-names-list" style="margin-bottom:16px;"></div>
       <div style="display:flex;gap:8px;">
         <input class="form-input" id="new-staff-name" placeholder="Add new name..." style="max-width:240px;" onkeydown="if(event.key==='Enter')addStaffName()">
         <button onclick="addStaffName()" class="btn-gold" style="padding:10px 20px;">+ Add</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header"><div class="card-title">🔐 Owner Approval Password</div></div>
+    <div class="card-body" id="owner-pwd-settings">
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;">Used for: Discount, Complimentary, Production Orders</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="password" id="new-owner-pwd" class="form-input" placeholder="New password" style="max-width:200px;">
+        <button onclick="changeOwnerPassword()" class="btn-gold" style="padding:10px 20px;">Change</button>
       </div>
     </div>
   </div>
@@ -767,6 +808,8 @@ const TABS = [
 const MORE_TABS = [
   { id:'credit',      label:'Credit Accounts', icon:'🏢' },
   { id:'production',  label:'Production',      icon:'🏭' },
+  { id:'estimates',   label:'Estimates',       icon:'💰' },
+  { id:'purchases',   label:'Purchases',       icon:'🛒' },
   { id:'customers',   label:'Customers',       icon:'👥' },
   { id:'dayreports',  label:'Day Reports',     icon:'📋' },
   { id:'mouldings',   label:'Mouldings',       icon:'🖼️' },
@@ -825,7 +868,7 @@ let currentPage = 'dashboard';
 window.showPage = window._realShowPage = function(p) {
   try {
     currentPage = p;
-    ['dashboard','orders','framer','form','mouldings','bookings','expenses','customers','dayend','dayreports','stock','readymade-stock','moulding-stock','settings','reports','credit','production'].forEach(x => {
+    ['dashboard','orders','framer','form','mouldings','bookings','expenses','customers','dayend','dayreports','stock','readymade-stock','moulding-stock','settings','reports','credit','production','estimates','purchases'].forEach(x => {
       document.getElementById('pg-'+x)?.classList.add('hidden');
     });
     document.getElementById('pg-'+p)?.classList.remove('hidden');
@@ -843,6 +886,8 @@ window.showPage = window._realShowPage = function(p) {
     if(p==='reports')         renderReports();
     if(p==='credit')          renderCreditLedger();
     if(p==='production')      renderProductionOrders();
+    if(p==='estimates')       renderEstimates();
+    if(p==='purchases')       renderPurchases();
     if(p==='dayend')          renderDayEnd();
     if(p==='dayreports')      { if(typeof renderDayReports==='function') renderDayReports(); }
     if(p==='readymade-stock') renderReadymadeStock();
@@ -1754,10 +1799,14 @@ window.saveOrder = async function() {
     notes: document.getElementById('f-notes')?.value||'',
     cartItems: JSON.parse(JSON.stringify(window.cart)),
     cartTotal, discountPct: discPct, discountAmt: discAmt,
-    total: finalTotal, advance, payMode,
+    total: window._isComplimentary ? 0 : finalTotal,
+    advance, payMode,
     splitCash: payMode==='Cash+UPI'?splitCash:0,
     splitUPI:  payMode==='Cash+UPI'?splitUPI:0,
     bookedBy: 'owner', billNo,
+    photos: window._orderPhotos||[],
+    isComplimentary: window._isComplimentary||false,
+    originalTotal: window._isComplimentary?(window._originalTotal||finalTotal):finalTotal,
   };
 
   if(useLocal) {
@@ -1840,7 +1889,492 @@ window.ownerDeleteMoulding = async function(size, index) {
   toast('🗑️ Moulding deleted');
 };
 
-// ── Credit Companies ──────────────────────────────────────────
+// ── Owner Password Settings ───────────────────────────────────
+function getOwnerPassword() { return localStorage.getItem('fv_owner_password')||'owner123'; }
+
+window.renderSettings = function() {
+  const el = document.getElementById('staff-names-list');
+  if(el) el.innerHTML = staffNames.map((n,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--paper3);">
+      <div style="flex:1;font-weight:600;">${n}</div>
+      <button onclick="deleteStaffName(${i})" style="background:#e53935;color:#fff;border:none;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:12px;">🗑️</button>
+    </div>`).join('');
+  renderVendorList();
+  renderCreditCompaniesSettings();
+  // Owner password section
+  const pwdEl = document.getElementById('owner-pwd-settings');
+  if(pwdEl) pwdEl.innerHTML = `
+    <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;">Used for: Discount, Complimentary, Production Orders</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input type="password" id="new-owner-pwd" class="form-input" placeholder="New password" style="max-width:200px;">
+      <button onclick="changeOwnerPassword()" class="btn-gold" style="padding:10px 20px;">Change</button>
+    </div>
+    <div style="font-size:12px;color:var(--ink3);margin-top:8px;">Current password is set</div>`;
+};
+
+window.changeOwnerPassword = function() {
+  const pwd = document.getElementById('new-owner-pwd')?.value.trim();
+  if(!pwd||pwd.length<4){toast('⚠️ Enter at least 4 characters','error');return;}
+  localStorage.setItem('fv_owner_password', pwd);
+  document.getElementById('new-owner-pwd').value='';
+  toast('✅ Password changed!','success');
+};
+
+// ── Estimates ─────────────────────────────────────────────────
+window.renderEstimates = function() {
+  const el = document.getElementById('estimates-list');
+  if(!el) return;
+  const search = document.getElementById('est-search')?.value.toLowerCase()||'';
+  let estimates = JSON.parse(localStorage.getItem('fv_estimates')||'[]');
+  const today = todayStr();
+
+  if(search) estimates = estimates.filter(e=>
+    e.name?.toLowerCase().includes(search) ||
+    e.estNo?.toLowerCase().includes(search) ||
+    e.phone?.includes(search)
+  );
+
+  if(!estimates.length) {
+    el.innerHTML='<div class="empty-state"><div class="empty-icon">💰</div><div class="empty-title">No estimates yet</div><div class="empty-sub">Save an estimate from the order form</div></div>';
+    return;
+  }
+
+  el.innerHTML = estimates.map(est=>{
+    const expired = est.expires && est.expires < today;
+    const daysLeft = est.expires ? Math.ceil((new Date(est.expires)-new Date(today))/(1000*60*60*24)) : null;
+    return `<div class="card" style="margin-bottom:10px;${expired?'opacity:.7;border-left:4px solid #e53935;':''}">
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+          <div>
+            <div style="font-weight:700;font-size:15px;">${est.name}</div>
+            <div style="font-size:12px;color:var(--ink3);">${est.estNo} · ${formatDate(est.date)} · ${est.phone||'—'}</div>
+            <div style="font-size:12px;color:var(--ink3);">${(est.cartItems||[]).flatMap(i=>i.svcs||[i.svc]).join(' + ')}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:800;font-size:16px;color:var(--gold-dk);">Rs.${est.total||0}</div>
+            ${expired?'<span style="background:#e53935;color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;">EXPIRED</span>':
+              daysLeft!==null?`<div style="font-size:11px;color:${daysLeft<=7?'#e65100':'#388e3c'};">${daysLeft}d left</div>`:''}
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button onclick="convertEstimateToOrder('${est.id}')" class="btn-gold" style="flex:1;padding:8px;font-size:12px;">✅ Convert to Order</button>
+          <button onclick="printEstimateById('${est.id}')" class="btn-outline" style="padding:8px 12px;font-size:12px;">🖨️</button>
+          <button onclick="deleteEstimate('${est.id}')" style="padding:8px 12px;background:#e53935;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;">🗑️</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+};
+
+window.deleteEstimate = function(id) {
+  let estimates = JSON.parse(localStorage.getItem('fv_estimates')||'[]');
+  estimates = estimates.filter(e=>e.id!==id);
+  localStorage.setItem('fv_estimates', JSON.stringify(estimates));
+  renderEstimates();
+  toast('🗑️ Estimate deleted');
+};
+
+window.printEstimateById = function(id) {
+  const estimates = JSON.parse(localStorage.getItem('fv_estimates')||'[]');
+  const est = estimates.find(e=>e.id===id);
+  if(est && typeof printEstimate==='function') printEstimate(est);
+};
+
+window.convertEstimateToOrder = function(id) {
+  const estimates = JSON.parse(localStorage.getItem('fv_estimates')||'[]');
+  const est = estimates.find(e=>e.id===id);
+  if(!est) return;
+  // Pre-fill form with estimate data
+  window.cart = est.cartItems||[];
+  window._editId = null;
+  showPage('form');
+  setTimeout(()=>{
+    try {
+      document.getElementById('f-name').value = est.name||'';
+      document.getElementById('f-phone').value = est.phone||'';
+      document.getElementById('f-staff').value = est.staff||'';
+      document.getElementById('f-notes').value = est.notes||'';
+      if(typeof updateCartPanel==='function') updateCartPanel();
+      toast('✅ Estimate loaded — review and book order','success');
+    } catch(e){}
+  }, 300);
+};
+
+// ── Purchases ─────────────────────────────────────────────────
+let currentPurchaseType = 'moulding';
+let purchases = JSON.parse(localStorage.getItem('fv_purchases')||'[]');
+let savedRawMaterials = JSON.parse(localStorage.getItem('fv_raw_materials')||'[]');
+
+window.setPurchaseType = function(type) {
+  currentPurchaseType = type;
+  ['moulding','raw','stock'].forEach(t=>{
+    const btn=document.getElementById('pt-'+t);
+    if(btn){btn.className=t===type?'btn-gold':'btn-outline';btn.style.cssText='padding:10px;border-radius:10px;font-size:12px;font-weight:700;';}
+  });
+  renderPurchaseForm();
+};
+
+window.renderPurchases = function() {
+  setPurchaseType('moulding');
+  renderPurchaseHistory();
+};
+
+function renderPurchaseForm() {
+  const el = document.getElementById('purchase-form-area');
+  if(!el) return;
+  if(currentPurchaseType==='moulding') {
+    el.innerHTML = `<div class="card" style="margin-bottom:12px;"><div class="card-header"><div class="card-title">➕ Add Moulding Purchase</div></div><div class="card-body">
+      <div style="margin-bottom:10px;">
+        <label class="form-label">Vendor</label>
+        <div id="pur-vendor-pills" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;"></div>
+        <div id="pur-vendor-other" class="hidden"><input class="form-input" id="pur-vendor-name" placeholder="Vendor name..."></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group"><label class="form-label">Moulding Size</label>
+          <select class="form-input" id="pur-msize"><option>0.5"</option><option>0.75"</option><option selected>1"</option><option>1.25"</option><option>1.5"</option><option>1.75"</option><option>2"</option><option>2.5"</option><option>3"</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Type/Color</label>
+          <input class="form-input" id="pur-mtype" placeholder="e.g. Golden Oak">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group"><label class="form-label">Qty (lengths)</label><input class="form-input" id="pur-qty" type="number" min="1" value="1" oninput="calcPurchaseTotal()"></div>
+        <div class="form-group"><label class="form-label">Cost/length (Rs.)</label><input class="form-input" id="pur-unit" type="number" min="0" placeholder="0" oninput="calcPurchaseTotal()"></div>
+        <div class="form-group"><label class="form-label">Total Cost</label><input class="form-input" id="pur-total" readonly style="background:#f5f5f5;font-weight:700;color:var(--gold-dk);"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div class="form-group"><label class="form-label">Invoice No (optional)</label><input class="form-input" id="pur-invoice" placeholder="INV-001"></div>
+        <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="pur-date" type="date" value="${todayStr()}"></div>
+      </div>
+      <button onclick="savePurchase('moulding')" class="btn-gold" style="padding:10px 24px;">💾 Save Purchase</button>
+    </div></div>`;
+    renderPurchaseVendorPills();
+  } else if(currentPurchaseType==='raw') {
+    el.innerHTML = `<div class="card" style="margin-bottom:12px;"><div class="card-header"><div class="card-title">➕ Add Raw Material Purchase</div></div><div class="card-body">
+      <div class="form-group" style="margin-bottom:10px;position:relative;">
+        <label class="form-label">Item Name</label>
+        <input class="form-input" id="pur-raw-name" placeholder="e.g. Inkjet Paper, Ink Cartridge..." oninput="showRawSuggestions()" autocomplete="off">
+        <div id="raw-suggestions" style="position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--paper3);border-radius:8px;max-height:150px;overflow-y:auto;z-index:100;display:none;"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group"><label class="form-label">Category</label>
+          <select class="form-input" id="pur-raw-cat"><option>Printing</option><option>Framing</option><option>Packaging</option><option>General</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Unit</label>
+          <select class="form-input" id="pur-raw-unit"><option>Pcs</option><option>Rolls</option><option>Litres</option><option>Kg</option><option>Box</option><option>Set</option></select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group"><label class="form-label">Qty</label><input class="form-input" id="pur-raw-qty" type="number" min="1" value="1" oninput="calcPurchaseTotal()"></div>
+        <div class="form-group"><label class="form-label">Cost/unit (Rs.)</label><input class="form-input" id="pur-raw-cost" type="number" min="0" placeholder="0" oninput="calcPurchaseTotal()"></div>
+        <div class="form-group"><label class="form-label">Total</label><input class="form-input" id="pur-total" readonly style="background:#f5f5f5;font-weight:700;color:var(--gold-dk);"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div class="form-group"><label class="form-label">Vendor (optional)</label><input class="form-input" id="pur-raw-vendor" placeholder="Vendor name..."></div>
+        <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="pur-date" type="date" value="${todayStr()}"></div>
+      </div>
+      <button onclick="savePurchase('raw')" class="btn-gold" style="padding:10px 24px;">💾 Save Purchase</button>
+    </div></div>`;
+  } else {
+    el.innerHTML = `<div class="card" style="margin-bottom:12px;"><div class="card-header"><div class="card-title">➕ Add Readymade Stock Purchase</div></div><div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group"><label class="form-label">Category</label>
+          <select class="form-input" id="pur-stk-cat"><option value="Readymade Frames">🖼️ Frames</option><option value="Slip In Albums">📒 Albums</option><option value="Gift Items">🎁 Gifts</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Item Code</label><input class="form-input" id="pur-stk-code" placeholder="F5X7WHITE"></div>
+      </div>
+      <div class="form-group" style="margin-bottom:10px;"><label class="form-label">Item Name</label><input class="form-input" id="pur-stk-name" placeholder="5×7 White Frame"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group"><label class="form-label">Qty</label><input class="form-input" id="pur-stk-qty" type="number" min="1" value="1" oninput="calcPurchaseTotal()"></div>
+        <div class="form-group"><label class="form-label">Cost/unit</label><input class="form-input" id="pur-stk-cost" type="number" min="0" placeholder="0" oninput="calcPurchaseTotal()"></div>
+        <div class="form-group"><label class="form-label">Sell Price</label><input class="form-input" id="pur-stk-sell" type="number" min="0" placeholder="0"></div>
+        <div class="form-group"><label class="form-label">Total</label><input class="form-input" id="pur-total" readonly style="background:#f5f5f5;font-weight:700;color:var(--gold-dk);"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div class="form-group"><label class="form-label">Vendor (optional)</label><input class="form-input" id="pur-stk-vendor" placeholder="Vendor name..."></div>
+        <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="pur-date" type="date" value="${todayStr()}"></div>
+      </div>
+      <button onclick="savePurchase('stock')" class="btn-gold" style="padding:10px 24px;">💾 Save Purchase</button>
+    </div></div>`;
+  }
+}
+
+function renderPurchaseVendorPills() {
+  const el = document.getElementById('pur-vendor-pills');
+  if(!el) return;
+  const vendorNames = [...Object.keys(vendors||{}), 'Others'];
+  el.innerHTML = vendorNames.map(v=>`
+    <button onclick="selectPurchaseVendor('${v}')" id="purv-${v.replace(/\s/g,'_')}"
+      style="padding:6px 12px;border:2px solid var(--paper3);border-radius:100px;font-size:12px;font-weight:600;cursor:pointer;background:#fff;color:var(--ink2);">
+      ${v}
+    </button>`).join('');
+}
+
+window.selectPurchaseVendor = function(v) {
+  document.querySelectorAll('[id^="purv-"]').forEach(b=>{b.style.background='#fff';b.style.color='var(--ink2)';b.style.borderColor='var(--paper3)';});
+  const btn=document.getElementById('purv-'+v.replace(/\s/g,'_'));
+  if(btn){btn.style.background='var(--gold-dk)';btn.style.color='#fff';btn.style.borderColor='var(--gold-dk)';}
+  const other=document.getElementById('pur-vendor-other');
+  if(other) other.classList.toggle('hidden',v!=='Others');
+  // Auto-fill moulding types for this vendor
+  const typeEl = document.getElementById('pur-mtype');
+  if(typeEl && vendors[v]) {
+    // Show first type as suggestion
+    typeEl.placeholder = vendors[v][0]||'Enter type/color';
+  }
+};
+
+window.calcPurchaseTotal = function() {
+  const qty = +(document.getElementById('pur-qty')?.value||document.getElementById('pur-raw-qty')?.value||document.getElementById('pur-stk-qty')?.value)||1;
+  const cost = +(document.getElementById('pur-unit')?.value||document.getElementById('pur-raw-cost')?.value||document.getElementById('pur-stk-cost')?.value)||0;
+  const el = document.getElementById('pur-total');
+  if(el) el.value = cost>0 ? `Rs.${qty*cost}` : '';
+};
+
+window.showRawSuggestions = function() {
+  const val = document.getElementById('pur-raw-name')?.value.toLowerCase();
+  const el = document.getElementById('raw-suggestions');
+  if(!el) return;
+  if(!val){el.style.display='none';return;}
+  const matches = savedRawMaterials.filter(m=>m.toLowerCase().includes(val));
+  if(!matches.length){el.style.display='none';return;}
+  el.style.display='block';
+  el.innerHTML = matches.map(m=>`<div onclick="document.getElementById('pur-raw-name').value='${m}';document.getElementById('raw-suggestions').style.display='none';"
+    style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--paper3);" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='#fff'">${m}</div>`).join('');
+};
+
+window.savePurchase = async function(type) {
+  const date = document.getElementById('pur-date')?.value || todayStr();
+  let purchase = {type, date, created:Date.now()};
+
+  if(type==='moulding') {
+    const vendorEl = document.querySelector('[id^="purv-"][style*="gold"]');
+    const vendorName = vendorEl ? vendorEl.textContent.trim() :
+      (document.getElementById('pur-vendor-name')?.value.trim()||'Unknown');
+    const size = document.getElementById('pur-msize')?.value;
+    const mtype = document.getElementById('pur-mtype')?.value.trim();
+    const qty = +(document.getElementById('pur-qty')?.value)||1;
+    const unit = +(document.getElementById('pur-unit')?.value)||0;
+    if(!mtype){toast('⚠️ Enter moulding type','error');return;}
+    purchase = {...purchase, vendor:vendorName, size, mtype, qty, unitCost:unit, total:qty*unit,
+      invoice:document.getElementById('pur-invoice')?.value||''};
+    // Add to moulding stock
+    const typeKey = `${vendorName} — ${mtype}`;
+    if(!mouldingStock[size]) mouldingStock[size]={};
+    if(!mouldingStock[size][typeKey]) mouldingStock[size][typeKey]=[];
+    for(let i=0;i<qty;i++) mouldingStock[size][typeKey].push(114);
+    saveMouldingStock();
+    toast(`✅ ${qty} lengths added to Moulding Stock!`,'success');
+
+  } else if(type==='raw') {
+    const name = document.getElementById('pur-raw-name')?.value.trim();
+    const qty = +(document.getElementById('pur-raw-qty')?.value)||1;
+    const cost = +(document.getElementById('pur-raw-cost')?.value)||0;
+    if(!name){toast('⚠️ Enter item name','error');return;}
+    purchase = {...purchase, name, category:document.getElementById('pur-raw-cat')?.value,
+      unit:document.getElementById('pur-raw-unit')?.value, qty, unitCost:cost, total:qty*cost,
+      vendor:document.getElementById('pur-raw-vendor')?.value||''};
+    // Save name for auto-suggest
+    if(!savedRawMaterials.includes(name)) {
+      savedRawMaterials.push(name);
+      localStorage.setItem('fv_raw_materials', JSON.stringify(savedRawMaterials));
+    }
+    toast('✅ Raw material purchase saved!','success');
+
+  } else if(type==='stock') {
+    const name = document.getElementById('pur-stk-name')?.value.trim();
+    const code = document.getElementById('pur-stk-code')?.value.trim();
+    const cat = document.getElementById('pur-stk-cat')?.value;
+    const qty = +(document.getElementById('pur-stk-qty')?.value)||1;
+    const cost = +(document.getElementById('pur-stk-cost')?.value)||0;
+    const sell = +(document.getElementById('pur-stk-sell')?.value)||0;
+    if(!name){toast('⚠️ Enter item name','error');return;}
+    purchase = {...purchase, name, code, category:cat, qty, unitCost:cost, sellingPrice:sell,
+      total:qty*cost, vendor:document.getElementById('pur-stk-vendor')?.value||''};
+    // Add to readymade stock
+    const existingItem = window.stockItems?.find(i=>i.code===code&&i.category===cat);
+    if(existingItem) {
+      existingItem.qty=(+existingItem.qty||0)+qty;
+      updateStockQty(existingItem.id, existingItem.qty);
+    } else {
+      const item={code,name,qty,sellingPrice:sell,costPrice:cost,category:cat,created:Date.now()};
+      if(useLocal){item.id='STK-'+Date.now();window.stockItems.push(item);localStorage.setItem('fv_stock',JSON.stringify(window.stockItems));}
+      else{try{const ref=await window.db.collection('stock').add(item);item.id=ref.id;window.stockItems.push(item);}catch(e){}}
+    }
+    toast(`✅ ${qty} items added to Readymade Stock!`,'success');
+  }
+
+  purchase.id = 'PUR-'+Date.now();
+  purchases.unshift(purchase);
+  localStorage.setItem('fv_purchases', JSON.stringify(purchases));
+  try{if(window.db)await window.db.collection('purchases').add(purchase);}catch(e){}
+  renderPurchaseForm();
+  renderPurchaseHistory();
+};
+
+function renderPurchaseHistory() {
+  const el = document.getElementById('purchase-history');
+  if(!el) return;
+  if(!purchases.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">🛒</div><div class="empty-title">No purchases yet</div></div>';return;}
+  const totalThisMonth = purchases.filter(p=>normDate(p.date||'').startsWith(thisMonthStr())).reduce((s,p)=>s+(p.total||0),0);
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="font-weight:700;font-size:15px;">📋 Purchase History</div>
+      <div style="font-size:12px;color:var(--ink3);">This month: <b style="color:var(--gold-dk);">Rs.${totalThisMonth.toLocaleString('en-IN')}</b></div>
+    </div>
+    ${purchases.slice(0,30).map(p=>`
+      <div class="card" style="margin-bottom:8px;">
+        <div class="card-body" style="padding:10px 14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-weight:600;font-size:13px;">${p.type==='moulding'?`📐 ${p.size} ${p.mtype}`:p.type==='raw'?`🎨 ${p.name}`:`📦 ${p.name}`}</div>
+              <div style="font-size:11px;color:var(--ink3);">${formatDate(normDate(p.date||''))} · ${p.vendor||'—'} · Qty:${p.qty}</div>
+            </div>
+            <div style="font-weight:700;color:var(--gold-dk);">Rs.${(p.total||0).toLocaleString('en-IN')}</div>
+          </div>
+        </div>
+      </div>`).join('')}`;
+}
+
+// ── Smart Barcode Printing ────────────────────────────────────
+let selectedBarcodeItems = {}; // {itemId: qty}
+
+window.renderReadymadeStock = function() {
+  const sumEl = document.getElementById('readymade-summary');
+  if(sumEl) {
+    const cats=[{key:'Readymade Frames',icon:'🖼️',label:'Frames'},{key:'Slip In Albums',icon:'📒',label:'Albums'},{key:'Gift Items',icon:'🎁',label:'Gifts'}];
+    sumEl.innerHTML=cats.map(c=>{
+      const items=(window.stockItems||[]).filter(i=>i.category===c.key);
+      const totalQty=items.reduce((s,i)=>s+(+i.qty||0),0);
+      return`<div style="background:var(--paper);border-radius:10px;padding:12px;text-align:center;"><div style="font-size:20px;">${c.icon}</div><div style="font-weight:700;font-size:15px;">${c.label}</div><div style="font-size:12px;color:var(--ink3);">${items.length} items · ${totalQty} qty</div></div>`;
+    }).join('');
+  }
+  // Print bar
+  const printBar = document.getElementById('print-bar');
+  if(printBar) printBar.style.display='none';
+  selectedBarcodeItems={};
+  renderReadymadeList();
+};
+
+function renderReadymadeList() {
+  const el=document.getElementById('readymade-list');
+  if(!el)return;
+  const catMap={frames:'Readymade Frames',albums:'Slip In Albums',gifts:'Gift Items'};
+  const items=(window.stockItems||[]).filter(i=>i.category===catMap[currentReadymadeTab]);
+  if(!items.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-title">No items yet</div></div>';return;}
+  el.innerHTML=items.map(item=>`
+    <div class="card" style="margin-bottom:10px;">
+      <div class="card-body">
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+          <input type="checkbox" id="chk-${item.id}" onchange="toggleBarcodeItem('${item.id}')"
+            style="width:18px;height:18px;margin-top:4px;cursor:pointer;accent-color:var(--gold-dk);">
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:14px;">${item.name}</div>
+            <div style="font-size:12px;color:var(--ink3);">Code: ${item.code||'—'}</div>
+            <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;align-items:center;">
+              <span style="background:#e8f5e9;color:#2e7d32;padding:3px 8px;border-radius:100px;font-size:12px;font-weight:700;">📦 Qty: ${item.qty||0}</span>
+              <span style="background:#fff3e0;color:#e65100;padding:3px 8px;border-radius:100px;font-size:12px;font-weight:700;">💰 Rs.${item.sellingPrice||0}</span>
+              <span style="background:#f3e5f5;color:#6a1b9a;padding:3px 8px;border-radius:100px;font-size:12px;font-weight:700;">💸 Cost Rs.${item.costPrice||0}</span>
+            </div>
+            <div id="label-qty-${item.id}" style="display:none;margin-top:8px;display:flex;align-items:center;gap:8px;">
+              <span style="font-size:12px;color:var(--ink3);">Labels:</span>
+              <button onclick="adjLabelQty('${item.id}',-1)" style="width:28px;height:28px;border:1px solid var(--paper3);border-radius:6px;background:#fff;cursor:pointer;font-size:16px;">−</button>
+              <span id="lqty-${item.id}" style="font-weight:700;min-width:24px;text-align:center;">1</span>
+              <button onclick="adjLabelQty('${item.id}',1)" style="width:28px;height:28px;border:1px solid var(--paper3);border-radius:6px;background:#fff;cursor:pointer;font-size:16px;">+</button>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <button onclick="staffAddReadymadeQty('${item.id}')" class="btn-outline" style="font-size:12px;padding:5px 10px;">+ Qty</button>
+            <button onclick="deleteReadymadeItem('${item.id}')" style="background:#e53935;color:#fff;border:none;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px;">🗑️</button>
+          </div>
+        </div>
+      </div>
+    </div>`).join('');
+
+  // Add sticky print bar
+  if(!document.getElementById('print-bar')) {
+    const bar = document.createElement('div');
+    bar.id='print-bar';
+    bar.style.cssText='position:fixed;bottom:70px;left:0;right:0;background:var(--gold-dk);color:#fff;padding:12px 16px;display:none;z-index:1000;display:flex;justify-content:space-between;align-items:center;box-shadow:0 -2px 12px rgba(0,0,0,.15);';
+    bar.innerHTML='<span id="print-bar-label">0 items · 0 labels</span><button onclick="printSelectedBarcodes()" style="background:#fff;color:var(--gold-dk);border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;">🖨️ Print Labels</button>';
+    document.body.appendChild(bar);
+  }
+}
+
+window.toggleBarcodeItem = function(id) {
+  const chk = document.getElementById('chk-'+id);
+  const qtyDiv = document.getElementById('label-qty-'+id);
+  if(chk?.checked) {
+    selectedBarcodeItems[id] = 1;
+    if(qtyDiv) qtyDiv.style.display='flex';
+  } else {
+    delete selectedBarcodeItems[id];
+    if(qtyDiv) qtyDiv.style.display='none';
+  }
+  updatePrintBar();
+};
+
+window.adjLabelQty = function(id, delta) {
+  selectedBarcodeItems[id] = Math.max(1,(selectedBarcodeItems[id]||1)+delta);
+  const el = document.getElementById('lqty-'+id);
+  if(el) el.textContent = selectedBarcodeItems[id];
+  updatePrintBar();
+};
+
+function updatePrintBar() {
+  const bar = document.getElementById('print-bar');
+  if(!bar) return;
+  const items = Object.keys(selectedBarcodeItems).length;
+  const labels = Object.values(selectedBarcodeItems).reduce((s,q)=>s+q,0);
+  if(items>0){
+    bar.style.display='flex';
+    document.getElementById('print-bar-label').textContent=`${items} item${items>1?'s':''} · ${labels} label${labels>1?'s':''}`;
+  } else {
+    bar.style.display='none';
+  }
+}
+
+window.printSelectedBarcodes = function() {
+  const items = Object.entries(selectedBarcodeItems);
+  if(!items.length){toast('⚠️ Select at least one item','error');return;}
+  let allLabels = '';
+  items.forEach(([id,qty])=>{
+    const item=(window.stockItems||[]).find(x=>x.id===id);
+    if(!item)return;
+    for(let i=0;i<qty;i++){
+      allLabels+=`<div style="width:63mm;height:33mm;border:1px solid #ccc;padding:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-sizing:border-box;page-break-inside:avoid;">
+        <div style="font-size:8px;font-weight:900;letter-spacing:1px;margin-bottom:1px;">HARISH GAURI</div>
+        <svg class="barcode" jsbarcode-value="${(item.code||item.name).replace(/\s/g,'_')}" jsbarcode-width="1.1" jsbarcode-height="22" jsbarcode-fontsize="7" jsbarcode-margin="1"></svg>
+        <div style="font-size:7px;font-weight:700;">${item.code||''}</div>
+        <div style="font-size:7px;">${item.name}</div>
+        <div style="font-size:7px;font-weight:700;">Rs.${item.sellingPrice}</div>
+      </div>`;
+    }
+  });
+  const w=window.open('','_blank','width=800,height=700');
+  w.document.write(`<!DOCTYPE html><html><head><title>Labels</title>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+  <style>body{margin:0;padding:8mm;}.grid{display:grid;grid-template-columns:repeat(3,63mm);gap:3mm;}@media print{@page{size:A4;margin:8mm;}}</style>
+  </head><body><div class="grid">${allLabels}</div>
+  <script>JsBarcode(".barcode").init();window.onload=()=>{window.print();setTimeout(()=>window.close(),1500);}<\/script></body></html>`);
+  w.document.close();
+  // Reset selection
+  selectedBarcodeItems={};
+  document.querySelectorAll('[id^="chk-"]').forEach(c=>c.checked=false);
+  document.querySelectorAll('[id^="label-qty-"]').forEach(d=>d.style.display='none');
+  updatePrintBar();
+};
+
+window.viewPhoto = function(idx, orderId) {
+  const o = orders.find(x=>x.id===orderId);
+  if(!o?.photos?.length) return;
+  const modal = document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:99999;display:flex;align-items:center;justify-content:center;';
+  modal.onclick=()=>modal.remove();
+  modal.innerHTML=`<img src="${o.photos[+idx]}" style="max-width:95vw;max-height:95vh;object-fit:contain;border-radius:8px;">
+    <button onclick="this.parentElement.remove()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:100%;width:36px;height:36px;font-size:20px;cursor:pointer;">✕</button>`;
+  document.body.appendChild(modal);
+};
 window.creditCompanies = [];
 let selectedCreditCompany = null;
 
@@ -1944,7 +2478,7 @@ function renderCreditCompanyLedger(company) {
     <div class="card" style="margin-bottom:14px;"><div class="card-header"><div class="card-title">📋 Orders (${creditOrders.length})</div></div>
       <div class="card-body" style="max-height:300px;overflow-y:auto;">
         ${creditOrders.length?creditOrders.map(o=>`
-          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--paper3);">
+          <div onclick="openOrderSheet('${o.id}')" style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--paper3);cursor:pointer;">
             <div><div style="font-weight:600;font-size:13px;">${o.name} · ${o.billNo||o.id.slice(0,8)}</div>
             <div style="font-size:11px;color:var(--ink3);">${formatDate(normDate(o.date||''))}</div></div>
             <div style="font-weight:700;color:var(--gold-dk);">Rs.${o.total||0}</div>
@@ -1998,7 +2532,15 @@ window.togglePOMount=function(){
   if(grp)grp.style.display=val==='Yes'?'block':'none';
 };
 
-window.createProductionOrder=async function(){
+window.createProductionOrder=function(){
+  // Require owner password
+  showOwnerPasswordModal(
+    'Create production order? Moulding stock will be deducted.',
+    _doCreateProductionOrder,
+    ()=>{}
+  );
+};
+async function _doCreateProductionOrder(){
   const name=document.getElementById('po-name')?.value.trim();
   const code=document.getElementById('po-code')?.value.trim();
   const fw=+(document.getElementById('po-fw')?.value)||0;
@@ -3015,11 +3557,22 @@ window.openOrderSheet = function(id) {
       const svcs=item.svcs||[item.svc]||[];
       const labelParts=(item.label||'').split('·').map(s=>s.trim()).filter(Boolean);
       return `<div style="background:var(--paper);border-radius:10px;padding:12px;margin-bottom:8px;border-left:3px solid var(--gold-dk);">
-        <div style="font-weight:700;color:var(--gold-dk);margin-bottom:6px;">${svcs.map(s=>SVC_ICONS[s]||'📦').join('')} ${svcs.join(' + ')}</div>
-        ${labelParts.map(p=>`<div style="font-size:12px;color:var(--ink2);">• ${p}</div>`).join('')}
-        <div style="font-weight:700;color:var(--gold-dk);margin-top:6px;">Rs.${item.price||0}</div>
+        <div style="font-weight:700;color:var(--gold-dk);margin-bottom:8px;font-size:14px;">${svcs.map(s=>SVC_ICONS[s]||'📦').join('')} ${svcs.join(' + ')}</div>
+        ${labelParts.map((p,i)=>`<div style="display:flex;align-items:flex-start;gap:6px;font-size:12px;color:var(--ink2);padding:2px 0 2px 8px;">
+          <span style="color:var(--gold-dk);font-size:10px;margin-top:2px;">${i===labelParts.length-1?'└':'├'}──</span>
+          <span>${p}</span>
+        </div>`).join('')}
+        <div style="font-weight:700;color:var(--gold-dk);margin-top:8px;font-size:13px;">Rs.${item.price||0}</div>
       </div>`;
     }).join('')}
+    ${(o.photos&&o.photos.length)?`
+    <div style="margin-bottom:12px;">
+      <div style="font-weight:700;font-size:14px;margin-bottom:8px;">📸 Reference Photos (${o.photos.length})</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        ${o.photos.map((src,i)=>`<img src="${src}" onclick="viewPhoto('${i}','${o.id}')" style="width:80px;height:80px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid var(--paper3);">`).join('')}
+      </div>
+    </div>`:''}
+    ${o.isComplimentary?`<div style="background:#fff3e0;border-radius:8px;padding:10px;margin-bottom:12px;font-size:13px;color:#e65100;font-weight:700;">🎁 COMPLIMENTARY ORDER (Value: Rs.${o.originalTotal||0})</div>`:''}
     <div style="background:var(--paper);border-radius:10px;padding:12px;margin-bottom:16px;">
       ${o.discountPct&&+o.discountPct>0?`<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>Subtotal</span><span>Rs.${o.cartTotal||o.total}</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#388e3c;margin-bottom:4px;"><span>Discount ${o.discountPct}%</span><span>-Rs.${o.discountAmt||0}</span></div>`:''}
       <div style="display:flex;justify-content:space-between;font-weight:700;font-size:15px;"><span>Total</span><span>Rs.${o.total}</span></div>
