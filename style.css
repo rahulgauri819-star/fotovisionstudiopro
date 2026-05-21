@@ -614,7 +614,7 @@ textarea.form-input { min-height: 80px; resize: vertical; }
 .hidden { display: none !important; }
 
 /* ── RESPONSIVE ── */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   :root { --hh: 56px; --tn: 64px; }
   .hdr { padding: 0 16px; }
   .hdr-nav { display: none; }
@@ -628,6 +628,8 @@ textarea.form-input { min-height: 80px; resize: vertical; }
   .modal-box { border-radius: var(--r-xl) var(--r-xl) 0 0; max-height: 92vh; overflow: auto; max-width: 100%; }
   .filter-bar { flex-direction: column; }
   .filter-input, .filter-select { width: 100%; }
+  .form-outer-grid { grid-template-columns: 1fr !important; }
+  #cart-panel { position: static; }
   .toast { bottom: calc(var(--tn) + 12px); }
 }
 @media (min-width: 769px) {
