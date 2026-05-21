@@ -136,12 +136,14 @@ function getFormHTML(existing, role) {
     <!-- Payment Mode -->
     <div style="margin-bottom:18px;">
       <label class="form-label" style="display:block;margin-bottom:10px;">Payment Mode</label>
-      <div class="toggle-group" style="flex-wrap:wrap;">
+      <div class="toggle-group" style="flex-wrap:wrap;" id="paymode-group">
         <label class="toggle-option"><input type="radio" name="paymode" value="Cash" checked onchange="onPayModeChange()"><span>💵 Cash</span></label>
         <label class="toggle-option"><input type="radio" name="paymode" value="UPI" onchange="onPayModeChange()"><span>📱 UPI</span></label>
         <label class="toggle-option"><input type="radio" name="paymode" value="Credit Card" onchange="onPayModeChange()"><span>💳 Credit Card</span></label>
         <label class="toggle-option"><input type="radio" name="paymode" value="Cash+UPI" onchange="onPayModeChange()"><span>💵📱 Cash+UPI</span></label>
       </div>
+      <!-- Credit company options - dynamically added -->
+      <div id="credit-companies-pay" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>
       <!-- Cash+UPI split inputs -->
       <div id="cash-upi-split" class="hidden" style="margin-top:12px;background:var(--paper);border-radius:var(--r-sm);padding:12px;">
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
@@ -156,6 +158,10 @@ function getFormHTML(existing, role) {
         </div>
         <div id="split-total-tag" class="price-info" style="margin-bottom:4px;"></div>
         <div id="split-warn" class="warn-box hidden">⚠️ Cash + UPI total must match the order total exactly.</div>
+      </div>
+      <!-- Credit company info -->
+      <div id="credit-pay-info" class="hidden" style="margin-top:8px;background:#fff3e0;border-radius:8px;padding:10px;font-size:13px;color:#e65100;">
+        🏢 <b id="credit-company-name"></b> — Amount will be added to credit ledger. No payment collected now.
       </div>
     </div>
 
@@ -641,7 +647,8 @@ function getBPanelHTML(svc) {
 // ── Form Init & Interactions ──────────────────────────────────
 function initFormJS(existing, role) {
   updatePaymentSection();
-  updateCartPanel(); // Init cart panel
+  updateCartPanel();
+  updateCreditPaymentOptions(); // Add credit company buttons
   if(existing) {
     document.getElementById('f-name').value    = existing.name||'';
     document.getElementById('f-phone').value   = existing.phone||'';
@@ -919,11 +926,31 @@ function updatePaymentSection() {
 
 window.onPayModeChange = function() {
   const pm = document.querySelector('input[name="paymode"]:checked')?.value;
+  const isCredit = pm && (window.creditCompanies||[]).includes(pm);
   document.getElementById('cash-upi-split')?.classList.toggle('hidden', pm !== 'Cash+UPI');
-  if (pm !== 'Cash+UPI') {
-    const sc = document.getElementById('split-cash'); if(sc) sc.value='';
-    const su = document.getElementById('split-upi');  if(su) su.value='';
+  document.getElementById('credit-pay-info')?.classList.toggle('hidden', !isCredit);
+  if(isCredit) {
+    const nameEl = document.getElementById('credit-company-name');
+    if(nameEl) nameEl.textContent = pm;
   }
+  if(pm !== 'Cash+UPI') {
+    const sc = document.getElementById('split-cash'); if(sc) sc.value='';
+    const su = document.getElementById('split-upi'); if(su) su.value='';
+  }
+};
+
+// Populate credit company payment options
+window.updateCreditPaymentOptions = function() {
+  const el = document.getElementById('credit-companies-pay');
+  if(!el) return;
+  const companies = window.creditCompanies||[];
+  if(!companies.length) { el.innerHTML=''; return; }
+  el.innerHTML = companies.map(c=>
+    `<label class="toggle-option">
+      <input type="radio" name="paymode" value="${c}" onchange="onPayModeChange()">
+      <span>🏢 ${c}</span>
+    </label>`
+  ).join('');
 };
 
 window.calcSplitPayment = function() {

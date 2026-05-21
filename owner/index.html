@@ -175,6 +175,78 @@
   </div>
 </div>
 
+<!-- ═══ CREDIT LEDGER ═══ -->
+<div id="pg-credit" class="hidden">
+  <div class="page-header">
+    <div class="page-title">🏢 Credit Accounts</div>
+    <div class="page-sub">Track company credit & settlements</div>
+  </div>
+  <!-- Company tabs -->
+  <div id="credit-company-tabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;"></div>
+  <div id="credit-ledger-content"></div>
+</div>
+
+<!-- ═══ PRODUCTION ORDERS ═══ -->
+<div id="pg-production" class="hidden">
+  <div class="page-header">
+    <div class="page-title">🏭 Production Orders</div>
+    <div class="page-sub">Send frame production jobs to framer</div>
+  </div>
+  <!-- Create Production Order -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header"><div class="card-title">➕ New Production Order</div></div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group"><label class="form-label">Frame Name</label><input class="form-input" id="po-name" placeholder="e.g. 5×7 White Frame"></div>
+        <div class="form-group"><label class="form-label">Item Code</label><input class="form-input" id="po-code" placeholder="e.g. F5X7WHITE"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group"><label class="form-label">Frame Width (inches)</label><input class="form-input" id="po-fw" type="number" placeholder="5"></div>
+        <div class="form-group"><label class="form-label">Frame Height (inches)</label><input class="form-input" id="po-fh" type="number" placeholder="7"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group">
+          <label class="form-label">Moulding Size</label>
+          <select class="form-input" id="po-msize" onchange="updatePOMouldingTypes()">
+            <option>0.5"</option><option>0.75"</option><option selected>1"</option>
+            <option>1.25"</option><option>1.5"</option><option>1.75"</option>
+            <option>2"</option><option>2.5"</option><option>3"</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Moulding Type</label>
+          <select class="form-input" id="po-mtype"></select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group">
+          <label class="form-label">Mount</label>
+          <select class="form-input" id="po-mount" onchange="togglePOMount()">
+            <option value="No">No Mount</option>
+            <option value="Yes">With Mount</option>
+          </select>
+        </div>
+        <div class="form-group" id="po-mount-size-group" style="display:none;">
+          <label class="form-label">Mount Size (inches)</label>
+          <input class="form-input" id="po-msize-val" type="number" placeholder="2">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quantity</label>
+          <input class="form-input" id="po-qty" type="number" min="1" value="1">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group"><label class="form-label">Selling Price (Rs.)</label><input class="form-input" id="po-price" type="number" placeholder="0"></div>
+        <div class="form-group"><label class="form-label">Notes for Framer</label><input class="form-input" id="po-notes" placeholder="Any special instructions..."></div>
+      </div>
+      <div id="po-stock-check" style="margin-bottom:10px;"></div>
+      <button onclick="createProductionOrder()" class="btn-gold" style="padding:12px 24px;font-size:14px;">📤 Send to Framer</button>
+    </div>
+  </div>
+  <!-- Active Production Orders -->
+  <div id="production-orders-list"></div>
+</div>
+
 <!-- ═══ REPORTS ═══ -->
 <div id="pg-reports" class="hidden">
   <div class="page-header">
@@ -309,8 +381,17 @@
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-header"><div class="card-title">🏪 Vendor & Moulding Types</div></div>
+  <div class="card" style="margin-top:16px;">
+    <div class="card-header"><div class="card-title">🏢 Credit Companies</div></div>
+    <div class="card-body">
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;">Companies that pay later — appear as payment options in orders</div>
+      <div id="credit-companies-list" style="margin-bottom:16px;"></div>
+      <div style="display:flex;gap:8px;">
+        <input class="form-input" id="new-credit-company" placeholder="e.g. GAVS, TCS..." style="max-width:240px;" onkeydown="if(event.key==='Enter')addCreditCompany()">
+        <button onclick="addCreditCompany()" class="btn-gold" style="padding:10px 20px;">+ Add</button>
+      </div>
+    </div>
+  </div>
     <div class="card-body">
       <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;">Each vendor has their own moulding types/colors</div>
       <div id="vendor-list" style="margin-bottom:16px;"></div>
@@ -618,21 +699,22 @@ document.getElementById('role-pill').textContent = getCurrentIcon() + ' ' + getC
 
 // ── Nav ───────────────────────────────────────────────────────
 const TABS = [
-  { id:'dashboard',      label:'Dashboard',   icon:'📊', name:'Dash' },
-  { id:'bookings',       label:'Bookings',    icon:'📅', name:'Book' },
-  { id:'orders',         label:'Orders',      icon:'📋', name:'Orders' },
-  { id:'expenses',       label:'Expenses',    icon:'💸', name:'Expense' },
-  { id:'readymade-stock',label:'Stock',       icon:'📦', name:'Stock' },
-  { id:'moulding-stock', label:'Moulds',      icon:'📐', name:'Moulds' },
-  { id:'reports',        label:'Reports',     icon:'📊', name:'Reports' },
-  { id:'settings',       label:'Settings',    icon:'⚙️', name:'Settings' },
+  { id:'dashboard',   label:'Dashboard', icon:'📊', name:'Dash' },
+  { id:'bookings',    label:'Bookings',  icon:'📅', name:'Book' },
+  { id:'orders',      label:'Orders',    icon:'📋', name:'Orders' },
+  { id:'expenses',    label:'Expenses',  icon:'💸', name:'Expense' },
+  { id:'readymade-stock',label:'Stock',  icon:'📦', name:'Stock' },
+  { id:'moulding-stock', label:'Moulds', icon:'📐', name:'Moulds' },
+  { id:'reports',     label:'Reports',   icon:'📊', name:'Reports' },
+  { id:'settings',    label:'Settings',  icon:'⚙️', name:'Settings' },
 ];
-// Extra tabs accessible via More menu
 const MORE_TABS = [
-  { id:'customers',  label:'Customers',   icon:'👥' },
-  { id:'dayreports', label:'Day Reports',  icon:'📋' },
-  { id:'mouldings',  label:'Mouldings',   icon:'🖼️' },
-  { id:'framer',     label:'Framing',     icon:'🔨' },
+  { id:'credit',      label:'Credit Accounts', icon:'🏢' },
+  { id:'production',  label:'Production',      icon:'🏭' },
+  { id:'customers',   label:'Customers',       icon:'👥' },
+  { id:'dayreports',  label:'Day Reports',     icon:'📋' },
+  { id:'mouldings',   label:'Mouldings',       icon:'🖼️' },
+  { id:'framer',      label:'Framing',         icon:'🔨' },
 ];
 
 function buildNav() {
@@ -681,7 +763,7 @@ document.addEventListener('click', e=>{
 });
 
 window.showPage = function(p) {
-  ['dashboard','orders','framer','form','mouldings','bookings','expenses','customers','dayend','dayreports','stock','readymade-stock','moulding-stock','settings','reports'].forEach(x => {
+  ['dashboard','orders','framer','form','mouldings','bookings','expenses','customers','dayend','dayreports','stock','readymade-stock','moulding-stock','settings','reports','credit','production'].forEach(x => {
     document.getElementById('pg-'+x)?.classList.add('hidden');
   });
   document.getElementById('pg-'+p)?.classList.remove('hidden');
@@ -699,6 +781,8 @@ window.showPage = function(p) {
   if(p==='expenses')   { setExpDateInput(); renderExpenses(); }
   if(p==='customers')  renderCustomers();
   if(p==='reports')         renderReports();
+  if(p==='credit')          renderCreditLedger();
+  if(p==='production')      renderProductionOrders();
   if(p==='dayend')          renderDayEnd();
   if(p==='dayreports')      renderDayReports();
   if(p==='stock')           renderStock();
@@ -1158,6 +1242,7 @@ function orderCard(o, role) {
       ${(o.cartItems||[]).map(i=>`<span class="tag">${(i.svcs||[i.svc]).map(s=>SVC_ICONS[s]||'').join('')} ${(i.svcs||[i.svc]).join('+')}${i.price?' '+inr(i.price):''}</span>`).join('')}
       ${o.discountPct&&+o.discountPct>0 ? `<span class="tag green">🏷️ ${o.discountPct}% OFF</span>` : ''}
       ${o.total ? `<span class="tag gold">Total ${inr(o.total)}</span>` : ''}
+      ${(window.creditCompanies||[]).includes(o.payMode) ? `<span class="tag" style="background:#e65100;color:#fff;">🏢 ${o.payMode} ON CREDIT</span>` : ''}
       ${+o.advance>0 ? `<span class="tag blue">Adv ${inr(o.advance)}</span>` : ''}
       ${+o.total>0 && +o.advance>0 ? `<span class="tag red">Bal ${inr(bal)}</span>` : ''}
       ${o.notes ? `<span class="tag">📝 ${o.notes.slice(0,30)}</span>` : ''}
@@ -1631,6 +1716,236 @@ window.ownerDeleteMoulding = async function(size, index) {
   toast('🗑️ Moulding deleted');
 };
 
+// ── Credit Companies ──────────────────────────────────────────
+window.creditCompanies = [];
+let selectedCreditCompany = null;
+
+async function loadCreditCompanies() {
+  const local = JSON.parse(localStorage.getItem('fv_credit_companies')||'["GAVS"]');
+  window.creditCompanies = local;
+  if(!useLocal) {
+    try {
+      window.db.collection('creditCompanies').onSnapshot(snap=>{
+        if(snap.docs.length) window.creditCompanies=snap.docs.map(d=>d.data().name).filter(Boolean);
+        renderCreditCompaniesSettings();
+      });
+    } catch(e) {}
+  }
+}
+
+function saveCreditCompanies() {
+  localStorage.setItem('fv_credit_companies', JSON.stringify(window.creditCompanies));
+}
+
+function renderCreditCompaniesSettings() {
+  const el = document.getElementById('credit-companies-list');
+  if(!el) return;
+  if(!window.creditCompanies.length) { el.innerHTML='<div style="color:var(--ink3);font-size:13px;">No credit companies yet</div>'; return; }
+  el.innerHTML = window.creditCompanies.map((c,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--paper3);">
+      <div style="flex:1;font-weight:600;">🏢 ${c}</div>
+      <button onclick="deleteCreditCompany(${i})" style="background:#e53935;color:#fff;border:none;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:12px;">🗑️</button>
+    </div>`).join('');
+}
+
+window.addCreditCompany = async function() {
+  const name = document.getElementById('new-credit-company')?.value.trim().toUpperCase();
+  if(!name){toast('⚠️ Enter company name','error');return;}
+  if(window.creditCompanies.includes(name)){toast('⚠️ Already exists','error');return;}
+  window.creditCompanies.push(name);
+  saveCreditCompanies();
+  if(!useLocal) try{await window.db.collection('creditCompanies').add({name});}catch(e){}
+  document.getElementById('new-credit-company').value='';
+  renderCreditCompaniesSettings();
+  toast('✅ Credit company added','success');
+};
+
+window.deleteCreditCompany = function(idx) {
+  if(!confirm(`Delete "${window.creditCompanies[idx]}"?`)) return;
+  window.creditCompanies.splice(idx,1);
+  saveCreditCompanies();
+  renderCreditCompaniesSettings();
+  toast('🗑️ Deleted');
+};
+
+window.renderCreditLedger = function() {
+  const companies = window.creditCompanies||[];
+  const tabsEl = document.getElementById('credit-company-tabs');
+  if(!tabsEl) return;
+  if(!companies.length) {
+    tabsEl.innerHTML='';
+    document.getElementById('credit-ledger-content').innerHTML='<div class="empty-state"><div class="empty-icon">🏢</div><div class="empty-title">No credit companies</div><div class="empty-sub">Add companies in Settings tab</div></div>';
+    return;
+  }
+  if(!selectedCreditCompany||!companies.includes(selectedCreditCompany)) selectedCreditCompany=companies[0];
+  tabsEl.innerHTML=companies.map(c=>`
+    <button onclick="selectCreditCompany('${c}')" style="padding:8px 16px;border:2px solid ${c===selectedCreditCompany?'var(--gold-dk)':'var(--paper3)'};border-radius:100px;font-weight:700;font-size:13px;cursor:pointer;background:${c===selectedCreditCompany?'var(--gold-dk)':'#fff'};color:${c===selectedCreditCompany?'#fff':'var(--ink2)'};">
+      🏢 ${c}
+    </button>`).join('');
+  renderCreditCompanyLedger(selectedCreditCompany);
+};
+
+window.selectCreditCompany = function(company) {
+  selectedCreditCompany=company;
+  renderCreditLedger();
+};
+
+function renderCreditCompanyLedger(company) {
+  const el=document.getElementById('credit-ledger-content');
+  if(!el)return;
+  const creditOrders=orders.filter(o=>o.payMode===company);
+  const settlements=JSON.parse(localStorage.getItem(`fv_settlements_${company}`)||'[]');
+  const totalBilled=creditOrders.reduce((s,o)=>s+(+o.total||0),0);
+  const totalSettled=settlements.reduce((s,x)=>s+(+x.amount||0),0);
+  const outstanding=totalBilled-totalSettled;
+  el.innerHTML=`
+    <div class="card" style="margin-bottom:14px;"><div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div style="background:var(--paper);border-radius:10px;padding:12px;text-align:center;"><div style="font-size:11px;color:var(--ink3);">Total Billed</div><div style="font-size:18px;font-weight:800;color:var(--gold-dk);">Rs.${totalBilled.toLocaleString('en-IN')}</div></div>
+        <div style="background:#e8f5e9;border-radius:10px;padding:12px;text-align:center;"><div style="font-size:11px;color:#388e3c;">Settled</div><div style="font-size:18px;font-weight:800;color:#2e7d32;">Rs.${totalSettled.toLocaleString('en-IN')}</div></div>
+        <div style="background:#fce4ec;border-radius:10px;padding:12px;text-align:center;"><div style="font-size:11px;color:#c62828;">Outstanding</div><div style="font-size:18px;font-weight:800;color:#b71c1c;">Rs.${outstanding.toLocaleString('en-IN')}</div></div>
+      </div>
+      <div style="background:var(--paper);border-radius:10px;padding:14px;">
+        <div style="font-weight:700;font-size:14px;margin-bottom:10px;">💰 Record Settlement</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div class="form-group"><label class="form-label">Amount (Rs.)</label><input class="form-input" id="settle-amount" type="number" value="${outstanding}"></div>
+          <div class="form-group"><label class="form-label">Payment Mode</label>
+            <div class="toggle-group"><label class="toggle-option"><input type="radio" name="settle-pay" value="Cash" checked><span>💵 Cash</span></label><label class="toggle-option"><input type="radio" name="settle-pay" value="UPI"><span>📱 UPI</span></label></div>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:10px;"><label class="form-label">Notes</label><input class="form-input" id="settle-notes" placeholder="Cheque no., ref..."></div>
+        <button onclick="recordSettlement('${company}')" class="btn-gold" style="padding:10px 24px;">✅ Record Settlement</button>
+      </div>
+    </div></div>
+    <div class="card" style="margin-bottom:14px;"><div class="card-header"><div class="card-title">📋 Orders (${creditOrders.length})</div></div>
+      <div class="card-body" style="max-height:300px;overflow-y:auto;">
+        ${creditOrders.length?creditOrders.map(o=>`
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--paper3);">
+            <div><div style="font-weight:600;font-size:13px;">${o.name} · ${o.billNo||o.id.slice(0,8)}</div>
+            <div style="font-size:11px;color:var(--ink3);">${formatDate(normDate(o.date||''))}</div></div>
+            <div style="font-weight:700;color:var(--gold-dk);">Rs.${o.total||0}</div>
+          </div>`).join(''):'<div style="text-align:center;padding:20px;color:var(--ink3);">No orders</div>'}
+      </div></div>
+    ${settlements.length?`<div class="card"><div class="card-header"><div class="card-title">💰 Settlements</div></div><div class="card-body">
+      ${settlements.map(s=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--paper3);">
+        <div><div style="font-weight:600;">Rs.${(+s.amount||0).toLocaleString('en-IN')}</div><div style="font-size:11px;color:var(--ink3);">${formatDate(s.date)} · ${s.payMode} ${s.notes?'· '+s.notes:''}</div></div>
+        <div style="font-size:11px;color:#388e3c;">✅</div></div>`).join('')}
+    </div></div>`:''}`;
+}
+
+window.recordSettlement = async function(company) {
+  const amount=+(document.getElementById('settle-amount')?.value)||0;
+  const payMode=document.querySelector('input[name="settle-pay"]:checked')?.value||'Cash';
+  const notes=document.getElementById('settle-notes')?.value||'';
+  if(!amount){toast('⚠️ Enter amount','error');return;}
+  const settlement={amount,payMode,notes,date:todayStr(),company,created:Date.now()};
+  const key=`fv_settlements_${company}`;
+  const existing=JSON.parse(localStorage.getItem(key)||'[]');
+  existing.unshift(settlement);
+  localStorage.setItem(key,JSON.stringify(existing));
+  if(!useLocal) try{await window.db.collection('settlements').add(settlement);}catch(e){}
+  toast(`✅ Settlement of Rs.${amount.toLocaleString('en-IN')} recorded!`,'success');
+  renderCreditCompanyLedger(company);
+};
+
+// ── Production Orders ─────────────────────────────────────────
+let productionOrders=[];
+
+async function loadProductionOrders() {
+  productionOrders=JSON.parse(localStorage.getItem('fv_production_orders')||'[]');
+  if(!useLocal){
+    try{window.db.collection('productionOrders').orderBy('created','desc').onSnapshot(snap=>{
+      productionOrders=snap.docs.map(d=>({id:d.id,...d.data()}));
+      if(currentPage==='production')renderProductionOrders();
+    });}catch(e){}
+  }
+}
+
+window.updatePOMouldingTypes=function(){
+  const typeSel=document.getElementById('po-mtype');
+  if(!typeSel)return;
+  const allTypes=Object.entries(vendors||{}).flatMap(([v,types])=>types.map(t=>`${v} — ${t}`));
+  typeSel.innerHTML=allTypes.length?allTypes.map(t=>`<option value="${t}">${t}</option>`).join(''):'<option value="default">Default</option>';
+};
+
+window.togglePOMount=function(){
+  const val=document.getElementById('po-mount')?.value;
+  const grp=document.getElementById('po-mount-size-group');
+  if(grp)grp.style.display=val==='Yes'?'block':'none';
+};
+
+window.createProductionOrder=async function(){
+  const name=document.getElementById('po-name')?.value.trim();
+  const code=document.getElementById('po-code')?.value.trim();
+  const fw=+(document.getElementById('po-fw')?.value)||0;
+  const fh=+(document.getElementById('po-fh')?.value)||0;
+  const msize=document.getElementById('po-msize')?.value||'1"';
+  const mtype=document.getElementById('po-mtype')?.value||'default';
+  const mount=document.getElementById('po-mount')?.value||'No';
+  const mval=mount==='Yes'?(+(document.getElementById('po-msize-val')?.value)||0):0;
+  const qty=+(document.getElementById('po-qty')?.value)||1;
+  const price=+(document.getElementById('po-price')?.value)||0;
+  const notes=document.getElementById('po-notes')?.value||'';
+  if(!name){toast('⚠️ Enter frame name','error');return;}
+  if(!fw||!fh){toast('⚠️ Enter frame dimensions','error');return;}
+  const mouldW=parseFloat(msize)||1;
+  const l=fw+mval*2+mouldW*2;
+  const b=fh+mval*2+mouldW*2;
+  const totalNeeded=(l*2+b*2)*qty;
+  const typeStock=mouldingStock?.[msize]?.[mtype]||[];
+  const WASTE=4;
+  const available=typeStock.filter(p=>p>WASTE).reduce((s,p)=>s+p,0);
+  if(available<totalNeeded){toast(`❌ Not enough stock! Need ${totalNeeded}" but only ${available}" available.`,'error');return;}
+  const po={name,code,fw,fh,msize,mtype,mount,mountSize:mval,qty,sellingPrice:price,notes,status:'Pending',created:Date.now(),totalMouldingNeeded:totalNeeded};
+  for(let i=0;i<qty;i++)deductMouldingStock(msize,mtype,fw,fh,mval);
+  if(useLocal){po.id='PO-'+Date.now();productionOrders.unshift(po);localStorage.setItem('fv_production_orders',JSON.stringify(productionOrders));}
+  else{try{const ref=await window.db.collection('productionOrders').add(po);po.id=ref.id;productionOrders.unshift(po);}catch(e){toast('Error','error');return;}}
+  ['po-name','po-code','po-fw','po-fh','po-qty','po-price','po-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  toast('✅ Production order sent to framer!','success');
+  renderProductionOrders();renderMouldingStock();
+};
+
+window.renderProductionOrders=function(){
+  updatePOMouldingTypes();
+  const el=document.getElementById('production-orders-list');if(!el)return;
+  const active=productionOrders.filter(p=>p.status!=='Complete');
+  const done=productionOrders.filter(p=>p.status==='Complete');
+  if(!productionOrders.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">🏭</div><div class="empty-title">No production orders yet</div></div>';return;}
+  const card=(p,showActions)=>`<div class="card" style="margin-bottom:10px;"><div class="card-body">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+      <div>
+        <div style="font-weight:700;font-size:15px;">${p.name}</div>
+        <div style="font-size:12px;color:var(--ink3);">${p.code||''} · ${p.fw}×${p.fh}" · ${p.msize} · ${p.mtype}</div>
+        <div style="font-size:12px;color:var(--ink3);">Mount: ${p.mount==='Yes'?p.mountSize+'"':'No'} · Qty: ${p.qty} frames</div>
+        ${p.notes?`<div style="font-size:12px;color:var(--ink3);">📝 ${p.notes}</div>`:''}
+      </div>
+      <span style="padding:4px 10px;border-radius:100px;font-size:11px;font-weight:700;background:${p.status==='Complete'?'#e8f5e9':p.status==='In Progress'?'#e3f2fd':'#fff3e0'};color:${p.status==='Complete'?'#2e7d32':p.status==='In Progress'?'#1565c0':'#e65100'};">${p.status}</span>
+    </div>
+    ${showActions?`<div style="display:flex;gap:8px;">
+      ${p.status==='Pending'?`<button onclick="updatePOStatus('${p.id}','In Progress')" style="flex:1;background:#1976d2;color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">🔨 Start</button>`:''}
+      ${p.status!=='Complete'?`<button onclick="completePO('${p.id}')" style="flex:1;background:#388e3c;color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">✅ Complete → Add to Stock</button>`:''}
+    </div>`:''}
+  </div></div>`;
+  el.innerHTML=(active.length?`<div style="font-weight:700;font-size:14px;margin-bottom:8px;">🔨 Active (${active.length})</div>${active.map(p=>card(p,true)).join('')}`:'')+(done.length?`<div style="font-weight:700;font-size:14px;margin:12px 0 8px;">✅ Completed</div>${done.map(p=>card(p,false)).join('')}`:'');
+};
+
+window.updatePOStatus=async function(id,status){
+  productionOrders=productionOrders.map(p=>p.id===id?{...p,status}:p);
+  if(useLocal)localStorage.setItem('fv_production_orders',JSON.stringify(productionOrders));
+  else try{await window.db.collection('productionOrders').doc(id).update({status});}catch(e){}
+  renderProductionOrders();
+};
+
+window.completePO=async function(id){
+  const po=productionOrders.find(p=>p.id===id);if(!po)return;
+  const newItem={code:po.code||'',name:po.name,qty:po.qty,sellingPrice:po.sellingPrice||0,costPrice:0,category:'Readymade Frames',created:Date.now()};
+  if(useLocal){newItem.id='STK-'+Date.now();window.stockItems.push(newItem);localStorage.setItem('fv_stock',JSON.stringify(window.stockItems));}
+  else{try{const ref=await window.db.collection('stock').add(newItem);newItem.id=ref.id;window.stockItems.push(newItem);}catch(e){}}
+  await updatePOStatus(id,'Complete');
+  toast(`✅ ${po.qty} frames added to Readymade Stock!`,'success');
+  renderProductionOrders();renderReadymadeStock();
+};
+
 // ── Reports ───────────────────────────────────────────────────
 let currentReportType = 'daily';
 let currentReportData = null;
@@ -1962,13 +2277,13 @@ function rebuildStaffDropdowns() {
 
 window.renderSettings = function() {
   const el = document.getElementById('staff-names-list');
-  if(!el) return;
-  el.innerHTML = staffNames.map((n,i)=>`
+  if(el) el.innerHTML = staffNames.map((n,i)=>`
     <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--paper3);">
       <div style="flex:1;font-weight:600;">${n}</div>
       <button onclick="deleteStaffName(${i})" style="background:#e53935;color:#fff;border:none;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:12px;">🗑️</button>
     </div>`).join('');
   renderVendorList();
+  renderCreditCompaniesSettings();
 };
 
 // ── Vendor Management ─────────────────────────────────────────
@@ -2351,11 +2666,13 @@ function calcMouldingCut(size, type, frameL, frameB, mountSize) {
   const PIECE_LEN = 114; // 9.5ft in inches
   const WASTE_MAX = 4;
 
-  // If mount, add mount to frame dimensions
-  const l = frameL + (mountSize||0)*2;
-  const b = frameB + (mountSize||0)*2;
+  // Parse moulding width from size string e.g. "1\"" → 1
+  const mouldW = parseFloat(size) || 1;
 
-  // 4 sides sorted largest first
+  // Add mount to frame dimensions
+  const l = frameL + (mountSize||0)*2 + (mouldW*2); // 45° mitre correction
+  const b = frameB + (mountSize||0)*2 + (mouldW*2);
+
   const sides = [l, l, b, b].sort((a,z)=>z-a);
 
   // Work on a copy of pieces
@@ -2400,8 +2717,9 @@ function calcMouldingCut(size, type, frameL, frameB, mountSize) {
 function deductMouldingStock(size, type, frameL, frameB, mountSize) {
   const WASTE_MAX = 4;
   const PIECE_LEN = 114;
-  const l = frameL + (mountSize||0)*2;
-  const b = frameB + (mountSize||0)*2;
+  const mouldW = parseFloat(size)||1;
+  const l = frameL + (mountSize||0)*2 + (mouldW*2);
+  const b = frameB + (mountSize||0)*2 + (mouldW*2);
   const sides = [l, l, b, b].sort((a,z)=>z-a);
 
   if(!mouldingStock[size]) mouldingStock[size]={};
@@ -3149,6 +3467,8 @@ initDB().then(async () => {
   await loadStaffNames();
   await loadMouldingStock();
   await loadVendors();
+  await loadCreditCompanies();
+  await loadProductionOrders();
   showPage('dashboard');
 });
 
