@@ -927,6 +927,7 @@ window.calcFrame = function() {
   const grand = frameCost + sleeveTotal;
   totalTag.classList.remove('hidden');
   totalTag.textContent = `Total Framing Cost: Rs.${grand}`;
+  updateCartPanel(); // Live preview update
 };
 
 function onOrderType() {
@@ -1577,8 +1578,18 @@ function updateCartPanel() {
   const totalsEl = document.getElementById('cart-panel-totals');
   if (!itemsEl) return;
 
+  // Check if something is being filled right now (live preview)
+  const livePreview = getLiveFillingPreview();
+
   if (!window.cart || window.cart.length === 0) {
-    itemsEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--ink3);font-size:13px;">No services added yet</div>';
+    if(livePreview) {
+      itemsEl.innerHTML = `<div style="padding:8px;margin-bottom:8px;background:#fff3e0;border-radius:8px;border-left:3px solid #e65100;">
+        <div style="font-size:11px;font-weight:700;color:#e65100;margin-bottom:4px;">⏳ FILLING NOW...</div>
+        ${livePreview}
+      </div>`;
+    } else {
+      itemsEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--ink3);font-size:13px;">No services added yet</div>';
+    }
     totalsEl?.classList.add('hidden');
     return;
   }
@@ -1588,20 +1599,32 @@ function updateCartPanel() {
   const discAmt  = Math.round(subtotal * discPct / 100);
   const total    = subtotal - discAmt;
 
+  // Use tree structure for cart items
   itemsEl.innerHTML = window.cart.map((item, idx) => `
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid var(--paper3);">
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:12px;font-weight:700;color:var(--ink1);">${(item.svcs||[]).map(s=>SVC_ICONS[s]||'📦').join('')} ${(item.svcs||[]).join('+')} </div>
-        <div style="font-size:11px;color:var(--ink3);margin-top:2px;word-break:break-word;">${item.label||''}</div>
-      </div>
-      <div style="text-align:right;flex-shrink:0;">
-        <div style="font-weight:700;color:var(--gold-dk);font-size:13px;">Rs.${(+item.price||0).toLocaleString('en-IN')}</div>
-        <div style="display:flex;gap:4px;margin-top:4px;justify-content:flex-end;">
-          <button onclick="duplicateCartItem(${idx})" style="background:none;border:none;color:var(--gold-dk);font-size:11px;cursor:pointer;padding:2px 4px;">📋 Dup</button>
-          <button onclick="removeFromCart(${idx})" style="background:none;border:none;color:#e53935;font-size:11px;cursor:pointer;padding:2px 4px;">❌ Del</button>
+    <div style="margin-bottom:8px;">
+      <div style="font-size:12px;font-weight:700;color:var(--ink1);margin-bottom:4px;">${(item.svcs||[]).map(s=>(window.SVC_ICONS||{})[s]||'📦').join('')} ${(item.svcs||[]).join('+')}</div>
+      ${(item.label||'').split('·').map(s=>s.trim()).filter(Boolean).map((p,i,arr)=>`
+        <div style="display:flex;gap:4px;font-size:11px;color:var(--ink3);padding:0 0 0 8px;">
+          <span style="color:var(--gold-dk);font-family:monospace;font-size:9px;">${i===arr.length-1?'└':'├'}──</span>
+          <span>${p}</span>
+        </div>`).join('')}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+        <span style="font-weight:700;color:var(--gold-dk);font-size:13px;">Rs.${(+item.price||0).toLocaleString('en-IN')}</span>
+        <div style="display:flex;gap:4px;">
+          <button onclick="duplicateCartItem(${idx})" style="background:none;border:none;color:var(--gold-dk);font-size:11px;cursor:pointer;padding:2px 4px;">📋</button>
+          <button onclick="removeFromCart(${idx})" style="background:none;border:none;color:#e53935;font-size:11px;cursor:pointer;padding:2px 4px;">❌</button>
         </div>
       </div>
+      <div style="border-bottom:1px solid var(--paper3);margin-top:6px;"></div>
     </div>`).join('');
+
+  // Show live preview below cart items
+  if(livePreview) {
+    itemsEl.innerHTML += `<div style="padding:8px;margin-top:8px;background:#fff3e0;border-radius:8px;border-left:3px solid #e65100;">
+      <div style="font-size:11px;font-weight:700;color:#e65100;margin-bottom:4px;">⏳ FILLING NOW...</div>
+      ${livePreview}
+    </div>`;
+  }
 
   totalsEl?.classList.remove('hidden');
   document.getElementById('cp-subtotal').textContent = 'Rs.'+subtotal.toLocaleString('en-IN');
@@ -1615,6 +1638,50 @@ function updateCartPanel() {
   } else {
     discRow?.classList.add('hidden');
   }
+}
+
+// Get live preview of what's currently being filled
+function getLiveFillingPreview() {
+  const lines = [];
+
+  // Check framing panel
+  const framingPanel = document.getElementById('panel-framing');
+  if(framingPanel) {
+    const size = document.querySelector('input[name="frame-print-w"]')?.value;
+    const size2 = document.querySelector('input[name="frame-print-h"]')?.value;
+    const msize = document.querySelector('input[name="mould-size"]:checked')?.value || document.querySelector('.mould-size-btn.act')?.dataset?.size;
+    const mtype = document.getElementById('mould-type')?.value;
+    const framePrice = document.getElementById('frame-price-tag')?.textContent;
+    if(size||msize||mtype) {
+      if(size&&size2) lines.push(`📐 Size: ${size}×${size2}"`);
+      if(msize) lines.push(`🖼️ Moulding: ${msize}`);
+      if(mtype) lines.push(`🎨 Type: ${mtype}`);
+      if(framePrice) lines.push(`💰 ${framePrice}`);
+    }
+  }
+
+  // Check printing panel
+  const printingPanel = document.getElementById('panel-printing');
+  if(printingPanel) {
+    const psize = document.getElementById('print-size')?.value || document.querySelector('.print-size-btn.act')?.textContent;
+    const qty = document.getElementById('print-qty')?.value;
+    const qual = document.querySelector('input[name="print-qual"]:checked')?.value;
+    if(psize||qty) {
+      if(psize) lines.push(`📏 Size: ${psize}`);
+      if(qual) lines.push(`✨ Quality: ${qual}`);
+      if(qty) lines.push(`🔢 Qty: ${qty}`);
+    }
+  }
+
+  // Check photo editing panel
+  const editingPanel = document.getElementById('panel-editing');
+  if(editingPanel) {
+    const cost = document.getElementById('edit-cost-tag')?.textContent;
+    if(cost) lines.push(`🎨 Photo Editing: ${cost}`);
+  }
+
+  if(!lines.length) return null;
+  return lines.map((l,i)=>`<div style="font-size:11px;color:#e65100;padding-left:8px;">${i===lines.length-1?'└':'├'}── ${l}</div>`).join('');
 }
 
 function renderCart() {

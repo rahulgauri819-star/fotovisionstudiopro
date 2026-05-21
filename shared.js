@@ -524,3 +524,47 @@ async function deleteMoulding(size, index) {
   window.mouldingsCache[size].splice(index, 1);
   await saveMouldings(size);
 }
+
+// ── Service Label Tree Parser ─────────────────────────────────
+function parseServiceLabel(item) {
+  const svcs = item.svcs || [item.svc] || [];
+  const label = item.label || '';
+  const price = item.price || 0;
+  const parts = label.split('·').map(s=>s.trim()).filter(Boolean);
+
+  // Build tree lines from label parts
+  const lines = parts.length > 0 ? parts : label.split('+').map(s=>s.trim()).filter(Boolean);
+
+  if(!lines.length) return { svcs, lines: [], price };
+  return { svcs, lines, price };
+}
+
+// Render service as tree HTML (for bottom sheets, cards etc)
+function renderServiceTree(item, compact=false) {
+  const {svcs, lines, price} = parseServiceLabel(item);
+  const svcLabel = svcs.map(s=>(window.SVC_ICONS?.[s]||'📦')+' '+s).join(' + ');
+  const fontSize = compact ? '11px' : '12px';
+  const padding = compact ? '8px' : '12px';
+
+  if(!lines.length) {
+    return `<div style="background:var(--paper);border-radius:8px;padding:${padding};margin-bottom:6px;border-left:3px solid var(--gold-dk);">
+      <div style="font-weight:700;color:var(--gold-dk);margin-bottom:4px;">${svcLabel}</div>
+      <div style="font-weight:700;color:var(--gold-dk);font-size:13px;">Rs.${price}</div>
+    </div>`;
+  }
+
+  const treeLines = lines.map((line, i) => {
+    const isLast = i === lines.length - 1;
+    const connector = isLast ? '└──' : '├──';
+    return `<div style="display:flex;align-items:flex-start;gap:5px;font-size:${fontSize};color:var(--ink2);padding:1px 0 1px ${compact?'4px':'8px'};">
+      <span style="color:var(--gold-dk);font-family:monospace;flex-shrink:0;font-size:10px;margin-top:1px;">${connector}</span>
+      <span>${line}</span>
+    </div>`;
+  }).join('');
+
+  return `<div style="background:var(--paper);border-radius:8px;padding:${padding};margin-bottom:6px;border-left:3px solid var(--gold-dk);">
+    <div style="font-weight:700;color:var(--gold-dk);margin-bottom:6px;font-size:${compact?'12px':'14px'};">${svcLabel}</div>
+    ${treeLines}
+    <div style="font-weight:700;color:var(--gold-dk);margin-top:6px;font-size:13px;">Rs.${price}</div>
+  </div>`;
+}

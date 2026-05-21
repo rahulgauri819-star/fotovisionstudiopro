@@ -1414,32 +1414,17 @@ function formatFramerOrderDetail(o) {
   // Customer & delivery info
   html += `<div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px;margin-bottom:12px;background:var(--paper);padding:10px;border-radius:8px;">
     <span style="color:var(--ink3);">👤 Customer</span><span style="font-weight:600;">${o.name}</span>
-    <span style="color:var(--ink3);">📋 Order</span><span>${o.id}</span>
+    <span style="color:var(--ink3);">📋 Order</span><span>${o.billNo||('#'+o.id.slice(0,8))}</span>
     <span style="color:var(--ink3);">👷 Staff</span><span>${o.staff||'—'}</span>
     ${o.delivery ? `<span style="color:var(--red);font-weight:600;">⏰ Delivery</span><span style="color:var(--red);font-weight:700;">${formatDatetime(o.delivery)}</span>` : ''}
   </div>`;
 
-  // Each cart item
-  items.forEach((item, idx) => {
-    const svcs = item.svcs||[item.svc]||[];
-    const lbl  = item.label||'';
-    html += `<div style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;">`;
-    html += `<div style="font-weight:700;font-size:13px;color:var(--gold-dk);margin-bottom:8px;">${svcs.map(s=>SVC_ICONS[s]||'').join('')} ${svcs.join(' + ')}</div>`;
-    html += `<div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:12px;">`;
-
-    if (svcs.includes('Printing')) {
-      // Parse label for printing details
-      const parts = lbl.split(' ');
-      html += `<span style="color:var(--ink3);">Details</span><span>${lbl}</span>`;
-    }
-    if (svcs.includes('Framing')) {
-      html += `<span style="color:var(--ink3);">Details</span><span>${lbl}</span>`;
-    }
-    html += `<span style="color:var(--ink3);">💰 Cost</span><span style="font-weight:700;">Rs.${item.price||0}</span>`;
-    html += `</div></div>`;
+  // Each cart item using tree structure
+  items.forEach(item => {
+    html += renderServiceTree(item, true);
   });
 
-  html += `<div style="font-weight:700;font-size:14px;color:var(--gold-dk);text-align:right;padding-top:8px;border-top:1px solid var(--border);">Total: Rs.${o.total||0}</div>`;
+  if(o.notes) html += `<div style="background:#fff3cd;border-radius:8px;padding:8px;font-size:12px;margin-top:6px;">📝 ${o.notes}</div>`;
   html += `</div>`;
   return html;
 }
@@ -3553,18 +3538,7 @@ window.openOrderSheet = function(id) {
       ${o.phone?`<div style="background:var(--paper);border-radius:8px;padding:10px;"><div style="font-size:10px;color:var(--ink3);">📞 Phone</div><div style="font-weight:600;font-size:13px;">${o.phone}</div></div>`:''}
     </div>
     <div style="font-weight:700;font-size:14px;margin-bottom:8px;">🛒 Services</div>
-    ${(o.cartItems||[]).map(item=>{
-      const svcs=item.svcs||[item.svc]||[];
-      const labelParts=(item.label||'').split('·').map(s=>s.trim()).filter(Boolean);
-      return `<div style="background:var(--paper);border-radius:10px;padding:12px;margin-bottom:8px;border-left:3px solid var(--gold-dk);">
-        <div style="font-weight:700;color:var(--gold-dk);margin-bottom:8px;font-size:14px;">${svcs.map(s=>SVC_ICONS[s]||'📦').join('')} ${svcs.join(' + ')}</div>
-        ${labelParts.map((p,i)=>`<div style="display:flex;align-items:flex-start;gap:6px;font-size:12px;color:var(--ink2);padding:2px 0 2px 8px;">
-          <span style="color:var(--gold-dk);font-size:10px;margin-top:2px;">${i===labelParts.length-1?'└':'├'}──</span>
-          <span>${p}</span>
-        </div>`).join('')}
-        <div style="font-weight:700;color:var(--gold-dk);margin-top:8px;font-size:13px;">Rs.${item.price||0}</div>
-      </div>`;
-    }).join('')}
+    ${(o.cartItems||[]).map(item=>renderServiceTree(item,false)).join('')}
     ${(o.photos&&o.photos.length)?`
     <div style="margin-bottom:12px;">
       <div style="font-weight:700;font-size:14px;margin-bottom:8px;">📸 Reference Photos (${o.photos.length})</div>
