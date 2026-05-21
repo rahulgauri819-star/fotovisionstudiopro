@@ -41,16 +41,31 @@
   <div class="tab-nav-inner" id="tab-nav-inner">
     <button class="tab-btn" id="tnb-dashboard" onclick="showPage('dashboard')"><span class="tab-icon">📊</span><span>Dash</span></button>
     <button class="tab-btn" id="tnb-bookings" onclick="showPage('bookings')"><span class="tab-icon">📅</span><span>Book</span></button>
+    <button class="tab-btn-fab" onclick="openForm()">+</button>
     <button class="tab-btn" id="tnb-orders" onclick="showPage('orders')"><span class="tab-icon">📋</span><span>Orders</span></button>
     <button class="tab-btn" id="tnb-expenses" onclick="showPage('expenses')"><span class="tab-icon">💸</span><span>Expense</span></button>
-    <button class="tab-btn-fab" onclick="openForm()">+</button>
-    <button class="tab-btn" id="tnb-readymade-stock" onclick="showPage('readymade-stock')"><span class="tab-icon">📦</span><span>Stock</span></button>
-    <button class="tab-btn" id="tnb-moulding-stock" onclick="showPage('moulding-stock')"><span class="tab-icon">📐</span><span>Moulds</span></button>
-    <button class="tab-btn" id="tnb-reports" onclick="showPage('reports')"><span class="tab-icon">📊</span><span>Reports</span></button>
-    <button class="tab-btn" id="tnb-settings" onclick="showPage('settings')"><span class="tab-icon">⚙️</span><span>Settings</span></button>
-    <button class="tab-btn" id="tnb-more" onclick="toggleMoreMenu()"><span class="tab-icon">☰</span><span>More</span></button>
+    <button class="tab-btn" id="tnb-more" onclick="ownerToggleMore()"><span class="tab-icon">☰</span><span>More</span></button>
   </div>
 </div>
+
+<!-- Owner More Menu - slides up from bottom -->
+<div id="owner-more-menu" style="display:none;position:fixed;bottom:70px;left:0;right:0;background:#fff;border-top:1px solid #eee;border-radius:16px 16px 0 0;box-shadow:0 -4px 24px rgba(0,0,0,.12);z-index:9999;padding:16px;">
+  <div style="font-size:11px;font-weight:700;color:#9A6E1E;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;">More Options</div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;">
+    <button onclick="showPage('readymade-stock');ownerCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">📦</span>Stock</button>
+    <button onclick="showPage('moulding-stock');ownerCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">📐</span>Moulds</button>
+    <button onclick="showPage('reports');ownerCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">📊</span>Reports</button>
+    <button onclick="showPage('settings');ownerCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">⚙️</span>Settings</button>
+    <button onclick="showPage('credit');ownerCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">🏢</span>Credit</button>
+    <button onclick="showPage('production');ownerCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">🏭</span>Produce</button>
+    <button onclick="showPage('customers');ownerCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">👥</span>Customers</button>
+    <button onclick="showPage('framer');ownerCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">🔨</span>Framing</button>
+    <button onclick="showPage('dayreports');ownerCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">📋</span>Day Rpts</button>
+    <button onclick="showPage('mouldings');ownerCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">🖼️</span>Mouldings</button>
+  </div>
+  <button onclick="ownerCloseMore()" style="width:100%;padding:12px;border:none;background:#f0ede6;border-radius:10px;font-size:14px;font-weight:700;color:#666;cursor:pointer;">✕ Close</button>
+</div>
+<div id="owner-more-overlay" onclick="ownerCloseMore()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:9998;"></div>
 
 <!-- OWNER APPROVAL BANNER -->
 <div id="owner-banner" class="owner-banner hidden" onclick="handleOwnerBannerClick()">
@@ -786,10 +801,18 @@ function buildNav() {
   } catch(e) { console.error('buildNav error:', e); }
 }
 
-window.toggleMoreMenu = function() {
-  const m = document.getElementById('more-menu');
-  if(m) m.style.display = m.style.display==='none'?'block':'none';
+window.ownerToggleMore = function() {
+  const m = document.getElementById('owner-more-menu');
+  const o = document.getElementById('owner-more-overlay');
+  const open = m.style.display === 'none';
+  m.style.display = open ? 'block' : 'none';
+  o.style.display = open ? 'block' : 'none';
 };
+window.ownerCloseMore = function() {
+  document.getElementById('owner-more-menu').style.display = 'none';
+  document.getElementById('owner-more-overlay').style.display = 'none';
+};
+window.toggleMoreMenu = window.ownerToggleMore; // backward compat
 // Close more menu when clicking outside - deferred to avoid parse-time crash
 setTimeout(()=>{
   document.addEventListener('click', e=>{

@@ -31,15 +31,32 @@
   <div class="tab-nav-inner" id="tab-nav-inner">
     <button class="tab-btn" id="tnb-dashboard" onclick="showPage('dashboard')"><span class="tab-icon">📊</span><span>Dash</span></button>
     <button class="tab-btn" id="tnb-bookings" onclick="showPage('bookings')"><span class="tab-icon">📅</span><span>Book</span></button>
+    <button class="tab-btn-fab" onclick="openForm()">+</button>
     <button class="tab-btn" id="tnb-orders" onclick="showPage('orders')"><span class="tab-icon">📋</span><span>Orders</span></button>
     <button class="tab-btn" id="tnb-expenses" onclick="showPage('expenses')"><span class="tab-icon">💸</span><span>Expense</span></button>
-    <button class="tab-btn-fab" onclick="openForm()">+</button>
-    <button class="tab-btn" id="tnb-readymade-stock" onclick="showPage('readymade-stock')"><span class="tab-icon">📦</span><span>Stock</span></button>
-    <button class="tab-btn" id="tnb-moulding-stock" onclick="showPage('moulding-stock')"><span class="tab-icon">📐</span><span>Moulds</span></button>
-    <button class="tab-btn" id="tnb-dayend" onclick="showPage('dayend')"><span class="tab-icon">🌙</span><span>DayEnd</span></button>
-    <button class="tab-btn" id="tnb-framer" onclick="showPage('framer')"><span class="tab-icon">🖼️</span><span>Framing</span></button>
+    <button class="tab-btn" id="tnb-more" onclick="staffToggleMore()"><span class="tab-icon">☰</span><span>More</span></button>
   </div>
 </div>
+
+<!-- Staff More Menu -->
+<div id="staff-more-menu" style="display:none;position:fixed;bottom:70px;left:0;right:0;background:#fff;border-top:1px solid #eee;border-radius:16px 16px 0 0;box-shadow:0 -4px 24px rgba(0,0,0,.12);z-index:9999;padding:16px;">
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:8px;">
+    <button onclick="showPage('readymade-stock');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;">
+      <span style="font-size:22px;">📦</span>Stock
+    </button>
+    <button onclick="showPage('moulding-stock');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;">
+      <span style="font-size:22px;">📐</span>Moulds
+    </button>
+    <button onclick="showPage('dayend');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;">
+      <span style="font-size:22px;">🌙</span>Day End
+    </button>
+    <button onclick="showPage('framer');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;">
+      <span style="font-size:22px;">🖼️</span>Framing
+    </button>
+  </div>
+  <button onclick="staffCloseMore()" style="width:100%;padding:12px;border:none;background:#f0ede6;border-radius:10px;font-size:14px;font-weight:700;color:#666;cursor:pointer;">✕ Close</button>
+</div>
+<div id="staff-more-overlay" onclick="staffCloseMore()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:9998;"></div>
 
 <!-- Owner approval banner (same-session simulation) -->
 <div id="owner-banner" class="owner-banner hidden" onclick="handleOwnerBannerClick()">
@@ -330,8 +347,17 @@ window.showPage=function(p){
     if(p==='moulding-stock')  { if(typeof renderStaffMouldingStock==='function') renderStaffMouldingStock(); }
   } catch(err) { console.error('showPage error:',err); }
 };
-window.openForm = function() { window.showPage('form'); };
-window.toggleMoreMenu = function() { const m=document.getElementById('more-menu'); if(m) m.style.display=m.style.display==='none'?'block':'none'; };
+window.staffToggleMore = function() {
+  const m = document.getElementById('staff-more-menu');
+  const o = document.getElementById('staff-more-overlay');
+  const open = m.style.display === 'none';
+  m.style.display = open ? 'block' : 'none';
+  o.style.display = open ? 'block' : 'none';
+};
+window.staffCloseMore = function() {
+  document.getElementById('staff-more-menu').style.display = 'none';
+  document.getElementById('staff-more-overlay').style.display = 'none';
+};
 
 // Auth - safe
 try { if(typeof requireRole==='function' && !requireRole('staff')) window.location.href='../index.html'; } catch(e){}
