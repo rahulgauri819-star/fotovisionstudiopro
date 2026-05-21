@@ -694,8 +694,8 @@ function showBanner(msg, ok) {
 }
 
 // ── Auth ──────────────────────────────────────────────────────
-if (!requireRole('owner')) throw new Error('Not authorized');
-document.getElementById('role-pill').textContent = getCurrentIcon() + ' ' + getCurrentName();
+if (!requireRole('owner')) { window.location.href='../index.html'; }
+try { document.getElementById('role-pill').textContent = getCurrentIcon() + ' ' + getCurrentName(); } catch(e){}
 
 // ── Nav ───────────────────────────────────────────────────────
 const TABS = [
@@ -718,38 +718,42 @@ const MORE_TABS = [
 ];
 
 function buildNav() {
-  const allTabs = [...TABS, ...MORE_TABS];
-  const dn = document.getElementById('desktop-nav');
-  dn.innerHTML = allTabs.map(t =>
-    `<button class="hdr-nav-btn" id="nav-${t.id}" onclick="showPage('${t.id}')">${t.icon} ${t.label}${t.id==='bookings'?'<span id="bookings-badge" style="background:#e53935;color:#fff;border-radius:100px;font-size:10px;padding:1px 5px;margin-left:4px;"></span>':''}</button>`
-  ).join('');
+  try {
+    const allTabs = [...TABS, ...MORE_TABS];
+    const dn = document.getElementById('desktop-nav');
+    if(dn) dn.innerHTML = allTabs.map(t =>
+      `<button class="hdr-nav-btn" id="nav-${t.id}" onclick="showPage('${t.id}')">${t.icon} ${t.label}${t.id==='bookings'?'<span id="bookings-badge" style="background:#e53935;color:#fff;border-radius:100px;font-size:10px;padding:1px 5px;margin-left:4px;display:none;"></span>':''}</button>`
+    ).join('');
 
-  const ti = document.getElementById('tab-nav-inner');
-  const half = Math.floor(TABS.length/2);
-  let html = '';
-  TABS.slice(0,half).forEach(t =>
-    html += `<button class="tab-btn" id="tnb-${t.id}" onclick="showPage('${t.id}')"><span class="tab-icon">${t.icon}</span>${t.name}${t.id==='bookings'?'<span id="bookings-badge-mob" style="background:#e53935;color:#fff;border-radius:100px;font-size:9px;padding:1px 4px;margin-left:2px;"></span>':''}</button>`
-  );
-  html += `<button class="tab-btn-fab" onclick="openForm()">+</button>`;
-  TABS.slice(half).forEach(t =>
-    html += `<button class="tab-btn" id="tnb-${t.id}" onclick="showPage('${t.id}')"><span class="tab-icon">${t.icon}</span>${t.name}</button>`
-  );
-  // More button
-  html += `<button class="tab-btn" id="tnb-more" onclick="toggleMoreMenu()"><span class="tab-icon">☰</span>More</button>`;
-  ti.innerHTML = html;
+    const ti = document.getElementById('tab-nav-inner');
+    if(ti) {
+      const half = Math.floor(TABS.length/2);
+      let html = '';
+      TABS.slice(0,half).forEach(t =>
+        html += `<button class="tab-btn" id="tnb-${t.id}" onclick="showPage('${t.id}')"><span class="tab-icon">${t.icon}</span><span>${t.name}</span></button>`
+      );
+      html += `<button class="tab-btn-fab" onclick="openForm()">+</button>`;
+      TABS.slice(half).forEach(t =>
+        html += `<button class="tab-btn" id="tnb-${t.id}" onclick="showPage('${t.id}')"><span class="tab-icon">${t.icon}</span><span>${t.name}</span></button>`
+      );
+      html += `<button class="tab-btn" id="tnb-more" onclick="toggleMoreMenu()"><span class="tab-icon">☰</span><span>More</span></button>`;
+      ti.innerHTML = html;
+    }
 
-  // More menu (hidden by default)
-  const moreMenu = document.createElement('div');
-  moreMenu.id = 'more-menu';
-  moreMenu.style.cssText = 'position:fixed;bottom:70px;right:8px;background:#fff;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,.18);z-index:2000;padding:8px;min-width:160px;display:none;';
-  moreMenu.innerHTML = MORE_TABS.map(t=>
-    `<button onclick="showPage('${t.id}');toggleMoreMenu();" id="nav-${t.id}"
-      style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:none;background:none;font-size:14px;font-weight:600;cursor:pointer;border-radius:8px;text-align:left;"
-      onmouseover="this.style.background='var(--paper)'" onmouseout="this.style.background='none'">
-      <span>${t.icon}</span> ${t.label}
-    </button>`
-  ).join('');
-  document.body.appendChild(moreMenu);
+    // Add More menu
+    if(!document.getElementById('more-menu')) {
+      const moreMenu = document.createElement('div');
+      moreMenu.id = 'more-menu';
+      moreMenu.style.cssText = 'position:fixed;bottom:70px;right:8px;background:#fff;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,.18);z-index:9999;padding:8px;min-width:180px;display:none;border:1px solid #eee;';
+      moreMenu.innerHTML = MORE_TABS.map(t=>
+        `<button onclick="showPage('${t.id}');document.getElementById('more-menu').style.display='none';" id="morenav-${t.id}"
+          style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:none;background:none;font-size:14px;font-weight:600;cursor:pointer;border-radius:8px;text-align:left;color:#333;">
+          <span style="font-size:18px;">${t.icon}</span> ${t.label}
+        </button>`
+      ).join('');
+      document.body.appendChild(moreMenu);
+    }
+  } catch(e) { console.error('buildNav error:', e); }
 }
 
 window.toggleMoreMenu = function() {
@@ -945,7 +949,7 @@ function renderDash() {
   document.getElementById('day-closed-banner')?.classList.toggle('hidden', !closed);
 
   // Today's stats with payment breakdown
-  const todayOrds = orders.filter(o => o.date === todayStr());
+  const todayOrds = orders.filter(o => normDate(o.date||'') === todayStr());
   const todaySales = todayOrds.reduce((s,o) => s+(+o.total||0), 0);
   document.getElementById('s-today-sales').textContent = 'Rs.'+todaySales.toLocaleString('en-IN');
   document.getElementById('s-today-orders').textContent = todayOrds.length;
@@ -1240,6 +1244,7 @@ function orderCard(o, role) {
   const svcs = [...new Set((o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]))];
   const payIcon = o.payMode==='UPI'?'📱':o.payMode==='Credit Card'?'💳':'💵';
   const overdueStyle = isOverdue(o) ? 'background:#ffcdd2;border-left:5px solid #c62828;border-top:1px solid #ef9a9a;' : '';
+  const isCreditOrder = (window.creditCompanies||[]).includes(o.payMode);
   return `<div class="order-card fade-in" onclick="openOrderSheet('${o.id}')" style="cursor:pointer;${overdueStyle}">
     <div class="order-card-head">
       <div class="order-avatar">${svcs.slice(0,2).map(s=>SVC_ICONS[s]||'').join('')||'📦'}</div>
@@ -1259,7 +1264,7 @@ function orderCard(o, role) {
       ${(o.cartItems||[]).map(i=>`<span class="tag">${(i.svcs||[i.svc]).map(s=>SVC_ICONS[s]||'').join('')} ${(i.svcs||[i.svc]).join('+')}${i.price?' '+inr(i.price):''}</span>`).join('')}
       ${o.discountPct&&+o.discountPct>0 ? `<span class="tag green">🏷️ ${o.discountPct}% OFF</span>` : ''}
       ${o.total ? `<span class="tag gold">Total ${inr(o.total)}</span>` : ''}
-      ${(window.creditCompanies||[]).includes(o.payMode) ? `<span class="tag" style="background:#e65100;color:#fff;">🏢 ${o.payMode} ON CREDIT</span>` : ''}
+      ${isCreditOrder ? `<span class="tag" style="background:#e65100;color:#fff;">🏢 ${o.payMode} ON CREDIT</span>` : ''}
       ${+o.advance>0 ? `<span class="tag blue">Adv ${inr(o.advance)}</span>` : ''}
       ${+o.total>0 && +o.advance>0 ? `<span class="tag red">Bal ${inr(bal)}</span>` : ''}
       ${o.notes ? `<span class="tag">📝 ${o.notes.slice(0,30)}</span>` : ''}
@@ -3476,7 +3481,12 @@ window.closeCustModal = function() {
 
 // ── Init ──────────────────────────────────────────────────────
 // Build nav immediately so tabs always show
-try { buildNav(); } catch(e) { console.error('buildNav error:',e); }
+// Build nav after DOM is ready
+if(document.readyState==='loading') {
+  document.addEventListener('DOMContentLoaded', ()=>{ try{buildNav();}catch(e){console.error('buildNav error:',e);} });
+} else {
+  try{buildNav();}catch(e){console.error('buildNav error:',e);}
+}
 
 initDB().then(async () => {
   await loadMouldings();

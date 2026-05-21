@@ -279,7 +279,7 @@ window.framerUndoReady = async function(id) {
 };
 
 window.doLogout = doLogout;
-if(!requireRole('framer')) throw new Error('Not authorized');
+if(!requireRole('framer')) { window.location.href='../index.html'; }
 framerOrders = JSON.parse(localStorage.getItem('fv_orders')||'[]');
 framerRender();
 framerInitDB();
