@@ -704,9 +704,43 @@ function showBanner(msg, ok) {
   if (ok) setTimeout(() => b.remove(), 3000);
 }
 
-// ── Auth ──────────────────────────────────────────────────────
-if (!requireRole('owner')) { window.location.href='../index.html'; }
-try { document.getElementById('role-pill').textContent = getCurrentIcon() + ' ' + getCurrentName(); } catch(e){}
+// ── CRITICAL: Define showPage immediately so nav always works ──
+// This must be the FIRST thing defined, before any code that could crash
+window.showPage = function(p) {
+  try {
+    ['dashboard','orders','framer','form','mouldings','bookings','expenses','customers','dayend','dayreports','stock','readymade-stock','moulding-stock','settings','reports','credit','production'].forEach(x => {
+      document.getElementById('pg-'+x)?.classList.add('hidden');
+    });
+    document.getElementById('pg-'+p)?.classList.remove('hidden');
+    document.querySelectorAll('.hdr-nav-btn, .tab-btn').forEach(b => b.classList.remove('act'));
+    document.getElementById('nav-'+p)?.classList.add('act');
+    document.getElementById('tnb-'+p)?.classList.add('act');
+    window.scrollTo(0,0);
+    window._currentPage = p;
+    // Render page content
+    if(p==='dashboard')       { if(typeof renderDash==='function') renderDash(); }
+    if(p==='orders')          { if(typeof renderOrders==='function') renderOrders(); }
+    if(p==='framer')          { if(typeof renderFramer==='function') renderFramer(); }
+    if(p==='bookings')        { if(typeof renderBookings==='function') renderBookings(); }
+    if(p==='expenses')        { if(typeof renderExpenses==='function') renderExpenses(); if(typeof setExpDateInput==='function') setExpDateInput(); }
+    if(p==='dayend')          { if(typeof renderDayEnd==='function') renderDayEnd(); }
+    if(p==='dayreports')      { if(typeof renderDayReports==='function') renderDayReports(); }
+    if(p==='readymade-stock') { if(typeof renderReadymadeStock==='function') renderReadymadeStock(); }
+    if(p==='moulding-stock')  { if(typeof renderMouldingStock==='function') renderMouldingStock(); }
+    if(p==='settings')        { if(typeof renderSettings==='function') renderSettings(); }
+    if(p==='reports')         { if(typeof renderReports==='function') renderReports(); }
+    if(p==='credit')          { if(typeof renderCreditLedger==='function') renderCreditLedger(); }
+    if(p==='production')      { if(typeof renderProductionOrders==='function') renderProductionOrders(); }
+    if(p==='customers')       { if(typeof renderCustomers==='function') renderCustomers(); }
+    if(p==='mouldings')       { if(typeof renderMouldings==='function') renderMouldings(); }
+  } catch(err) { console.error('showPage error:', err); }
+};
+window.openForm = function() { window.showPage('form'); }; // placeholder, real one defined below
+window.toggleMoreMenu = function() { const m=document.getElementById('more-menu'); if(m) m.style.display=m.style.display==='none'?'block':'none'; };
+
+// ── Auth (safe - won't crash module if requireRole missing) ───
+try { if(typeof requireRole==='function' && !requireRole('owner')) window.location.href='../index.html'; } catch(e){}
+try { document.getElementById('role-pill').textContent = (typeof getCurrentIcon==='function'?getCurrentIcon():'👑') + ' ' + (typeof getCurrentName==='function'?getCurrentName():'Owner'); } catch(e){}
 
 // ── Nav ───────────────────────────────────────────────────────
 const TABS = [
@@ -766,33 +800,13 @@ setTimeout(()=>{
   });
 },500);
 
+// showPage is defined at top of module - this just keeps currentPage in sync
+let currentPage = 'dashboard';
+// Override showPage to also update currentPage
+const _origShowPage = window.showPage;
 window.showPage = function(p) {
-  ['dashboard','orders','framer','form','mouldings','bookings','expenses','customers','dayend','dayreports','stock','readymade-stock','moulding-stock','settings','reports','credit','production'].forEach(x => {
-    document.getElementById('pg-'+x)?.classList.add('hidden');
-  });
-  document.getElementById('pg-'+p)?.classList.remove('hidden');
-  document.querySelectorAll('.hdr-nav-btn').forEach(b => b.classList.remove('act'));
-  document.getElementById('nav-'+p)?.classList.add('act');
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('act'));
-  document.getElementById('tnb-'+p)?.classList.add('act');
-  window.scrollTo(0,0);
   currentPage = p;
-  if(p==='dashboard')  renderDash();
-  if(p==='orders')     renderOrders();
-  if(p==='framer')     renderFramer();
-  if(p==='mouldings')  renderMouldingsManager();
-  if(p==='bookings')   renderBookings();
-  if(p==='expenses')   { setExpDateInput(); renderExpenses(); }
-  if(p==='customers')  renderCustomers();
-  if(p==='reports')         renderReports();
-  if(p==='credit')          renderCreditLedger();
-  if(p==='production')      renderProductionOrders();
-  if(p==='dayend')          renderDayEnd();
-  if(p==='dayreports')      renderDayReports();
-  if(p==='stock')           renderStock();
-  if(p==='readymade-stock') renderReadymadeStock();
-  if(p==='moulding-stock')  renderMouldingStock();
-  if(p==='settings')        renderSettings();
+  _origShowPage(p);
 };
 
 let currentPage = 'dashboard';

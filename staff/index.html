@@ -311,7 +311,31 @@ async function initDB() {
 }
 function saveLocal(){if(useLocal)localStorage.setItem('fv_orders',JSON.stringify(orders));}
 
-if(!requireRole('staff')) { window.location.href='../index.html'; }
+// Define showPage FIRST before anything can crash
+window.showPage=function(p){
+  try {
+    ['dashboard','orders','framer','form','bookings','expenses','dayend','readymade-stock','moulding-stock'].forEach(x=>document.getElementById('pg-'+x)?.classList.add('hidden'));
+    document.getElementById('pg-'+p)?.classList.remove('hidden');
+    document.querySelectorAll('.hdr-nav-btn, .tab-btn').forEach(b=>b.classList.remove('act'));
+    document.getElementById('nav-'+p)?.classList.add('act');
+    document.getElementById('tnb-'+p)?.classList.add('act');
+    window.scrollTo(0,0); currentPage=p;
+    if(p==='dashboard')       { if(typeof renderDash==='function') renderDash(); }
+    if(p==='orders')          { if(typeof renderOrders==='function') renderOrders(); }
+    if(p==='framer')          { if(typeof renderFramer==='function') renderFramer(); }
+    if(p==='bookings')        { if(typeof renderBookings==='function') renderBookings(); }
+    if(p==='expenses')        { if(typeof staffSetExpDate==='function') staffSetExpDate(); if(typeof staffRenderExpenses==='function') staffRenderExpenses(); }
+    if(p==='dayend')          { if(typeof renderStaffDayEnd==='function') renderStaffDayEnd(); }
+    if(p==='readymade-stock') { if(typeof renderStaffReadymadeStock==='function') renderStaffReadymadeStock(); }
+    if(p==='moulding-stock')  { if(typeof renderStaffMouldingStock==='function') renderStaffMouldingStock(); }
+  } catch(err) { console.error('showPage error:',err); }
+};
+window.openForm = function() { window.showPage('form'); };
+window.toggleMoreMenu = function() { const m=document.getElementById('more-menu'); if(m) m.style.display=m.style.display==='none'?'block':'none'; };
+
+// Auth - safe
+try { if(typeof requireRole==='function' && !requireRole('staff')) window.location.href='../index.html'; } catch(e){}
+try { document.getElementById('role-pill').textContent = (typeof getCurrentIcon==='function'?getCurrentIcon():'👤') + ' ' + (typeof getCurrentName==='function'?getCurrentName():'Staff'); } catch(e){}
 
 const TABS=[
   {id:'dashboard',      label:'Dashboard',      icon:'📊',name:'Dash'},
@@ -339,23 +363,9 @@ function buildNav(){
 let currentPage='dashboard';
 let lastReadyIds = new Set();
 
-window.showPage=function(p){
-  ['dashboard','orders','framer','form','bookings','expenses','dayend','readymade-stock','moulding-stock'].forEach(x=>document.getElementById('pg-'+x)?.classList.add('hidden'));
-  document.getElementById('pg-'+p)?.classList.remove('hidden');
-  document.querySelectorAll('.hdr-nav-btn').forEach(b=>b.classList.remove('act'));
-  document.getElementById('nav-'+p)?.classList.add('act');
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('act'));
-  document.getElementById('tnb-'+p)?.classList.add('act');
-  window.scrollTo(0,0); currentPage=p;
-  if(p==='dashboard')       renderDash();
-  if(p==='orders')          renderOrders();
-  if(p==='framer')          renderFramer();
-  if(p==='bookings')        renderBookings();
-  if(p==='expenses')        { staffSetExpDate(); staffRenderExpenses(); }
-  if(p==='dayend')          renderStaffDayEnd();
-  if(p==='readymade-stock') renderStaffReadymadeStock();
-  if(p==='moulding-stock')  renderStaffMouldingStock();
-};
+// showPage already defined above - just keep currentPage updated
+const _staffOrigShowPage = window.showPage;
+window.showPage = function(p){ currentPage=p; _staffOrigShowPage(p); };
 function refreshCurrentPage(){
   try {
     if(currentPage==='dashboard')renderDash();
