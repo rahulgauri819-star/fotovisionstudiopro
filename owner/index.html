@@ -756,11 +756,15 @@ window.toggleMoreMenu = function() {
   const m = document.getElementById('more-menu');
   if(m) m.style.display = m.style.display==='none'?'block':'none';
 };
-// Close more menu when clicking outside
-document.addEventListener('click', e=>{
-  const m=document.getElementById('more-menu');
-  if(m&&!m.contains(e.target)&&!e.target.closest('#tnb-more')) m.style.display='none';
-});
+// Close more menu when clicking outside - deferred to avoid parse-time crash
+setTimeout(()=>{
+  document.addEventListener('click', e=>{
+    try {
+      const m=document.getElementById('more-menu');
+      if(m&&!m.contains(e.target)&&!e.target.closest?.('#tnb-more')) m.style.display='none';
+    } catch(err){}
+  });
+},500);
 
 window.showPage = function(p) {
   ['dashboard','orders','framer','form','mouldings','bookings','expenses','customers','dayend','dayreports','stock','readymade-stock','moulding-stock','settings','reports','credit','production'].forEach(x => {
@@ -932,6 +936,7 @@ function renderSvcBars() {
 }
 
 function renderDash() {
+  try {
   setGreeting();
   document.getElementById('dashdate').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 
@@ -999,22 +1004,34 @@ function renderDash() {
         <div style="font-size:11px;color:var(--red);margin-top:2px;">⏰ ${formatDatetime(o.delivery)}</div>
       </div>`).join('')
     : '<div style="font-size:12px;color:var(--ink3);padding:8px 0;">None due today 🎉</div>';
+  } catch(err) {
+    console.error('renderDash error:', err);
+    const rl = document.getElementById('recent-list');
+    if(rl) rl.innerHTML = '<div style="padding:16px;color:var(--ink3);font-size:13px;">Loading orders...</div>';
+  }
 }
 
 function recentRow(o) {
-  const sc = STATUS_CFG[o.status] || STATUS_CFG['Pending'];
-  const svcs = [...new Set((o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]))];
-  const dispId = o.billNo || ('#'+o.id.slice(0,8));
-  const dispDate = formatDate(normDate(o.date||'')) || o.date || '—';
-  const overdueStyle = isOverdue(o) ? 'background:#ffcdd2;border-left:4px solid #c62828;' : '';
-  return `<div onclick="openOrderSheet('${o.id}')" style="display:flex;align-items:center;gap:12px;padding:10px 20px;border-bottom:1px solid var(--paper2);cursor:pointer;${overdueStyle}">
-    <div style="font-size:22px;width:30px;">${svcs.slice(0,2).map(s=>SVC_ICONS[s]||'').join('')||'📦'}</div>
-    <div style="flex:1;min-width:0;">
-      <div style="font-size:13px;font-weight:600;">${o.name}${isOverdue(o)?' <span style="color:#c62828;font-size:10px;font-weight:700;">⚠️ OVERDUE</span>':''}</div>
-      <div style="font-size:11px;color:var(--ink3);">${dispId} · ${dispDate} · ${inr(o.total||0)}</div>
-    </div>
-    <span class="${sc.cls}" style="padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;white-space:nowrap;">${o.status}</span>
-  </div>`;
+  try {
+    const sc = STATUS_CFG[o.status] || STATUS_CFG['Pending'];
+    const svcs = [...new Set((o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]))];
+    const dispId = o.billNo || ('#'+(o.id||'').slice(0,8));
+    const dispDate = (typeof normDate==='function' ? formatDate(normDate(o.date||'')) : o.date) || '—';
+    const over = typeof isOverdue==='function' && isOverdue(o);
+    const overdueStyle = over ? 'background:#ffcdd2;border-left:4px solid #c62828;' : '';
+    return `<div onclick="openOrderSheet('${o.id}')" style="display:flex;align-items:center;gap:12px;padding:10px 20px;border-bottom:1px solid var(--paper2);cursor:pointer;${overdueStyle}">
+      <div style="font-size:22px;width:30px;">${svcs.slice(0,2).map(s=>SVC_ICONS[s]||'').join('')||'📦'}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;">${o.name}${over?' <span style="color:#c62828;font-size:10px;font-weight:700;">⚠️ OVERDUE</span>':''}</div>
+        <div style="font-size:11px;color:var(--ink3);">${dispId} · ${dispDate} · ${inr(o.total||0)}</div>
+      </div>
+      <span class="${sc.cls}" style="padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;white-space:nowrap;">${o.status}</span>
+    </div>`;
+  } catch(err) {
+    return `<div style="padding:10px 20px;border-bottom:1px solid var(--paper2);font-size:13px;">
+      <b>${o.name||'Order'}</b> · ${o.status||''}
+    </div>`;
+  }
 }
 
 // ── Orders ────────────────────────────────────────────────────
@@ -3458,7 +3475,9 @@ window.closeCustModal = function() {
 };
 
 // ── Init ──────────────────────────────────────────────────────
-buildNav();
+// Build nav immediately so tabs always show
+try { buildNav(); } catch(e) { console.error('buildNav error:',e); }
+
 initDB().then(async () => {
   await loadMouldings();
   await loadExpenses();
@@ -3469,6 +3488,9 @@ initDB().then(async () => {
   await loadVendors();
   await loadCreditCompanies();
   await loadProductionOrders();
+  showPage('dashboard');
+}).catch(err=>{
+  console.error('initDB error:',err);
   showPage('dashboard');
 });
 
