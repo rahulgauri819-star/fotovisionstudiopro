@@ -298,6 +298,16 @@
 </div>
 
 <script src="../shared.js"></script>
+<script>
+window._pageQueue=null; window._moduleReady=false;
+window.showPage=function(p){
+  if(window._moduleReady&&window._realShowPage){window._realShowPage(p);}
+  else{window._pageQueue=p;document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('act'));const tb=document.getElementById('tnb-'+p);if(tb)tb.classList.add('act');}
+};
+window.openForm=function(){if(window._moduleReady&&window._realOpenForm)window._realOpenForm();else window._pageQueue='form';};
+window.staffToggleMore=function(){const m=document.getElementById('staff-more-menu');const o=document.getElementById('staff-more-overlay');if(m&&o){const open=m.style.display==='none'||!m.style.display;m.style.display=open?'block':'none';o.style.display=open?'block':'none';}};
+window.staffCloseMore=function(){const m=document.getElementById('staff-more-menu');const o=document.getElementById('staff-more-overlay');if(m)m.style.display='none';if(o)o.style.display='none';};
+</script>
 <script type="module">
 import { initializeApp }    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, updateDoc,
@@ -328,70 +338,43 @@ async function initDB() {
 }
 function saveLocal(){if(useLocal)localStorage.setItem('fv_orders',JSON.stringify(orders));}
 
-// Define showPage FIRST before anything can crash
-window.showPage=function(p){
+// Auth - safe
+try { if(typeof requireRole==='function' && !requireRole('staff')) window.location.href='../index.html'; } catch(e){}
+try { document.getElementById('role-pill').textContent = (typeof getCurrentIcon==='function'?getCurrentIcon():'👤') + ' ' + (typeof getCurrentName==='function'?getCurrentName():'Staff'); } catch(e){}
+
+let currentPage='dashboard';
+let lastReadyIds = new Set();
+
+// Register real showPage - replaces stub from plain script
+window._realShowPage = function(p) {
   try {
+    currentPage=p;
     ['dashboard','orders','framer','form','bookings','expenses','dayend','readymade-stock','moulding-stock'].forEach(x=>document.getElementById('pg-'+x)?.classList.add('hidden'));
     document.getElementById('pg-'+p)?.classList.remove('hidden');
     document.querySelectorAll('.hdr-nav-btn, .tab-btn').forEach(b=>b.classList.remove('act'));
     document.getElementById('nav-'+p)?.classList.add('act');
     document.getElementById('tnb-'+p)?.classList.add('act');
-    window.scrollTo(0,0); currentPage=p;
-    if(p==='dashboard')       { if(typeof renderDash==='function') renderDash(); }
-    if(p==='orders')          { if(typeof renderOrders==='function') renderOrders(); }
-    if(p==='framer')          { if(typeof renderFramer==='function') renderFramer(); }
-    if(p==='bookings')        { if(typeof renderBookings==='function') renderBookings(); }
-    if(p==='expenses')        { if(typeof staffSetExpDate==='function') staffSetExpDate(); if(typeof staffRenderExpenses==='function') staffRenderExpenses(); }
-    if(p==='dayend')          { if(typeof renderStaffDayEnd==='function') renderStaffDayEnd(); }
-    if(p==='readymade-stock') { if(typeof renderStaffReadymadeStock==='function') renderStaffReadymadeStock(); }
-    if(p==='moulding-stock')  { if(typeof renderStaffMouldingStock==='function') renderStaffMouldingStock(); }
+    window.scrollTo(0,0);
+    if(p==='dashboard')       renderDash();
+    if(p==='orders')          renderOrders();
+    if(p==='framer')          renderFramer();
+    if(p==='bookings')        renderBookings();
+    if(p==='expenses')        { staffSetExpDate(); staffRenderExpenses(); }
+    if(p==='dayend')          renderStaffDayEnd();
+    if(p==='readymade-stock') renderStaffReadymadeStock();
+    if(p==='moulding-stock')  renderStaffMouldingStock();
   } catch(err) { console.error('showPage error:',err); }
 };
-window.staffToggleMore = function() {
-  const m = document.getElementById('staff-more-menu');
-  const o = document.getElementById('staff-more-overlay');
-  const open = m.style.display === 'none';
-  m.style.display = open ? 'block' : 'none';
-  o.style.display = open ? 'block' : 'none';
+window.showPage = window._realShowPage;
+window._realOpenForm = window.openForm = function(){
+  window.editId=null;window.cart=[];
+  try{document.getElementById('ftit').textContent='+ New Order';document.getElementById('fsubt').textContent='Fill in customer & service details';}catch(e){}
+  if(typeof renderFormContent==='function')renderFormContent();
+  window._realShowPage('form');
 };
-window.staffCloseMore = function() {
-  document.getElementById('staff-more-menu').style.display = 'none';
-  document.getElementById('staff-more-overlay').style.display = 'none';
-};
+window._moduleReady=true;
+if(window._pageQueue){const q=window._pageQueue;window._pageQueue=null;window._realShowPage(q);}
 
-// Auth - safe
-try { if(typeof requireRole==='function' && !requireRole('staff')) window.location.href='../index.html'; } catch(e){}
-try { document.getElementById('role-pill').textContent = (typeof getCurrentIcon==='function'?getCurrentIcon():'👤') + ' ' + (typeof getCurrentName==='function'?getCurrentName():'Staff'); } catch(e){}
-
-const TABS=[
-  {id:'dashboard',      label:'Dashboard',      icon:'📊',name:'Dash'},
-  {id:'bookings',       label:'Bookings',       icon:'📅',name:'Book'},
-  {id:'orders',         label:'Orders',         icon:'📋',name:'Orders'},
-  {id:'expenses',       label:'Expenses',       icon:'💸',name:'Expense'},
-  {id:'readymade-stock',label:'Readymade Stock',icon:'📦',name:'Stock'},
-  {id:'moulding-stock', label:'Moulding Stock', icon:'📐',name:'Moulds'},
-  {id:'dayend',         label:'Day End',        icon:'🌙',name:'DayEnd'},
-  {id:'framer',         label:'Framing',        icon:'🖼️',name:'Framing'},
-];
-
-function buildNav(){
-  const dn=document.getElementById('desktop-nav');
-  dn.innerHTML=TABS.map(t=>`<button class="hdr-nav-btn" id="nav-${t.id}" onclick="showPage('${t.id}')">${t.icon} ${t.label}${t.id==='bookings'?'<span id="bookings-badge" style="background:#e53935;color:#fff;border-radius:100px;font-size:10px;padding:1px 5px;margin-left:4px;"></span>':''}</button>`).join('');
-  const ti=document.getElementById('tab-nav-inner');
-  const half=Math.floor(TABS.length/2);
-  let html='';
-  TABS.slice(0,half).forEach(t=>html+=`<button class="tab-btn" id="tnb-${t.id}" onclick="showPage('${t.id}')"><span class="tab-icon">${t.icon}</span>${t.name}</button>`);
-  html+=`<button class="tab-btn-fab" onclick="openForm()">+</button>`;
-  TABS.slice(half).forEach(t=>html+=`<button class="tab-btn" id="tnb-${t.id}" onclick="showPage('${t.id}')"><span class="tab-icon">${t.icon}</span>${t.name}</button>`);
-  ti.innerHTML=html;
-}
-
-let currentPage='dashboard';
-let lastReadyIds = new Set();
-
-// showPage already defined above - just keep currentPage updated
-const _staffOrigShowPage = window.showPage;
-window.showPage = function(p){ currentPage=p; _staffOrigShowPage(p); };
 function refreshCurrentPage(){
   try {
     if(currentPage==='dashboard')renderDash();
@@ -1187,7 +1170,7 @@ window.renderStaffDayEnd = function() {
   }
 };
 
-buildNav();
+// buildNav removed - tab nav is hardcoded in HTML
 initDB().then(async()=>{
   await loadMouldings();
   await staffLoadExpenses();

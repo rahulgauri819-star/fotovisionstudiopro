@@ -589,6 +589,13 @@
     <div class="page-title">🖼️ Framing Jobs</div>
     <div class="page-sub">Live view of all framing & finishing work</div>
   </div>
+  <!-- Stats -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;">
+    <div style="background:var(--paper);border-radius:10px;padding:12px;text-align:center;"><div style="font-size:10px;color:var(--ink3);">Today's Jobs</div><div style="font-size:22px;font-weight:800;color:var(--gold-dk);" id="fs-today">0</div></div>
+    <div style="background:var(--paper);border-radius:10px;padding:12px;text-align:center;"><div style="font-size:10px;color:var(--ink3);">Total Active</div><div style="font-size:22px;font-weight:800;color:var(--gold-dk);" id="fs-active">0</div></div>
+    <div style="background:var(--paper);border-radius:10px;padding:12px;text-align:center;"><div style="font-size:10px;color:var(--ink3);">Due Today</div><div style="font-size:22px;font-weight:800;color:#e65100;" id="fs-duetoday">0</div></div>
+    <div style="background:#ffcdd2;border-radius:10px;padding:12px;text-align:center;"><div style="font-size:10px;color:#c62828;">Overdue</div><div style="font-size:22px;font-weight:800;color:#c62828;" id="fs-overdue">0</div></div>
+  </div>
   <div class="framer-panel">
     <div class="framer-panel-title">🔔 Active Framing Jobs</div>
     <div id="framer-notifs"></div>
@@ -664,6 +671,55 @@
 </div>
 
 <script src="../shared.js"></script>
+
+<!-- CRITICAL: Define nav functions in plain script so they work IMMEDIATELY -->
+<!-- Module scripts are deferred - this runs synchronously before module loads -->
+<script>
+// Queue for calls made before module loads
+window._pageQueue = null;
+window._moduleReady = false;
+
+// Stub showPage - queues call if module not ready yet
+window.showPage = function(p) {
+  if(window._moduleReady && window._realShowPage) {
+    window._realShowPage(p);
+  } else {
+    window._pageQueue = p;
+    // Highlight active tab immediately for visual feedback
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('act'));
+    const tb = document.getElementById('tnb-'+p);
+    if(tb) tb.classList.add('act');
+  }
+};
+window.openForm = function() {
+  if(window._moduleReady && window._realOpenForm) window._realOpenForm();
+  else window._pageQueue = 'form';
+};
+window.ownerToggleMore = function() {
+  const m=document.getElementById('owner-more-menu');
+  const o=document.getElementById('owner-more-overlay');
+  if(m&&o){const open=m.style.display==='none'||!m.style.display;m.style.display=open?'block':'none';o.style.display=open?'block':'none';}
+};
+window.ownerCloseMore = function() {
+  const m=document.getElementById('owner-more-menu');
+  const o=document.getElementById('owner-more-overlay');
+  if(m) m.style.display='none';
+  if(o) o.style.display='none';
+};
+window.staffToggleMore = function() {
+  const m=document.getElementById('staff-more-menu');
+  const o=document.getElementById('staff-more-overlay');
+  if(m&&o){const open=m.style.display==='none'||!m.style.display;m.style.display=open?'block':'none';o.style.display=open?'block':'none';}
+};
+window.staffCloseMore = function() {
+  const m=document.getElementById('staff-more-menu');
+  const o=document.getElementById('staff-more-overlay');
+  if(m) m.style.display='none';
+  if(o) o.style.display='none';
+};
+window.toggleMoreMenu = window.ownerToggleMore;
+</script>
+
 <script type="module">
 // ── Firebase Setup ────────────────────────────────────────────
 import { initializeApp }    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -719,41 +775,7 @@ function showBanner(msg, ok) {
   if (ok) setTimeout(() => b.remove(), 3000);
 }
 
-// ── CRITICAL: Define showPage immediately so nav always works ──
-// This must be the FIRST thing defined, before any code that could crash
-window.showPage = function(p) {
-  try {
-    ['dashboard','orders','framer','form','mouldings','bookings','expenses','customers','dayend','dayreports','stock','readymade-stock','moulding-stock','settings','reports','credit','production'].forEach(x => {
-      document.getElementById('pg-'+x)?.classList.add('hidden');
-    });
-    document.getElementById('pg-'+p)?.classList.remove('hidden');
-    document.querySelectorAll('.hdr-nav-btn, .tab-btn').forEach(b => b.classList.remove('act'));
-    document.getElementById('nav-'+p)?.classList.add('act');
-    document.getElementById('tnb-'+p)?.classList.add('act');
-    window.scrollTo(0,0);
-    window._currentPage = p;
-    // Render page content
-    if(p==='dashboard')       { if(typeof renderDash==='function') renderDash(); }
-    if(p==='orders')          { if(typeof renderOrders==='function') renderOrders(); }
-    if(p==='framer')          { if(typeof renderFramer==='function') renderFramer(); }
-    if(p==='bookings')        { if(typeof renderBookings==='function') renderBookings(); }
-    if(p==='expenses')        { if(typeof renderExpenses==='function') renderExpenses(); if(typeof setExpDateInput==='function') setExpDateInput(); }
-    if(p==='dayend')          { if(typeof renderDayEnd==='function') renderDayEnd(); }
-    if(p==='dayreports')      { if(typeof renderDayReports==='function') renderDayReports(); }
-    if(p==='readymade-stock') { if(typeof renderReadymadeStock==='function') renderReadymadeStock(); }
-    if(p==='moulding-stock')  { if(typeof renderMouldingStock==='function') renderMouldingStock(); }
-    if(p==='settings')        { if(typeof renderSettings==='function') renderSettings(); }
-    if(p==='reports')         { if(typeof renderReports==='function') renderReports(); }
-    if(p==='credit')          { if(typeof renderCreditLedger==='function') renderCreditLedger(); }
-    if(p==='production')      { if(typeof renderProductionOrders==='function') renderProductionOrders(); }
-    if(p==='customers')       { if(typeof renderCustomers==='function') renderCustomers(); }
-    if(p==='mouldings')       { if(typeof renderMouldings==='function') renderMouldings(); }
-  } catch(err) { console.error('showPage error:', err); }
-};
-window.openForm = function() { window.showPage('form'); }; // placeholder, real one defined below
-window.toggleMoreMenu = function() { const m=document.getElementById('more-menu'); if(m) m.style.display=m.style.display==='none'?'block':'none'; };
-
-// ── Auth (safe - won't crash module if requireRole missing) ───
+// ── Auth (safe) ───────────────────────────────────────────────
 try { if(typeof requireRole==='function' && !requireRole('owner')) window.location.href='../index.html'; } catch(e){}
 try { document.getElementById('role-pill').textContent = (typeof getCurrentIcon==='function'?getCurrentIcon():'👑') + ' ' + (typeof getCurrentName==='function'?getCurrentName():'Owner'); } catch(e){}
 
@@ -823,16 +845,47 @@ setTimeout(()=>{
   });
 },500);
 
-// showPage is defined at top of module - this just keeps currentPage in sync
+// Register real showPage when module loads - flush any queued taps
 let currentPage = 'dashboard';
-// Override showPage to also update currentPage
-const _origShowPage = window.showPage;
-window.showPage = function(p) {
-  currentPage = p;
-  _origShowPage(p);
-};
 
-let currentPage = 'dashboard';
+window._realShowPage = function(p) {
+  try {
+    currentPage = p;
+    ['dashboard','orders','framer','form','mouldings','bookings','expenses','customers','dayend','dayreports','stock','readymade-stock','moulding-stock','settings','reports','credit','production'].forEach(x => {
+      document.getElementById('pg-'+x)?.classList.add('hidden');
+    });
+    document.getElementById('pg-'+p)?.classList.remove('hidden');
+    document.querySelectorAll('.hdr-nav-btn, .tab-btn').forEach(b => b.classList.remove('act'));
+    document.getElementById('nav-'+p)?.classList.add('act');
+    document.getElementById('tnb-'+p)?.classList.add('act');
+    window.scrollTo(0,0);
+    if(p==='dashboard')       renderDash();
+    if(p==='orders')          renderOrders();
+    if(p==='framer')          renderFramer();
+    if(p==='mouldings')       { if(typeof renderMouldingsManager==='function') renderMouldingsManager(); }
+    if(p==='bookings')        renderBookings();
+    if(p==='expenses')        { setExpDateInput(); renderExpenses(); }
+    if(p==='customers')       { if(typeof renderCustomers==='function') renderCustomers(); }
+    if(p==='reports')         renderReports();
+    if(p==='credit')          renderCreditLedger();
+    if(p==='production')      renderProductionOrders();
+    if(p==='dayend')          renderDayEnd();
+    if(p==='dayreports')      { if(typeof renderDayReports==='function') renderDayReports(); }
+    if(p==='readymade-stock') renderReadymadeStock();
+    if(p==='moulding-stock')  renderMouldingStock();
+    if(p==='settings')        renderSettings();
+  } catch(err) { console.error('showPage error:', err); }
+};
+window.showPage = window._realShowPage;
+window._realOpenForm = window.openForm = function() {
+  window.editId=null; window.cart=[];
+  try { document.getElementById('ftit').textContent='+ New Order'; document.getElementById('fsubt').textContent='Fill in customer & service details'; } catch(e){}
+  if(typeof renderFormContent==='function') renderFormContent();
+  window._realShowPage('form');
+};
+window._moduleReady = true;
+if(window._pageQueue) { const q=window._pageQueue; window._pageQueue=null; window._realShowPage(q); }
+
 function refreshCurrentPage() {
   if(currentPage==='dashboard') renderDash();
   else if(currentPage==='orders') renderOrders();
@@ -1374,36 +1427,76 @@ function formatFramerOrderDetail(o) {
 }
 
 function renderFramer() {
-  const fo = orders.filter(o => orderNeedsFramer(o));
-  const active = fo.filter(o => o.status!=='Delivered');
-  document.getElementById('framer-notifs').innerHTML = active.length
-    ? active.map(o => {
-        return `<div class="job-notif"><div class="job-dot"></div><div>
-          <div class="job-text"><b>${o.name}</b> · ${o.id} · <b>${o.status}</b></div>
-          <div class="job-time">📅 ${o.date} · 👤 ${o.staff}${o.delivery?' · ⏰ '+formatDatetime(o.delivery):''}</div>
-        </div></div>`;
-      }).join('')
-    : '<div style="font-size:13px;color:#9C8060;padding:6px 0;">No active framing jobs 🎉</div>';
+  try {
+    const fo = orders.filter(o => orderNeedsFramer(o));
+    const active = fo.filter(o => o.status!=='Delivered').sort((a,b)=>(b.created||0)-(a.created||0));
+    const today = todayStr();
+    const overdue  = active.filter(o=>o.delivery&&normDate(o.delivery.slice(0,10))<today);
+    const dueToday = active.filter(o=>o.delivery&&normDate(o.delivery.slice(0,10))===today&&!overdue.includes(o));
+    const upcoming = active.filter(o=>o.delivery&&normDate(o.delivery.slice(0,10))>today);
+    const nodue    = active.filter(o=>!o.delivery);
+    const todayJobs= active.filter(o=>normDate(o.date||'')===today);
 
-  document.getElementById('framer-orders').innerHTML = fo.length
-    ? fo.map(o => {
-        const sc = STATUS_CFG[o.status] || STATUS_CFG['Pending'];
-        const isDone = o.status === 'Delivered';
-        return `<div class="card" style="margin-bottom:12px;">
-          <div class="card-body">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-              <div style="font-size:15px;font-weight:700;">${o.name}</div>
-              <span class="${sc.cls}" style="padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;">${sc.icon||''} ${o.status}</span>
-            </div>
-            ${formatFramerOrderDetail(o)}
-            ${!isDone ? `<div style="display:flex;gap:8px;margin-top:10px;">
-              ${o.status!=='Ready' ? `<button onclick="markFramerReady('${o.id}')" class="btn-gold" style="flex:1;padding:10px;font-size:13px;">✅ Mark Ready</button>` : ''}
-              ${o.status==='Ready' ? `<button onclick="undoFramerReady('${o.id}')" class="btn-outline" style="flex:1;padding:10px;font-size:13px;color:#e53935;border-color:#e53935;">↩️ Undo Ready</button>` : ''}
-            </div>` : ''}
+    // Update stats
+    const set=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+    set('fs-today',todayJobs.length);
+    set('fs-active',active.length);
+    set('fs-duetoday',dueToday.length);
+    set('fs-overdue',overdue.length);
+
+    // Notifs panel
+    document.getElementById('framer-notifs').innerHTML = active.length
+      ? active.slice(0,5).map(o=>`
+        <div class="job-notif" style="${overdue.includes(o)?'color:#c62828;':''}">
+          <div class="job-dot" style="${overdue.includes(o)?'background:#c62828;':''}"></div>
+          <div>
+            <div class="job-text"><b>${o.name}</b> · <b>${o.status}</b>${overdue.includes(o)?' ⚠️ OVERDUE':''}</div>
+            <div class="job-time">📅 ${formatDate(normDate(o.date||''))} · 👤 ${o.staff||''}${o.delivery?' · ⏰ '+formatDatetime(o.delivery):''}</div>
           </div>
-        </div>`;
-      }).join('')
-    : '<div class="empty-state"><div class="empty-icon">🖼️</div><div class="empty-title">No framing orders</div></div>';
+        </div>`).join('')
+      : '<div style="font-size:13px;color:#9C8060;padding:6px 0;">No active framing jobs 🎉</div>';
+
+    if(!active.length) {
+      document.getElementById('framer-orders').innerHTML='<div class="empty-state"><div class="empty-icon">🎉</div><div class="empty-title">All caught up!</div></div>';
+      return;
+    }
+
+    const section=(title,color,bg,list)=>{
+      if(!list.length) return '';
+      return `<div style="margin-bottom:14px;">
+        <div style="font-weight:700;font-size:12px;color:${color};padding:5px 10px;background:${bg};border-radius:8px;margin-bottom:8px;border-left:3px solid ${color};">${title}</div>
+        ${list.map(o=>ownerFramerCard(o)).join('')}
+      </div>`;
+    };
+
+    document.getElementById('framer-orders').innerHTML =
+      section('🔴 OVERDUE','#c62828','#ffcdd2',overdue) +
+      section('🟡 DUE TODAY','#e65100','#fff3e0',dueToday) +
+      section('🔵 UPCOMING','#1976d2','#e3f2fd',upcoming) +
+      section('📋 NO DUE DATE','#666','#f5f5f5',nodue);
+  } catch(err) { console.error('renderFramer error:',err); }
+}
+
+function ownerFramerCard(o) {
+  const sc = STATUS_CFG[o.status]||STATUS_CFG['Pending'];
+  const isOD = o.delivery && normDate(o.delivery.slice(0,10)) < todayStr();
+  return `<div class="card" style="margin-bottom:10px;${isOD?'background:#ffcdd2;border-left:5px solid #c62828;':''}">
+    <div class="card-body">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div>
+          <div style="font-size:15px;font-weight:700;">${o.name} ${isOD?'<span style="background:#c62828;color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;">⚠️ OVERDUE</span>':''}</div>
+          <div style="font-size:11px;color:var(--ink3);">${o.billNo||('#'+o.id.slice(0,8))} · 👤 ${o.staff||'—'}</div>
+          ${o.delivery?`<div style="font-size:11px;color:#e65100;">⏰ ${formatDatetime(o.delivery)}</div>`:''}
+        </div>
+        <span class="${sc.cls}" style="padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;">${o.status}</span>
+      </div>
+      ${formatFramerOrderDetail(o)}
+      ${o.status!=='Delivered'?`<div style="display:flex;gap:8px;margin-top:10px;">
+        ${o.status!=='Ready'?`<button onclick="markFramerReady('${o.id}')" class="btn-gold" style="flex:1;padding:10px;font-size:13px;">✅ Mark Ready</button>`:''}
+        ${o.status==='Ready'?`<button onclick="undoFramerReady('${o.id}')" class="btn-outline" style="flex:1;padding:10px;font-size:13px;color:#e53935;border-color:#e53935;">↩️ Undo</button>`:''}
+      </div>`:''}
+    </div>
+  </div>`;
 }
 
 window.markFramerReady = async function(id) {
@@ -2594,8 +2687,31 @@ function saveMouldingStock() {
 }
 
 window.renderMouldingStock = function() {
-  // Render vendor pills
-  renderMouldingVendorPills();
+  // Render vendor pills - show free text if no vendors yet
+  const hasVendors = Object.keys(vendors||{}).length > 0;
+  const vpEl = document.getElementById('ms-vendor-pills');
+  if(vpEl) {
+    if(hasVendors) {
+      renderMouldingVendorPills();
+    } else {
+      vpEl.innerHTML = `<div style="font-size:12px;color:var(--ink3);margin-bottom:8px;">No vendors yet — type moulding name directly below, or add vendors in Settings</div>`;
+      // Auto-select "Others" mode
+      selectedMouldingVendor = 'Others';
+      const othersBox = document.getElementById('ms-others-box');
+      if(othersBox) othersBox.classList.remove('hidden');
+    }
+  }
+
+  // Update type dropdown
+  const typeSel = document.getElementById('ms-type');
+  if(typeSel && hasVendors && selectedMouldingVendor && selectedMouldingVendor !== 'Others') {
+    const types = vendors[selectedMouldingVendor]||[];
+    typeSel.innerHTML = types.length
+      ? types.map(t=>`<option value="${selectedMouldingVendor}|${t}">${t}</option>`).join('')
+      : `<option value="${selectedMouldingVendor}|default">Add type below</option>`;
+  } else if(typeSel && !hasVendors) {
+    typeSel.innerHTML = '<option value="default">Will use name entered below</option>';
+  }
 
   const el = document.getElementById('moulding-stock-list');
   if(!el) return;

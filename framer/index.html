@@ -78,11 +78,14 @@
 
   <!-- Tabs -->
   <div style="display:flex;gap:0;margin-bottom:16px;background:var(--paper);border-radius:12px;padding:4px;">
-    <button id="tab-active" onclick="framerTab('active')" style="flex:1;padding:10px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;background:var(--gold-dk);color:#fff;">
-      🔨 Active Jobs <span id="active-badge" style="background:rgba(255,255,255,.3);border-radius:100px;padding:1px 7px;font-size:11px;margin-left:4px;"></span>
+    <button id="tab-active" onclick="framerTab('active')" style="flex:1;padding:10px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:var(--gold-dk);color:#fff;">
+      🔨 Active <span id="active-badge" style="background:rgba(255,255,255,.3);border-radius:100px;padding:1px 7px;font-size:11px;margin-left:4px;"></span>
     </button>
-    <button id="tab-done" onclick="framerTab('done')" style="flex:1;padding:10px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;background:transparent;color:var(--ink2);">
-      ✅ Completed
+    <button id="tab-production" onclick="framerTab('production')" style="flex:1;padding:10px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:var(--ink2);">
+      🏭 Production
+    </button>
+    <button id="tab-done" onclick="framerTab('done')" style="flex:1;padding:10px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:var(--ink2);">
+      ✅ Done
     </button>
   </div>
 
@@ -93,6 +96,11 @@
       <div id="framer-notifs"><div style="font-size:13px;color:#9C8060;">Loading...</div></div>
     </div>
     <div id="framer-orders"><div class="loader"></div></div>
+  </div>
+
+  <!-- Production Orders -->
+  <div id="panel-production" style="display:none;">
+    <div id="framer-production-list"><div class="loader"></div></div>
   </div>
 
   <!-- Completed -->
@@ -155,19 +163,66 @@ let framerCurrentTab = 'active';
 
 window.framerTab = function(tab) {
   framerCurrentTab = tab;
-  document.getElementById('panel-active').style.display = tab==='active'?'block':'none';
-  document.getElementById('panel-done').style.display   = tab==='done'?'block':'none';
-  const btnA = document.getElementById('tab-active');
-  const btnD = document.getElementById('tab-done');
-  if(btnA){ btnA.style.background=tab==='active'?'var(--gold-dk)':'transparent'; btnA.style.color=tab==='active'?'#fff':'var(--ink2)'; }
-  if(btnD){ btnD.style.background=tab==='done'?'var(--gold-dk)':'transparent'; btnD.style.color=tab==='done'?'#fff':'var(--ink2)'; }
-  framerRender();
+  document.getElementById('panel-active').style.display     = tab==='active'?'block':'none';
+  document.getElementById('panel-production').style.display = tab==='production'?'block':'none';
+  document.getElementById('panel-done').style.display       = tab==='done'?'block':'none';
+  ['active','production','done'].forEach(t=>{
+    const b=document.getElementById('tab-'+t);
+    if(b){b.style.background=t===tab?'var(--gold-dk)':'transparent';b.style.color=t===tab?'#fff':'var(--ink2)';}
+  });
+  if(tab==='production') renderFramerProduction();
+  else framerRender();
+};
+
+function renderFramerProduction() {
+  const el=document.getElementById('framer-production-list');
+  if(!el)return;
+  const pos=JSON.parse(localStorage.getItem('fv_production_orders')||'[]');
+  const active=pos.filter(p=>p.status!=='Complete');
+  const done=pos.filter(p=>p.status==='Complete');
+  if(!pos.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">🏭</div><div class="empty-title">No production orders</div><div class="empty-sub">Owner will send jobs here</div></div>';return;}
+  const card=(p)=>`<div class="job-card" style="${p.status==='Complete'?'opacity:.6;':''}">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+      <div>
+        <div style="font-size:16px;font-weight:700;">${p.name}</div>
+        <div style="font-size:12px;color:var(--ink3);">${p.code||''} · ${p.fw}×${p.fh}" · ${p.msize}</div>
+        <div style="font-size:12px;color:var(--ink3);">Mount: ${p.mount==='Yes'?p.mountSize+'"':'No'} · Qty: ${p.qty} frames</div>
+        ${p.notes?`<div style="font-size:12px;padding:6px 8px;background:#fff3e0;border-radius:6px;margin-top:4px;">📝 ${p.notes}</div>`:''}
+      </div>
+      <span style="padding:4px 10px;border-radius:100px;font-size:11px;font-weight:700;background:${p.status==='Complete'?'#e8f5e9':p.status==='In Progress'?'#e3f2fd':'#fff3e0'};color:${p.status==='Complete'?'#2e7d32':p.status==='In Progress'?'#1565c0':'#e65100'};">${p.status}</span>
+    </div>
+    ${p.status!=='Complete'?`<div style="display:flex;gap:8px;">
+      ${p.status==='Pending'?`<button onclick="framerStartPO('${p.id}')" style="flex:1;background:#1976d2;color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">🔨 Start</button>`:''}
+      <button onclick="framerCompletePO('${p.id}')" style="flex:1;background:#388e3c;color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">✅ Complete → Add to Stock</button>
+    </div>`:''}
+  </div>`;
+  el.innerHTML=(active.length?`<div style="font-weight:700;font-size:14px;margin-bottom:8px;">🔨 Active (${active.length})</div>${active.map(card).join('')}`:'')+(done.length?`<div style="font-weight:700;font-size:14px;margin:12px 0 8px;">✅ Done</div>${done.map(card).join('')}`:'');
+}
+
+window.framerStartPO=function(id){
+  const pos=JSON.parse(localStorage.getItem('fv_production_orders')||'[]');
+  const idx=pos.findIndex(p=>p.id===id);if(idx<0)return;
+  pos[idx].status='In Progress';
+  localStorage.setItem('fv_production_orders',JSON.stringify(pos));
+  renderFramerProduction();
+};
+
+window.framerCompletePO=function(id){
+  const pos=JSON.parse(localStorage.getItem('fv_production_orders')||'[]');
+  const idx=pos.findIndex(p=>p.id===id);if(idx<0)return;
+  const po=pos[idx];pos[idx].status='Complete';
+  localStorage.setItem('fv_production_orders',JSON.stringify(pos));
+  const stock=JSON.parse(localStorage.getItem('fv_stock')||'[]');
+  stock.push({id:'STK-'+Date.now(),code:po.code||'',name:po.name,qty:po.qty,sellingPrice:po.sellingPrice||0,costPrice:0,category:'Readymade Frames',created:Date.now()});
+  localStorage.setItem('fv_stock',JSON.stringify(stock));
+  renderFramerProduction();
+  alert(`✅ ${po.qty} frames marked complete & added to Readymade Stock!`);
 };
 
 function framerCard(o, showActions) {
   const isReady   = o.status==='Ready';
   const isOD      = o.delivery && o.delivery.slice(0,10) < todayStr() && o.status!=='Delivered';
-  const cardStyle = isOD ? 'background:linear-gradient(135deg,#fff5f5,#ffe8e8);border-left:3px solid #e53935;' : '';
+  const cardStyle = isOD ? 'background:#ffcdd2;border-left:5px solid #c62828;border-top:1px solid #ef9a9a;' : '';
   return `<div class="job-card${o.status==='Delivered'?' delivered':''}" style="${cardStyle}">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;">
       <div>
