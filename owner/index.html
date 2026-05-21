@@ -161,7 +161,7 @@
       <div class="card" style="margin-bottom:14px;">
         <div class="card-header"><div class="card-title">📋 Recent Orders</div></div>
         <div class="card-body" style="padding:12px 0 0;">
-          <div id="recent-list"><div class="loader"></div></div>
+          <div id="recent-list"><div style="padding:24px;text-align:center;color:var(--ink3);font-size:13px;">Loading orders...</div></div>
         </div>
       </div>
     </div>
@@ -990,11 +990,14 @@ function renderDash() {
   const bb = document.getElementById('bookings-badge');
   if (bb) bb.textContent = pb>0?pb:'';
 
-  // Recent orders
-  const rec = [...orders].slice(0,8);
-  document.getElementById('recent-list').innerHTML = rec.length
-    ? rec.map(o => recentRow(o)).join('')
-    : '<div class="empty-state" style="padding:20px"><div class="empty-sub">No orders yet</div></div>';
+  // Recent orders - show immediately, don't leave spinner
+  const rec = [...orders].sort((a,b)=>(b.created||0)-(a.created||0)).slice(0,8);
+  const recentEl = document.getElementById('recent-list');
+  if(recentEl) {
+    recentEl.innerHTML = rec.length
+      ? rec.map(o => recentRow(o)).join('')
+      : '<div style="padding:24px;text-align:center;color:var(--ink3);font-size:13px;">No orders yet — tap + New Order to begin</div>';
+  }
 
   // Due today
   const due = orders.filter(o => o.delivery && o.delivery.startsWith(todayStr()) && o.status!=='Delivered');
