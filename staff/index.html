@@ -862,6 +862,9 @@ async function staffLoadExpenses() {
 // ── Order Detail Bottom Sheet ─────────────────────────────────
 window.openOrderSheet = function(id) {
   const o = orders.find(x=>x.id===id); if(!o) return;
+  // Load photos from localStorage
+  const photoStore = JSON.parse(localStorage.getItem('fv_order_photos')||'{}');
+  const photos = photoStore[id] || o.photos || [];
   const bal = (+o.total||0)-(+o.advance||0);
   const payIcon = o.payMode==='UPI'?'📱':o.payMode==='Cash+UPI'?'💵📱':'💵';
   document.getElementById('ods-title').textContent = o.name + ' · ' + (o.billNo||o.id);
@@ -873,9 +876,17 @@ window.openOrderSheet = function(id) {
       <div style="background:var(--paper);border-radius:8px;padding:10px;"><div style="font-size:10px;color:var(--ink3);">📦 Status</div><div style="font-weight:600;font-size:13px;">${STATUS_CFG[o.status]?.icon||''} ${o.status}</div></div>
       <div style="background:var(--paper);border-radius:8px;padding:10px;"><div style="font-size:10px;color:var(--ink3);">💳 Payment</div><div style="font-weight:600;font-size:13px;">${payIcon} ${o.payMode||'Cash'}</div></div>
       ${o.phone?`<div style="background:var(--paper);border-radius:8px;padding:10px;"><div style="font-size:10px;color:var(--ink3);">📞 Phone</div><div style="font-weight:600;font-size:13px;">${o.phone}</div></div>`:''}
+      ${o.email?`<div style="background:var(--paper);border-radius:8px;padding:10px;"><div style="font-size:10px;color:var(--ink3);">📧 Email</div><div style="font-weight:600;font-size:13px;">${o.email}</div></div>`:''}
     </div>
+    ${o.isComplimentary?`<div style="background:#fff3e0;border-radius:8px;padding:10px;margin-bottom:12px;font-size:13px;color:#e65100;font-weight:700;">🎁 COMPLIMENTARY ORDER</div>`:''}
     <div style="font-weight:700;font-size:14px;margin-bottom:8px;">🛒 Services</div>
     ${(o.cartItems||[]).map(item=>typeof renderServiceTree==='function'?renderServiceTree(item,false):`<div style="background:var(--paper);border-radius:10px;padding:12px;margin-bottom:8px;border-left:3px solid var(--gold-dk);"><div style="font-weight:700;color:var(--gold-dk);">${(item.svcs||[item.svc]).join(' + ')}</div><div style="font-size:12px;">• ${item.label||''}</div><div style="font-weight:700;color:var(--gold-dk);">Rs.${item.price||0}</div></div>`).join('')}
+    ${photos.length?`<div style="margin-bottom:12px;">
+      <div style="font-weight:700;font-size:14px;margin-bottom:8px;">📸 Reference Photos (${photos.length})</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        ${photos.map((src,i)=>`<img src="${src}" onclick="viewStaffPhoto(${i},'${id}')" style="width:80px;height:80px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid var(--paper3);">`).join('')}
+      </div>
+    </div>`:''}
     <div style="background:var(--paper);border-radius:10px;padding:12px;margin-bottom:16px;">
       ${o.discountPct&&+o.discountPct>0?`<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;color:#388e3c;"><span>Discount ${o.discountPct}%</span><span>-Rs.${o.discountAmt||0}</span></div>`:''}
       <div style="display:flex;justify-content:space-between;font-weight:700;font-size:15px;"><span>Total</span><span>Rs.${o.total}</span></div>
@@ -897,6 +908,19 @@ window.openOrderSheet = function(id) {
   const overlay=document.getElementById('ods-overlay');
   sheet.style.display='block'; overlay.style.display='block';
   setTimeout(()=>{ sheet.style.transform='translateY(0)'; },10);
+};
+
+window.viewStaffPhoto = function(idx, orderId) {
+  const photoStore=JSON.parse(localStorage.getItem('fv_order_photos')||'{}');
+  const o=orders.find(x=>x.id===orderId);
+  const photos=photoStore[orderId]||o?.photos||[];
+  if(!photos.length)return;
+  const modal=document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:99999;display:flex;align-items:center;justify-content:center;';
+  modal.onclick=()=>modal.remove();
+  modal.innerHTML=`<img src="${photos[+idx]}" style="max-width:95vw;max-height:95vh;object-fit:contain;border-radius:8px;">
+    <button onclick="this.parentElement.remove()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:100%;width:36px;height:36px;font-size:20px;cursor:pointer;">✕</button>`;
+  document.body.appendChild(modal);
 };
 
 window.closeOrderSheet = function() {

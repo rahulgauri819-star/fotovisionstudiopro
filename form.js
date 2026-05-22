@@ -383,16 +383,43 @@ function getSvcPanelHTML(svcs) {
       <div class="section-head" style="font-size:15px;">🖼️ Framing Details</div>
 
       ${!hasPrinting ? `
-      <!-- Manual L & B input (only when Framing alone) -->
+      <!-- Frame size dropdown with custom option -->
       <div style="margin-bottom:14px;">
-        <label class="form-label" style="display:block;margin-bottom:8px;">Print Size (for frame calculation)</label>
-        <div style="display:flex;gap:10px;align-items:center;">
-          <input class="form-input" id="frm-L" type="number" min="1" placeholder="Length (in)" style="max-width:120px;" oninput="calcFrame()">
-          <span style="font-weight:700;color:var(--gold-dk);">×</span>
-          <input class="form-input" id="frm-B" type="number" min="1" placeholder="Breadth (in)" style="max-width:120px;" oninput="calcFrame()">
-          <span style="font-size:12px;color:var(--ink-lt);">inches</span>
+        <label class="form-label" style="display:block;margin-bottom:8px;">Frame Size</label>
+        <select class="form-input" id="frm-size-select" onchange="onFrameSizeSelect()" style="margin-bottom:8px;">
+          <option value="">— Select Size —</option>
+          <option value="4x6">4×6"</option>
+          <option value="5x7">5×7"</option>
+          <option value="6x8">6×8"</option>
+          <option value="8x10">8×10"</option>
+          <option value="8x12">8×12"</option>
+          <option value="10x12">10×12"</option>
+          <option value="10x15">10×15"</option>
+          <option value="12x15">12×15"</option>
+          <option value="12x16">12×16"</option>
+          <option value="12x18">12×18"</option>
+          <option value="16x20">16×20"</option>
+          <option value="20x24">20×24"</option>
+          <option value="20x30">20×30"</option>
+          <option value="24x30">24×30"</option>
+          <option value="24x36">24×36"</option>
+          <option value="30x40">30×40"</option>
+          <option value="custom">✏️ Custom Size...</option>
+        </select>
+        <!-- Custom size inputs — shown only when Custom selected -->
+        <div id="frm-custom-size" style="display:none;">
+          <div style="display:flex;gap:10px;align-items:center;margin-top:8px;">
+            <input class="form-input" id="frm-L-custom" type="number" min="1" placeholder="Width (in)" style="max-width:110px;" oninput="onFrameCustomInput()">
+            <span style="font-weight:700;color:var(--gold-dk);">×</span>
+            <input class="form-input" id="frm-B-custom" type="number" min="1" placeholder="Height (in)" style="max-width:110px;" oninput="onFrameCustomInput()">
+            <span style="font-size:12px;color:var(--ink3);">inches</span>
+          </div>
         </div>
-      </div>` : `<div id="frm-size-info" class="price-info" style="margin-bottom:12px;">📐 Print size taken from Printing panel</div>`}
+        <!-- Hidden inputs used for frame calculation -->
+        <input type="hidden" id="frm-L" value="">
+        <input type="hidden" id="frm-B" value="">
+      </div>` : `<div id="frm-size-info" class="price-info" style="margin-bottom:12px;">📐 Print size taken from Printing panel</div>
+      <input type="hidden" id="frm-L" value=""><input type="hidden" id="frm-B" value="">`}
 
       <!-- Moulding Size -->
       <label class="form-label" style="display:block;margin-bottom:8px;">1. Moulding Size</label>
@@ -891,8 +918,41 @@ window.onSleeveTypeChange = function() {
   calcFrame();
 };
 
+window.onFrameSizeSelect = function() {
+  const sel = document.getElementById('frm-size-select');
+  const val = sel?.value;
+  const customBox = document.getElementById('frm-custom-size');
+  const hidL = document.getElementById('frm-L');
+  const hidB = document.getElementById('frm-B');
+
+  if(val === 'custom') {
+    if(customBox) customBox.style.display = 'block';
+    if(hidL) hidL.value = '';
+    if(hidB) hidB.value = '';
+  } else if(val) {
+    if(customBox) customBox.style.display = 'none';
+    const [w,h] = val.split('x').map(Number);
+    if(hidL) hidL.value = w;
+    if(hidB) hidB.value = h;
+    calcFrame();
+  } else {
+    if(customBox) customBox.style.display = 'none';
+    if(hidL) hidL.value = '';
+    if(hidB) hidB.value = '';
+  }
+};
+
+window.onFrameCustomInput = function() {
+  const w = document.getElementById('frm-L-custom')?.value;
+  const h = document.getElementById('frm-B-custom')?.value;
+  const hidL = document.getElementById('frm-L');
+  const hidB = document.getElementById('frm-B');
+  if(hidL) hidL.value = w||'';
+  if(hidB) hidB.value = h||'';
+  calcFrame();
+};
+
 function getFrameLB() {
-  const groupAsel = [...document.querySelectorAll('input[name="groupA"]:checked')].map(c=>c.value);
   if (groupAsel.includes('Printing')) {
     const size = document.getElementById('pr-size')?.value;
     if (size && SIZE_DIMS[size]) return { l: SIZE_DIMS[size].w, b: SIZE_DIMS[size].h };
@@ -1695,8 +1755,8 @@ function getLiveFillingPreview() {
   const framingPanel = document.getElementById('panel-framing');
   if(framingPanel && !framingPanel.classList.contains('hidden')) {
     const lb = typeof getFrameLB === 'function' ? getFrameLB() : null;
-    const L = document.getElementById('frm-L')?.value;
-    const B = document.getElementById('frm-B')?.value;
+    const L = document.getElementById('frm-L')?.value || document.getElementById('frm-L-custom')?.value;
+    const B = document.getElementById('frm-B')?.value || document.getElementById('frm-B-custom')?.value;
     const msize = document.querySelector('input[name="ms"]:checked')?.value;
     const mouldSel = document.getElementById('frm-mould-select');
     const mouldText = mouldSel?.options[mouldSel?.selectedIndex]?.text;

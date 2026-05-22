@@ -259,17 +259,44 @@
     <div class="page-title">🏭 Production Orders</div>
     <div class="page-sub">Send frame production jobs to framer</div>
   </div>
-  <!-- Create Production Order -->
+
+  <!-- Pending approval alert -->
+  <div id="po-approval-alert" style="display:none;background:#fff3e0;border-left:4px solid #e65100;border-radius:10px;padding:12px 16px;margin-bottom:16px;">
+    <div style="font-weight:700;color:#e65100;">⚠️ <span id="po-approval-count">0</span> Production Order(s) Awaiting Your Approval</div>
+    <button onclick="showPage('production')" style="background:none;border:none;color:#e65100;font-size:12px;cursor:pointer;text-decoration:underline;padding:0;margin-top:4px;">Review Now →</button>
+  </div>
+
+  <!-- New Production Order Form -->
   <div class="card" style="margin-bottom:16px;">
-    <div class="card-header"><div class="card-title">➕ New Production Order</div></div>
+    <div class="card-header"><div class="card-title">➕ Add Frame Type</div></div>
     <div class="card-body">
+      <!-- Frame Size Dropdown -->
+      <div style="margin-bottom:10px;">
+        <label class="form-label">Frame Size</label>
+        <select class="form-input" id="po-size-select" onchange="onPOSizeSelect()" style="margin-bottom:6px;">
+          <option value="">— Select Size —</option>
+          <option value="4x6">4×6"</option><option value="5x7">5×7"</option>
+          <option value="6x8">6×8"</option><option value="8x10">8×10"</option>
+          <option value="8x12">8×12"</option><option value="10x12">10×12"</option>
+          <option value="10x15">10×15"</option><option value="12x15">12×15"</option>
+          <option value="12x16">12×16"</option><option value="12x18">12×18"</option>
+          <option value="16x20">16×20"</option><option value="20x24">20×24"</option>
+          <option value="20x30">20×30"</option><option value="24x30">24×30"</option>
+          <option value="24x36">24×36"</option><option value="30x40">30×40"</option>
+          <option value="custom">✏️ Custom Size...</option>
+        </select>
+        <div id="po-custom-size" style="display:none;display:flex;gap:8px;align-items:center;">
+          <input class="form-input" id="po-fw" type="number" placeholder="Width" style="max-width:100px;">
+          <span style="color:var(--gold-dk);font-weight:700;">×</span>
+          <input class="form-input" id="po-fh" type="number" placeholder="Height" style="max-width:100px;">
+          <span style="font-size:12px;color:var(--ink3);">inches</span>
+        </div>
+        <input type="hidden" id="po-fw" value=""><input type="hidden" id="po-fh" value="">
+      </div>
+
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
         <div class="form-group"><label class="form-label">Frame Name</label><input class="form-input" id="po-name" placeholder="e.g. 5×7 White Frame"></div>
-        <div class="form-group"><label class="form-label">Item Code</label><input class="form-input" id="po-code" placeholder="e.g. F5X7WHITE"></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-        <div class="form-group"><label class="form-label">Frame Width (inches)</label><input class="form-input" id="po-fw" type="number" placeholder="5"></div>
-        <div class="form-group"><label class="form-label">Frame Height (inches)</label><input class="form-input" id="po-fh" type="number" placeholder="7"></div>
+        <div class="form-group"><label class="form-label">Item Code</label><input class="form-input" id="po-code" placeholder="F5X7WHITE"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
         <div class="form-group">
@@ -280,37 +307,37 @@
             <option>2"</option><option>2.5"</option><option>3"</option>
           </select>
         </div>
-        <div class="form-group">
-          <label class="form-label">Moulding Type</label>
-          <select class="form-input" id="po-mtype"></select>
-        </div>
+        <div class="form-group"><label class="form-label">Moulding Type</label><select class="form-input" id="po-mtype"></select></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
         <div class="form-group">
           <label class="form-label">Mount</label>
           <select class="form-input" id="po-mount" onchange="togglePOMount()">
-            <option value="No">No Mount</option>
-            <option value="Yes">With Mount</option>
+            <option value="No">No Mount</option><option value="Yes">With Mount</option>
           </select>
         </div>
         <div class="form-group" id="po-mount-size-group" style="display:none;">
-          <label class="form-label">Mount Size (inches)</label>
+          <label class="form-label">Mount Size"</label>
           <input class="form-input" id="po-msize-val" type="number" placeholder="2">
         </div>
-        <div class="form-group">
-          <label class="form-label">Quantity</label>
-          <input class="form-input" id="po-qty" type="number" min="1" value="1">
-        </div>
+        <div class="form-group"><label class="form-label">Quantity</label><input class="form-input" id="po-qty" type="number" min="1" value="1"></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-        <div class="form-group"><label class="form-label">Selling Price (Rs.)</label><input class="form-input" id="po-price" type="number" placeholder="0"></div>
-        <div class="form-group"><label class="form-label">Notes for Framer</label><input class="form-input" id="po-notes" placeholder="Any special instructions..."></div>
-      </div>
+      <div class="form-group" style="margin-bottom:12px;"><label class="form-label">Notes for Framer</label><input class="form-input" id="po-notes" placeholder="Any special instructions..."></div>
       <div id="po-stock-check" style="margin-bottom:10px;"></div>
-      <button onclick="createProductionOrder()" class="btn-gold" style="padding:12px 24px;font-size:14px;">📤 Send to Framer</button>
+      <div style="display:flex;gap:8px;">
+        <button onclick="addFrameToList()" class="btn-gold" style="flex:1;padding:12px;font-size:14px;">➕ Add to List</button>
+        <button onclick="duplicateLastFrame()" class="btn-outline" style="padding:12px 16px;font-size:14px;">📋 Duplicate</button>
+      </div>
     </div>
   </div>
-  <!-- Active Production Orders -->
+
+  <!-- Pending frame types list -->
+  <div id="po-pending-list" style="margin-bottom:12px;"></div>
+
+  <!-- Send buttons -->
+  <div id="po-send-bar" style="display:none;"></div>
+
+  <!-- Existing Production Orders -->
   <div id="production-orders-list"></div>
 </div>
 
@@ -452,14 +479,18 @@
     <div class="card-header"><div class="card-title">🔑 Login Passwords</div></div>
     <div class="card-body">
       <div style="font-size:13px;color:var(--ink3);margin-bottom:16px;">Change login passwords for each role</div>
-      ${['owner','staff','framer'].map(role=>`
-        <div style="margin-bottom:14px;">
-          <label class="form-label" style="text-transform:capitalize;">${role==='owner'?'👑':'role'==='staff'?'👤':'🔨'} ${role.charAt(0).toUpperCase()+role.slice(1)} Password</label>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <input type="password" id="login-pwd-${role}" class="form-input" placeholder="New password" style="max-width:200px;">
-            <button onclick="changeLoginPassword('${role}')" class="btn-gold" style="padding:8px 16px;font-size:13px;">Save</button>
-          </div>
-        </div>`).join('')}
+      <!-- Role selector -->
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <button id="lpw-btn-owner" onclick="selectLoginPwdRole('owner')" style="flex:1;padding:10px;border:2px solid var(--gold-dk);border-radius:10px;background:var(--gold-dk);color:#fff;font-weight:700;cursor:pointer;font-size:13px;">👑 Owner</button>
+        <button id="lpw-btn-staff" onclick="selectLoginPwdRole('staff')" style="flex:1;padding:10px;border:2px solid var(--paper3);border-radius:10px;background:#fff;color:var(--ink2);font-weight:700;cursor:pointer;font-size:13px;">🧑‍💼 Staff</button>
+        <button id="lpw-btn-framer" onclick="selectLoginPwdRole('framer')" style="flex:1;padding:10px;border:2px solid var(--paper3);border-radius:10px;background:#fff;color:var(--ink2);font-weight:700;cursor:pointer;font-size:13px;">🖼️ Framer</button>
+      </div>
+      <div id="lpw-role-label" style="font-size:14px;font-weight:700;margin-bottom:10px;">👑 Owner Password</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="password" id="lpw-new" class="form-input" placeholder="Enter new password (min 3 chars)" style="flex:1;">
+        <button onclick="saveLoginPassword()" class="btn-gold" style="padding:10px 20px;white-space:nowrap;">💾 Save</button>
+      </div>
+      <div id="lpw-msg" style="font-size:12px;color:#388e3c;margin-top:8px;display:none;"></div>
     </div>
   </div>
     <div class="card-body" id="owner-pwd-settings">
@@ -2582,13 +2613,37 @@ window.printSelectedBarcodes = function() {
   updatePrintBar();
 };
 
-window.changeLoginPassword = function(role) {
-  const pwd = document.getElementById(`login-pwd-${role}`)?.value.trim();
-  if(!pwd||pwd.length<3){toast('⚠️ Enter at least 3 characters','error');return;}
-  localStorage.setItem(`fv_${role}_login_password`, pwd);
-  document.getElementById(`login-pwd-${role}`).value='';
-  toast(`✅ ${role.charAt(0).toUpperCase()+role.slice(1)} password updated!`,'success');
+let _selectedLoginRole = 'owner';
+const _roleIcons = {owner:'👑',staff:'🧑‍💼',framer:'🖼️'};
+
+window.selectLoginPwdRole = function(role) {
+  _selectedLoginRole = role;
+  ['owner','staff','framer'].forEach(r=>{
+    const btn=document.getElementById('lpw-btn-'+r);
+    if(btn){
+      if(r===role){btn.style.background='var(--gold-dk)';btn.style.color='#fff';btn.style.borderColor='var(--gold-dk)';}
+      else{btn.style.background='#fff';btn.style.color='var(--ink2)';btn.style.borderColor='var(--paper3)';}
+    }
+  });
+  const label=document.getElementById('lpw-role-label');
+  if(label) label.textContent=`${_roleIcons[role]} ${role.charAt(0).toUpperCase()+role.slice(1)} Password`;
+  const msg=document.getElementById('lpw-msg');
+  if(msg) msg.style.display='none';
+  const input=document.getElementById('lpw-new');
+  if(input) input.value='';
 };
+
+window.saveLoginPassword = function() {
+  const pwd=document.getElementById('lpw-new')?.value.trim();
+  if(!pwd||pwd.length<3){toast('⚠️ Enter at least 3 characters','error');return;}
+  localStorage.setItem(`fv_${_selectedLoginRole}_login_password`,pwd);
+  document.getElementById('lpw-new').value='';
+  const msg=document.getElementById('lpw-msg');
+  if(msg){msg.style.display='block';msg.textContent=`✅ ${_selectedLoginRole.charAt(0).toUpperCase()+_selectedLoginRole.slice(1)} password updated!`;}
+  toast(`✅ ${_selectedLoginRole} password updated!`,'success');
+};
+
+window.changeLoginPassword = window.saveLoginPassword; // backward compat
 
 window.viewPhotoArr = function(idx, orderId) {
   const photoStore = JSON.parse(localStorage.getItem('fv_order_photos')||'{}');
@@ -2810,67 +2865,226 @@ window.togglePOMount=function(){
   if(grp)grp.style.display=val==='Yes'?'block':'none';
 };
 
-window.createProductionOrder=function(){
-  // Require owner password
-  showOwnerPasswordModal(
-    'Create production order? Moulding stock will be deducted.',
-    _doCreateProductionOrder,
-    ()=>{}
-  );
+// ── Production Orders — Multi-frame + Approval ────────────────
+let pendingFrameTypes = [];
+
+window.onPOSizeSelect = function() {
+  const val = document.getElementById('po-size-select')?.value;
+  const customBox = document.getElementById('po-custom-size');
+  const hidL = document.getElementById('po-fw');
+  const hidH = document.getElementById('po-fh');
+  if(val==='custom') {
+    if(customBox) customBox.style.display='flex';
+    if(hidL) hidL.value=''; if(hidH) hidH.value='';
+  } else if(val) {
+    if(customBox) customBox.style.display='none';
+    const [w,h]=val.split('x').map(Number);
+    if(hidL) hidL.value=w; if(hidH) hidH.value=h;
+    if(!document.getElementById('po-name')?.value) {
+      document.getElementById('po-name').value=`${w}×${h}" Frame`;
+    }
+  } else {
+    if(customBox) customBox.style.display='none';
+    if(hidL) hidL.value=''; if(hidH) hidH.value='';
+  }
 };
-async function _doCreateProductionOrder(){
-  const name=document.getElementById('po-name')?.value.trim();
-  const code=document.getElementById('po-code')?.value.trim();
+
+window.duplicateLastFrame = function() {
+  if(!pendingFrameTypes.length){toast('⚠️ Add a frame first then duplicate','error');return;}
+  const last=pendingFrameTypes[pendingFrameTypes.length-1];
+  pendingFrameTypes.push({...last, id:'ft-'+Date.now()});
+  renderPendingFrameTypes();
+  toast('📋 Frame duplicated — edit in list if needed','info');
+};
+
+window.addFrameToList = function() {
   const fw=+(document.getElementById('po-fw')?.value)||0;
   const fh=+(document.getElementById('po-fh')?.value)||0;
+  const name=document.getElementById('po-name')?.value.trim()||`${fw}×${fh}" Frame`;
   const msize=document.getElementById('po-msize')?.value||'1"';
   const mtype=document.getElementById('po-mtype')?.value||'default';
   const mount=document.getElementById('po-mount')?.value||'No';
   const mval=mount==='Yes'?(+(document.getElementById('po-msize-val')?.value)||0):0;
   const qty=+(document.getElementById('po-qty')?.value)||1;
-  const price=+(document.getElementById('po-price')?.value)||0;
   const notes=document.getElementById('po-notes')?.value||'';
-  if(!name){toast('⚠️ Enter frame name','error');return;}
-  if(!fw||!fh){toast('⚠️ Enter frame dimensions','error');return;}
-  const mouldW=parseFloat(msize)||1;
-  const l=fw+mval*2+mouldW*2;
-  const b=fh+mval*2+mouldW*2;
-  const totalNeeded=(l*2+b*2)*qty;
-  const typeStock=mouldingStock?.[msize]?.[mtype]||[];
-  const WASTE=4;
-  const available=typeStock.filter(p=>p>WASTE).reduce((s,p)=>s+p,0);
-  if(available<totalNeeded){toast(`❌ Not enough stock! Need ${totalNeeded}" but only ${available}" available.`,'error');return;}
-  const po={name,code,fw,fh,msize,mtype,mount,mountSize:mval,qty,sellingPrice:price,notes,status:'Pending',created:Date.now(),totalMouldingNeeded:totalNeeded};
-  for(let i=0;i<qty;i++)deductMouldingStock(msize,mtype,fw,fh,mval);
-  if(useLocal){po.id='PO-'+Date.now();productionOrders.unshift(po);localStorage.setItem('fv_production_orders',JSON.stringify(productionOrders));}
-  else{try{const ref=await window.db.collection('productionOrders').add(po);po.id=ref.id;productionOrders.unshift(po);}catch(e){toast('Error','error');return;}}
-  ['po-name','po-code','po-fw','po-fh','po-qty','po-price','po-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  toast('✅ Production order sent to framer!','success');
-  renderProductionOrders();renderMouldingStock();
+  const code=document.getElementById('po-code')?.value||'';
+  if(!fw||!fh){toast('⚠️ Select frame size first','error');return;}
+  const frame={id:'ft-'+Date.now(),name,code,fw,fh,msize,mtype,mount,mountSize:mval,qty,notes};
+  pendingFrameTypes.push(frame);
+  // Reset form
+  ['po-name','po-code','po-qty','po-notes','po-msize-val'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=el.id==='po-qty'?'1':'';});
+  document.getElementById('po-size-select').value='';
+  document.getElementById('po-fw').value='';
+  document.getElementById('po-fh').value='';
+  document.getElementById('po-custom-size').style.display='none';
+  renderPendingFrameTypes();
+  toast(`✅ "${name}" added to list`,'success');
+};
+
+function renderPendingFrameTypes() {
+  const el=document.getElementById('po-pending-list');
+  const bar=document.getElementById('po-send-bar');
+  if(!el)return;
+  if(!pendingFrameTypes.length){el.innerHTML='';if(bar)bar.style.display='none';return;}
+  const totalFrames=pendingFrameTypes.reduce((s,f)=>s+f.qty,0);
+  el.innerHTML=`<div class="card" style="margin-bottom:12px;border:2px solid var(--gold-dk);">
+    <div class="card-header"><div class="card-title">🏭 Frame Types (${pendingFrameTypes.length}) · ${totalFrames} total frames</div></div>
+    <div class="card-body">
+      ${pendingFrameTypes.map((f,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--paper3);">
+        <div>
+          <div style="font-weight:600;font-size:13px;">${f.name}</div>
+          <div style="font-size:11px;color:var(--ink3);">${f.fw}×${f.fh}" · ${f.msize} ${f.mtype} · Qty:${f.qty}</div>
+          ${f.mount==='Yes'?`<div style="font-size:11px;color:var(--ink3);">Mount: ${f.mountSize}"</div>`:''}
+          ${f.notes?`<div style="font-size:11px;color:var(--ink3);">📝 ${f.notes}</div>`:''}
+        </div>
+        <button onclick="removePendingFrame(${i})" style="background:#e53935;color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;">✕</button>
+      </div>`).join('')}
+    </div>
+  </div>`;
+  if(bar){
+    bar.style.display='block';
+    bar.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+      <button onclick="sendPOWithPassword()" style="padding:14px;background:var(--gold-dk);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">🔐 Enter Password & Send</button>
+      <button onclick="sendPOForApproval()" style="padding:14px;background:#fff;color:var(--gold-dk);border:2px solid var(--gold-dk);border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">📨 Send for Approval</button>
+    </div>`;
+  }
+}
+
+window.removePendingFrame=function(idx){pendingFrameTypes.splice(idx,1);renderPendingFrameTypes();};
+
+window.sendPOWithPassword=function(){
+  showOwnerPasswordModal('Approve production order? Moulding stock will be deducted.',
+    ()=>_saveProductionOrder('Approved'), ()=>{});
+};
+
+window.sendPOForApproval=function(){
+  if(!pendingFrameTypes.length){toast('⚠️ Add frame types first','error');return;}
+  _saveProductionOrder('Pending Approval');
+};
+
+async function _saveProductionOrder(initialStatus) {
+  if(!pendingFrameTypes.length){toast('⚠️ Add at least one frame type','error');return;}
+  const po={
+    id:'PO-'+Date.now(), created:Date.now(),
+    status:initialStatus,
+    frameTypes:pendingFrameTypes.map(f=>({...f})),
+    // Keep backward compat fields from first frame
+    name:pendingFrameTypes.map(f=>f.name).join(' + '),
+    fw:pendingFrameTypes[0].fw, fh:pendingFrameTypes[0].fh,
+    msize:pendingFrameTypes[0].msize, mtype:pendingFrameTypes[0].mtype,
+    mount:pendingFrameTypes[0].mount, mountSize:pendingFrameTypes[0].mountSize,
+    qty:pendingFrameTypes.reduce((s,f)=>s+f.qty,0),
+    notes:pendingFrameTypes.map(f=>f.notes).filter(Boolean).join('; '),
+  };
+  // Deduct moulding stock only if approved
+  if(initialStatus==='Approved') {
+    for(const f of pendingFrameTypes) {
+      const mouldW=parseFloat(f.msize)||1;
+      const l=f.fw+(f.mountSize||0)*2+mouldW*2;
+      const b=f.fh+(f.mountSize||0)*2+mouldW*2;
+      const needed=(l*2+b*2)*f.qty;
+      const typeStock=mouldingStock?.[f.msize]?.[f.mtype]||[];
+      const avail=typeStock.filter(p=>p>4).reduce((s,p)=>s+p,0);
+      if(avail<needed){toast(`❌ Not enough ${f.msize} ${f.mtype} stock for ${f.name}`,'error');return;}
+      for(let i=0;i<f.qty;i++) deductMouldingStock(f.msize,f.mtype,f.fw,f.fh,f.mountSize||0);
+    }
+  }
+  if(useLocal){productionOrders.unshift(po);localStorage.setItem('fv_production_orders',JSON.stringify(productionOrders));}
+  else{try{await window.db.collection('productionOrders').add(po);}catch(e){toast('Error saving','error');return;}}
+  pendingFrameTypes=[];
+  renderPendingFrameTypes();
+  renderProductionOrders();
+  if(initialStatus==='Approved') toast('✅ Production order sent to framer!','success');
+  else toast('📨 Sent for owner approval!','success');
+  updateApprovalAlert();
+}
+
+window.createProductionOrder = window.sendPOWithPassword; // backward compat
+
+function updateApprovalAlert() {
+  const pending=productionOrders.filter(p=>p.status==='Pending Approval');
+  const el=document.getElementById('po-approval-alert');
+  const cnt=document.getElementById('po-approval-count');
+  if(el){el.style.display=pending.length?'block':'none';}
+  if(cnt) cnt.textContent=pending.length;
+  // Also update dashboard
+  const dashAlert=document.getElementById('dash-po-alert');
+  if(dashAlert){dashAlert.style.display=pending.length?'flex':'none';dashAlert.querySelector('span')?.textContent && (dashAlert.querySelector('span').textContent=`⚠️ ${pending.length} Production Order${pending.length>1?'s':''} Awaiting Approval`);}
+}
+
+window.approvePO=async function(id){
+  const po=productionOrders.find(p=>p.id===id);if(!po)return;
+  // Deduct stock
+  const frames=po.frameTypes||[{...po,qty:po.qty}];
+  for(const f of frames){
+    const mouldW=parseFloat(f.msize)||1;
+    const l=f.fw+(f.mountSize||0)*2+mouldW*2;
+    const b=f.fh+(f.mountSize||0)*2+mouldW*2;
+    const needed=(l*2+b*2)*f.qty;
+    const avail=(mouldingStock?.[f.msize]?.[f.mtype]||[]).filter(p=>p>4).reduce((s,p)=>s+p,0);
+    if(avail<needed){toast(`❌ Not enough stock for ${f.name}`,'error');return;}
+    for(let i=0;i<f.qty;i++) deductMouldingStock(f.msize,f.mtype,f.fw,f.fh,f.mountSize||0);
+  }
+  await updatePOStatus(id,'Approved');
+  toast('✅ Approved! Framer can now see this order.','success');
+  updateApprovalAlert();
+};
+
+window.rejectPO=async function(id){
+  await updatePOStatus(id,'Rejected');
+  toast('❌ Production order rejected.','info');
+  updateApprovalAlert();
 };
 
 window.renderProductionOrders=function(){
   updatePOMouldingTypes();
+  updateApprovalAlert();
   const el=document.getElementById('production-orders-list');if(!el)return;
-  const active=productionOrders.filter(p=>p.status!=='Complete');
-  const done=productionOrders.filter(p=>p.status==='Complete');
   if(!productionOrders.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">🏭</div><div class="empty-title">No production orders yet</div></div>';return;}
-  const card=(p,showActions)=>`<div class="card" style="margin-bottom:10px;"><div class="card-body">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
-      <div>
-        <div style="font-weight:700;font-size:15px;">${p.name}</div>
-        <div style="font-size:12px;color:var(--ink3);">${p.code||''} · ${p.fw}×${p.fh}" · ${p.msize} · ${p.mtype}</div>
-        <div style="font-size:12px;color:var(--ink3);">Mount: ${p.mount==='Yes'?p.mountSize+'"':'No'} · Qty: ${p.qty} frames</div>
-        ${p.notes?`<div style="font-size:12px;color:var(--ink3);">📝 ${p.notes}</div>`:''}
+
+  const pending=productionOrders.filter(p=>p.status==='Pending Approval');
+  const active=productionOrders.filter(p=>['Approved','Pending','In Progress'].includes(p.status));
+  const done=productionOrders.filter(p=>['Complete','Rejected'].includes(p.status));
+
+  const card=(p)=>{
+    const frames=p.frameTypes||[{name:p.name,fw:p.fw,fh:p.fh,msize:p.msize,mtype:p.mtype,mount:p.mount,mountSize:p.mountSize,qty:p.qty,notes:p.notes}];
+    const statusColors={'Pending Approval':'#fff3e0','Approved':'#e3f2fd','In Progress':'#e3f2fd','Complete':'#e8f5e9','Rejected':'#ffebee','Pending':'#fff3e0'};
+    const textColors={'Pending Approval':'#e65100','Approved':'#1565c0','In Progress':'#1565c0','Complete':'#2e7d32','Rejected':'#c62828','Pending':'#e65100'};
+    return `<div class="card" style="margin-bottom:10px;${p.status==='Pending Approval'?'border-left:4px solid #e65100;':''}">
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div style="font-weight:700;font-size:15px;">🏭 ${frames.length} frame type${frames.length>1?'s':''} · ${p.qty} total</div>
+          <span style="padding:4px 10px;border-radius:100px;font-size:11px;font-weight:700;background:${statusColors[p.status]||'#fff3e0'};color:${textColors[p.status]||'#e65100'};">${p.status}</span>
+        </div>
+        ${frames.map(f=>`<div style="background:var(--paper);border-radius:8px;padding:8px 12px;margin-bottom:6px;">
+          <div style="font-weight:600;font-size:13px;">${f.name}</div>
+          <div style="font-size:11px;color:var(--ink3);">${f.fw}×${f.fh}" · ${f.msize} ${f.mtype} · Qty:${f.qty}${f.mount==='Yes'?' · Mount:'+f.mountSize+'"':''}</div>
+          ${f.notes?`<div style="font-size:11px;color:#e65100;">📝 ${f.notes}</div>`:''}
+        </div>`).join('')}
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+          ${p.status==='Pending Approval'?`
+            <button onclick="approvePO('${p.id}')" style="flex:1;background:#388e3c;color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">✅ Approve</button>
+            <button onclick="rejectPO('${p.id}')" style="flex:1;background:#e53935;color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">❌ Reject</button>`:''}
+          ${p.status==='Approved'?`<button onclick="updatePOStatus('${p.id}','In Progress')" style="flex:1;background:#1976d2;color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">🔨 Start</button>`:''}
+          ${p.status==='In Progress'||p.status==='Approved'?`<button onclick="completePO('${p.id}')" style="flex:1;background:#388e3c;color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">✅ Complete → Stock</button>`:''}
+          ${['Approved','Pending Approval','In Progress','Pending'].includes(p.status)?`<button onclick="deletePO('${p.id}')" style="background:#e53935;color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer;font-size:13px;">🗑️</button>`:''}
+        </div>
       </div>
-      <span style="padding:4px 10px;border-radius:100px;font-size:11px;font-weight:700;background:${p.status==='Complete'?'#e8f5e9':p.status==='In Progress'?'#e3f2fd':'#fff3e0'};color:${p.status==='Complete'?'#2e7d32':p.status==='In Progress'?'#1565c0':'#e65100'};">${p.status}</span>
-    </div>
-    ${showActions?`<div style="display:flex;gap:8px;">
-      ${p.status==='Pending'?`<button onclick="updatePOStatus('${p.id}','In Progress')" style="flex:1;background:#1976d2;color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">🔨 Start</button>`:''}
-      ${p.status!=='Complete'?`<button onclick="completePO('${p.id}')" style="flex:1;background:#388e3c;color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">✅ Complete → Add to Stock</button>`:''}
-    </div>`:''}
-  </div></div>`;
-  el.innerHTML=(active.length?`<div style="font-weight:700;font-size:14px;margin-bottom:8px;">🔨 Active (${active.length})</div>${active.map(p=>card(p,true)).join('')}`:'')+(done.length?`<div style="font-weight:700;font-size:14px;margin:12px 0 8px;">✅ Completed</div>${done.map(p=>card(p,false)).join('')}`:'');
+    </div>`;
+  };
+
+  el.innerHTML=
+    (pending.length?`<div style="font-weight:700;font-size:14px;color:#e65100;margin-bottom:8px;">⏳ Awaiting Approval (${pending.length})</div>${pending.map(card).join('')}`:'') +
+    (active.length?`<div style="font-weight:700;font-size:14px;margin:12px 0 8px;">🔨 Active (${active.length})</div>${active.map(card).join('')}`:'') +
+    (done.length?`<div style="font-weight:700;font-size:14px;margin:12px 0 8px;">✅ Completed</div>${done.map(card).join('')}`:'');
+};
+
+window.deletePO=async function(id){
+  productionOrders=productionOrders.filter(p=>p.id!==id);
+  if(useLocal)localStorage.setItem('fv_production_orders',JSON.stringify(productionOrders));
+  else try{await window.db.collection('productionOrders').doc(id).delete();}catch(e){}
+  renderProductionOrders();
+  toast('🗑️ Production order deleted');
 };
 
 window.updatePOStatus=async function(id,status){
