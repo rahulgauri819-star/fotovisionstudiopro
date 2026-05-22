@@ -444,7 +444,7 @@ function getSvcPanelHTML(svcs) {
       <div id="frm-accessories" class="hidden" style="margin-bottom:10px;">
         <label class="form-label" style="display:block;margin-bottom:8px;">4. Accessories (Optional)</label>
         <div style="display:flex;flex-direction:column;gap:8px;">
-          <label class="check-btn" style="width:100%;">
+          <label id="table-stand-row" class="check-btn" style="width:100%;">
             <input type="checkbox" name="acc" value="Table Stand" onchange="calcFrame()">
             <span>🪑 Table Stand <span style="font-size:11px;color:var(--ink-lt);">Free · Recommended for max 10×12"</span></span>
           </label>
@@ -918,6 +918,14 @@ window.calcFrame = function() {
   if (!lb || !mouldSize || !mouldIdx) { costTag.classList.add('hidden'); totalTag?.classList.add('hidden'); return; }
   if (mnt === 'Yes' && !mountSize) { costTag.classList.add('hidden'); totalTag?.classList.add('hidden'); return; }
   const { l, b } = lb;
+
+  // Hide table stand for large frames
+  const tsRow = document.getElementById('table-stand-row');
+  if(tsRow) {
+    const hide = l > 10 || b > 12;
+    tsRow.style.display = hide ? 'none' : '';
+    if(hide) { const tsCb = document.querySelector('input[name="acc"][value="Table Stand"]'); if(tsCb) tsCb.checked = false; }
+  }
   const mouldItem = (window.mouldingsCache[mouldSize] || DEFAULT_MOULDINGS[mouldSize] || [])[+mouldIdx];
   const pricePerFt = mouldItem?.price || FRAME_PRICE_PER_FT;
   let frameCost = 0, costLabel = '';
@@ -1161,6 +1169,7 @@ window.calcEditing = function() {
   if(v&&v!=='custom'){pt.classList.remove('hidden');pt.textContent=`Editing Charge: ₹${v}`;}
   else if(v==='custom'){const cv=document.getElementById('ep-val')?.value;pt.classList.toggle('hidden',!cv);if(cv)pt.textContent=`Custom Charge: ₹${cv}`;}
   else pt.classList.add('hidden');
+  updateCartPanel();
 };
 
 window.calcPrint = function() {
@@ -1269,6 +1278,7 @@ window.calcPrint = function() {
   const grand = printTotal + extraTotal;
   tTag.classList.remove('hidden');
   tTag.textContent = `Total Print Cost: ₹${grand}`;
+  updateCartPanel();
 };
 
 window.calcPassport = () => {
@@ -1282,6 +1292,7 @@ window.calcPassport = () => {
   if (costTag) costTag.textContent = `Print Cost: Rs.${base}`;
   if (soft && totalTag) { totalTag.classList.remove('hidden'); totalTag.textContent = `Total: Rs.${base} + Rs.${soft} (Soft Copy) = Rs.${total}`; }
   else if (totalTag) totalTag.classList.add('hidden');
+  updateCartPanel();
 };
 window.onVisaCountryChange = function() {
   const val = document.getElementById('visa-type')?.value;
@@ -1629,11 +1640,16 @@ function updateCartPanel() {
   const discAmt  = Math.round(subtotal * discPct / 100);
   const total    = subtotal - discAmt;
 
-  // Use tree structure for cart items
-  itemsEl.innerHTML = window.cart.map((item, idx) => `
-    <div style="margin-bottom:8px;">
+  // Use smart tree structure for cart items
+  itemsEl.innerHTML = window.cart.map((item, idx) => {
+    const label = item.label || '';
+    // Smart split — try · first, then +
+    let parts = label.split('·').map(s=>s.trim()).filter(Boolean);
+    if(parts.length<=1) parts = label.split(/\s*\+(?=[A-Z🖼📷📐])/).map(s=>s.trim()).filter(Boolean);
+    if(!parts.length&&label) parts=[label];
+    return `<div style="margin-bottom:8px;">
       <div style="font-size:12px;font-weight:700;color:var(--ink1);margin-bottom:4px;">${(item.svcs||[]).map(s=>(window.SVC_ICONS||{})[s]||'📦').join('')} ${(item.svcs||[]).join('+')}</div>
-      ${(item.label||'').split('·').map(s=>s.trim()).filter(Boolean).map((p,i,arr)=>`
+      ${parts.map((p,i,arr)=>`
         <div style="display:flex;gap:4px;font-size:11px;color:var(--ink3);padding:0 0 0 8px;">
           <span style="color:var(--gold-dk);font-family:monospace;font-size:9px;">${i===arr.length-1?'└':'├'}──</span>
           <span>${p}</span>
@@ -1646,7 +1662,8 @@ function updateCartPanel() {
         </div>
       </div>
       <div style="border-bottom:1px solid var(--paper3);margin-top:6px;"></div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   // Show live preview below cart items
   if(livePreview) {
@@ -1674,40 +1691,74 @@ function updateCartPanel() {
 function getLiveFillingPreview() {
   const lines = [];
 
-  // Check framing panel
+  // ── Framing panel ────────────────────────────────────────────
   const framingPanel = document.getElementById('panel-framing');
-  if(framingPanel) {
-    const size = document.querySelector('input[name="frame-print-w"]')?.value;
-    const size2 = document.querySelector('input[name="frame-print-h"]')?.value;
-    const msize = document.querySelector('input[name="mould-size"]:checked')?.value || document.querySelector('.mould-size-btn.act')?.dataset?.size;
-    const mtype = document.getElementById('mould-type')?.value;
-    const framePrice = document.getElementById('frame-price-tag')?.textContent;
-    if(size||msize||mtype) {
-      if(size&&size2) lines.push(`📐 Size: ${size}×${size2}"`);
-      if(msize) lines.push(`🖼️ Moulding: ${msize}`);
-      if(mtype) lines.push(`🎨 Type: ${mtype}`);
+  if(framingPanel && !framingPanel.classList.contains('hidden')) {
+    const lb = typeof getFrameLB === 'function' ? getFrameLB() : null;
+    const L = document.getElementById('frm-L')?.value;
+    const B = document.getElementById('frm-B')?.value;
+    const msize = document.querySelector('input[name="ms"]:checked')?.value;
+    const mouldSel = document.getElementById('frm-mould-select');
+    const mouldText = mouldSel?.options[mouldSel?.selectedIndex]?.text;
+    const mnt = document.querySelector('input[name="mnt"]:checked')?.value||'No';
+    const mountSize = document.querySelector('input[name="mntS"]:checked')?.value;
+    const totalTag = document.getElementById('frm-total-tag');
+    const framePrice = totalTag?.textContent;
+    const accs = [...document.querySelectorAll('input[name="acc"]:checked')].map(c=>c.value);
+    const slvChk = document.getElementById('acc-sleeve')?.checked;
+    const slvColor = document.querySelector('input[name="slvColor"]:checked')?.value;
+
+    if(L||msize||mouldText) {
+      if(L&&B) lines.push(`📐 Frame Size: ${L}×${B}"`);
+      if(msize) lines.push(`🖼️ Moulding: ${msize}${mouldText?' · '+mouldText.replace(/\s*\(.*\)/,''):''}`);
+      if(mnt==='Yes'&&mountSize) lines.push(`🔲 Mount: ${mountSize}"`);
+      if(accs.length) lines.push(`📎 Acc: ${accs.join(', ')}`);
+      if(slvChk&&slvColor) lines.push(`✨ Sleeve: ${slvColor}`);
       if(framePrice) lines.push(`💰 ${framePrice}`);
     }
   }
 
-  // Check printing panel
+  // ── Printing panel ───────────────────────────────────────────
   const printingPanel = document.getElementById('panel-printing');
-  if(printingPanel) {
-    const psize = document.getElementById('print-size')?.value || document.querySelector('.print-size-btn.act')?.textContent;
-    const qty = document.getElementById('print-qty')?.value;
-    const qual = document.querySelector('input[name="print-qual"]:checked')?.value;
+  if(printingPanel && !printingPanel.classList.contains('hidden')) {
+    const psizeEl = document.getElementById('print-size-select') || document.getElementById('print-size');
+    const psize = psizeEl?.value || document.querySelector('.print-size-btn.act')?.dataset?.size;
+    const qty = document.getElementById('print-qty')?.value || document.getElementById('p-qty')?.value;
+    const qual = document.querySelector('input[name="pqual"]:checked')?.value || document.querySelector('input[name="print-qual"]:checked')?.value;
+    const totalTag = document.getElementById('print-total-tag') || document.getElementById('prn-total-tag');
+    const printPrice = totalTag?.textContent;
+
     if(psize||qty) {
-      if(psize) lines.push(`📏 Size: ${psize}`);
+      if(psize) lines.push(`📏 Print Size: ${psize}`);
       if(qual) lines.push(`✨ Quality: ${qual}`);
-      if(qty) lines.push(`🔢 Qty: ${qty}`);
+      if(qty) lines.push(`🔢 Qty: ${qty} print${+qty>1?'s':''}`);
+      if(printPrice) lines.push(`💰 ${printPrice}`);
     }
   }
 
-  // Check photo editing panel
+  // ── Photo Editing panel ──────────────────────────────────────
   const editingPanel = document.getElementById('panel-editing');
-  if(editingPanel) {
-    const cost = document.getElementById('edit-cost-tag')?.textContent;
-    if(cost) lines.push(`🎨 Photo Editing: ${cost}`);
+  if(editingPanel && !editingPanel.classList.contains('hidden')) {
+    const cost = document.getElementById('edit-cost')?.value || document.getElementById('editing-cost')?.value;
+    if(cost) lines.push(`🎨 Photo Editing: Rs.${cost}`);
+  }
+
+  // ── Passport panel ───────────────────────────────────────────
+  const passportPanel = document.getElementById('panel-passport');
+  if(passportPanel && !passportPanel.classList.contains('hidden')) {
+    const copies = document.getElementById('pp-copies')?.value;
+    const totalTag = document.getElementById('pp-total-tag');
+    if(copies) lines.push(`📷 Passport: ${copies} copies`);
+    if(totalTag?.textContent) lines.push(`💰 ${totalTag.textContent}`);
+  }
+
+  // ── Visa panel ───────────────────────────────────────────────
+  const visaPanel = document.getElementById('panel-visa');
+  if(visaPanel && !visaPanel.classList.contains('hidden')) {
+    const country = document.getElementById('visa-country')?.value;
+    const copies = document.getElementById('visa-copies')?.value;
+    if(country) lines.push(`🛂 Visa: ${country}`);
+    if(copies) lines.push(`📷 Copies: ${copies}`);
   }
 
   if(!lines.length) return null;
