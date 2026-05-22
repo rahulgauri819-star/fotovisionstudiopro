@@ -78,14 +78,17 @@
 
   <!-- Tabs -->
   <div style="display:flex;gap:0;margin-bottom:16px;background:var(--paper);border-radius:12px;padding:4px;">
-    <button id="tab-active" onclick="framerTab('active')" style="flex:1;padding:10px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:var(--gold-dk);color:#fff;">
-      🔨 Active <span id="active-badge" style="background:rgba(255,255,255,.3);border-radius:100px;padding:1px 7px;font-size:11px;margin-left:4px;"></span>
+    <button id="tab-active" onclick="framerTab('active')" style="flex:1;padding:8px 4px;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;background:var(--gold-dk);color:#fff;">
+      🔨 Active <span id="active-badge" style="background:rgba(255,255,255,.3);border-radius:100px;padding:1px 5px;font-size:10px;margin-left:2px;"></span>
     </button>
-    <button id="tab-production" onclick="framerTab('production')" style="flex:1;padding:10px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:var(--ink2);">
-      🏭 Production
+    <button id="tab-ready" onclick="framerTab('ready')" style="flex:1;padding:8px 4px;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:var(--ink2);">
+      ✅ Ready <span id="ready-badge" style="background:rgba(0,0,0,.1);border-radius:100px;padding:1px 5px;font-size:10px;margin-left:2px;"></span>
     </button>
-    <button id="tab-done" onclick="framerTab('done')" style="flex:1;padding:10px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:var(--ink2);">
-      ✅ Done
+    <button id="tab-production" onclick="framerTab('production')" style="flex:1;padding:8px 4px;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:var(--ink2);">
+      🏭 Prod
+    </button>
+    <button id="tab-done" onclick="framerTab('done')" style="flex:1;padding:8px 4px;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:var(--ink2);">
+      📦 Done
     </button>
   </div>
 
@@ -96,6 +99,11 @@
       <div id="framer-notifs"><div style="font-size:13px;color:#9C8060;">Loading...</div></div>
     </div>
     <div id="framer-orders"><div class="loader"></div></div>
+  </div>
+
+  <!-- Ready -->
+  <div id="panel-ready" style="display:none;">
+    <div id="framer-ready-list"><div class="loader"></div></div>
   </div>
 
   <!-- Production Orders -->
@@ -163,11 +171,10 @@ let framerCurrentTab = 'active';
 
 window.framerTab = function(tab) {
   framerCurrentTab = tab;
-  document.getElementById('panel-active').style.display     = tab==='active'?'block':'none';
-  document.getElementById('panel-production').style.display = tab==='production'?'block':'none';
-  document.getElementById('panel-done').style.display       = tab==='done'?'block':'none';
-  ['active','production','done'].forEach(t=>{
+  ['active','ready','production','done'].forEach(t=>{
+    const p=document.getElementById('panel-'+t);
     const b=document.getElementById('tab-'+t);
+    if(p) p.style.display=t===tab?'block':'none';
     if(b){b.style.background=t===tab?'var(--gold-dk)':'transparent';b.style.color=t===tab?'#fff':'var(--ink2)';}
   });
   if(tab==='production') renderFramerProduction();
@@ -251,73 +258,104 @@ function framerRender() {
   try {
     const today = todayStr();
     const fo = framerOrders.filter(o=>orderNeedsFramer(o));
-    // Only show Pending + In Progress + Ready (not Delivered)
-    const active = fo.filter(o=>o.status!=='Delivered').sort((a,b)=>(b.created||0)-(a.created||0));
-    const done   = fo.filter(o=>o.status==='Delivered').sort((a,b)=>(b.created||0)-(a.created||0));
+    const activeJobs = fo.filter(o=>o.status==='Pending'||o.status==='In Progress').sort((a,b)=>(b.created||0)-(a.created||0));
+    const readyJobs  = fo.filter(o=>o.status==='Ready').sort((a,b)=>(b.created||0)-(a.created||0));
+    const doneJobs   = fo.filter(o=>o.status==='Delivered').sort((a,b)=>(b.created||0)-(a.created||0));
+    const overdue    = activeJobs.filter(o=>o.delivery&&o.delivery.slice(0,10)<today);
+    const dueToday   = activeJobs.filter(o=>o.delivery&&o.delivery.slice(0,10)===today);
 
-    const todayJobs = active.filter(o=>o.date===today);
-    const dueToday  = active.filter(o=>o.delivery&&o.delivery.startsWith(today));
-    const overdue   = active.filter(o=>o.delivery&&o.delivery.slice(0,10)<today&&o.status!=='Delivered');
-
-    document.getElementById('fs-today').textContent   = todayJobs.length;
-    document.getElementById('fs-active').textContent  = active.length;
-    document.getElementById('fs-duetoday').textContent= dueToday.length;
-    document.getElementById('fs-overdue').textContent = overdue.length;
-
-    const badge = document.getElementById('active-badge');
-    if(badge) badge.textContent = active.length>0 ? active.length : '';
+    // Update badges
+    const ab=document.getElementById('active-badge'); if(ab) ab.textContent=activeJobs.length||'';
+    const rb=document.getElementById('ready-badge'); if(rb) rb.textContent=readyJobs.length||'';
+    // Update stats
+    const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+    set('fs-today',fo.filter(o=>o.date===today).length);
+    set('fs-active',activeJobs.length);
+    set('fs-duetoday',dueToday.length);
+    set('fs-overdue',overdue.length);
 
     if(framerCurrentTab==='active') {
-      // Alerts — active jobs
-      document.getElementById('framer-notifs').innerHTML = active.length
-        ? active.slice(0,5).map(o=>`<div class="job-notif" style="${o.delivery&&o.delivery.slice(0,10)<today?'color:#e53935;':''}">
-            <div class="job-dot" style="${o.delivery&&o.delivery.slice(0,10)<today?'background:#e53935;':''}"></div>
-            <div>
-              <div class="job-text"><b>${o.name}</b> · <b>${o.status}</b></div>
-              <div class="job-time">👤 ${o.staff||''}${o.delivery?' · ⏰ '+formatDatetime(o.delivery):''}</div>
-            </div>
-          </div>`).join('')
-        : '<div style="font-size:13px;color:#9C8060;">No active framing jobs 🎉</div>';
+      // Alerts — only Pending + In Progress, clickable
+      document.getElementById('framer-notifs').innerHTML = activeJobs.length
+        ? activeJobs.slice(0,6).map(o=>{
+            const isOD=o.delivery&&o.delivery.slice(0,10)<today;
+            return `<div onclick="framerOpenDetail('${o.id}')" class="job-notif" style="cursor:pointer;${isOD?'color:#c62828;background:#ffcdd2;border-radius:8px;padding:4px 6px;':''}">
+              <div class="job-dot" style="${isOD?'background:#c62828;':''}"></div>
+              <div>
+                <div class="job-text"><b>${o.name}</b> · <b>${o.status}</b>${isOD?' ⚠️ OVERDUE':''}</div>
+                <div class="job-time">👤 ${o.staff||''}${o.delivery?' · ⏰ '+formatDatetime(o.delivery):''}</div>
+              </div>
+            </div>`;
+          }).join('')
+        : '<div style="font-size:13px;color:#9C8060;padding:6px 0;">✅ All caught up! No pending jobs.</div>';
 
-      if(!active.length) {
+      if(!activeJobs.length) {
         document.getElementById('framer-orders').innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><div class="empty-title">All caught up!</div><div class="empty-sub">No active framing orders</div></div>';
         return;
       }
-
-      // Sections: Overdue → Due Today → Upcoming → No due date
-      const upcoming  = active.filter(o=>o.delivery&&o.delivery.slice(0,10)>today);
-      const nodue     = active.filter(o=>!o.delivery);
-
-      const section = (title,color,bg,list) => {
+      const upcoming = activeJobs.filter(o=>o.delivery&&o.delivery.slice(0,10)>today);
+      const nodue    = activeJobs.filter(o=>!o.delivery);
+      const section=(title,color,bg,list)=>{
         if(!list.length) return '';
-        return `<div style="margin-bottom:14px;">
-          <div style="font-weight:700;font-size:12px;color:${color};padding:5px 10px;background:${bg};border-radius:8px;margin-bottom:8px;border-left:3px solid ${color};">${title}</div>
-          ${list.map(o=>framerCard(o,true)).join('')}
-        </div>`;
+        return `<div style="margin-bottom:14px;"><div style="font-weight:700;font-size:12px;color:${color};padding:5px 10px;background:${bg};border-radius:8px;margin-bottom:8px;border-left:3px solid ${color};">${title}</div>${list.map(o=>framerCard(o,true)).join('')}</div>`;
       };
-
       document.getElementById('framer-orders').innerHTML =
-        section('🔴 OVERDUE','#e53935','#ffe8e8',overdue) +
-        section('🟡 DUE TODAY','#e65100','#fff3e0',dueToday.filter(o=>!overdue.includes(o))) +
-        section('🔵 UPCOMING','#1976d2','#e3f2fd',upcoming) +
+        section('🔴 OVERDUE','#c62828','#ffcdd2',overdue)+
+        section('🟡 DUE TODAY','#e65100','#fff3e0',dueToday.filter(o=>!overdue.includes(o)))+
+        section('🔵 UPCOMING','#1976d2','#e3f2fd',upcoming)+
         section('📋 NO DUE DATE','#666','#f5f5f5',nodue);
 
-    } else {
-      document.getElementById('framer-done').innerHTML = done.length
-        ? done.map(o=>framerCard(o,false)).join('')
+    } else if(framerCurrentTab==='ready') {
+      const el=document.getElementById('framer-ready-list');
+      if(el) el.innerHTML = readyJobs.length
+        ? readyJobs.map(o=>`<div class="job-card" style="background:#e8f5e9;border-left:4px solid #388e3c;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <div><div style="font-weight:700;">${o.name}</div><div style="font-size:12px;color:var(--ink3);">${o.billNo||o.id.slice(0,8)}</div></div>
+              <span style="background:#388e3c;color:#fff;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:700;">✅ Ready</span>
+            </div>
+            ${renderServiceTree(o.cartItems?.[0],true,true)||''}
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button onclick="framerUndoReady('${o.id}')" style="flex:1;background:#f5f5f5;color:#333;border:none;border-radius:8px;padding:8px;font-size:12px;cursor:pointer;">↩️ Undo</button>
+            </div>
+          </div>`).join('')
+        : '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No ready orders</div></div>';
+
+    } else if(framerCurrentTab==='done') {
+      const el=document.getElementById('framer-done');
+      if(el) el.innerHTML = doneJobs.length
+        ? doneJobs.map(o=>framerCard(o,false)).join('')
         : '<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-title">No completed orders yet</div></div>';
     }
   } catch(err) {
     console.error('framerRender error:',err);
-    document.getElementById('framer-notifs').innerHTML='<div style="color:#888;font-size:13px;">No active jobs</div>';
-    document.getElementById('framer-orders').innerHTML='<div style="padding:20px;text-align:center;color:#888;">Loading...</div>';
   }
 }
 
+window.framerOpenDetail = function(id) {
+  const o = framerOrders.find(x=>x.id===id);
+  if(!o) return;
+  const modal = document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:flex-end;justify-content:center;';
+  modal.innerHTML=`<div style="background:#fff;border-radius:16px 16px 0 0;padding:20px;width:100%;max-width:500px;max-height:80vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="font-weight:700;font-size:16px;">${o.name} · ${o.billNo||o.id.slice(0,8)}</div>
+      <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    ${o.delivery?`<div style="background:#fff3e0;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:13px;font-weight:700;color:#e65100;">⏰ Due: ${formatDatetime(o.delivery)}</div>`:''}
+    ${(o.cartItems||[]).map(item=>typeof renderServiceTree==='function'?renderServiceTree(item,false,true):'').join('')}
+    ${o.notes?`<div style="background:#fff3cd;border-radius:8px;padding:10px;margin-top:8px;font-size:13px;">📝 ${o.notes}</div>`:''}
+    ${o.status!=='Ready'?`<button onclick="framerMarkReady('${o.id}');this.closest('[style*=fixed]').remove();" style="width:100%;margin-top:16px;background:#388e3c;color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;">✅ Mark Ready</button>`:'<div style="text-align:center;color:#388e3c;font-weight:700;margin-top:12px;">✅ Already Ready</div>'}
+  </div>`;
+  document.body.appendChild(modal);
+};
+
 window.framerMarkReady = async function(id) {
-  if(framerUseLocal){framerOrders=framerOrders.map(o=>o.id===id?{...o,status:'Ready'}:o);localStorage.setItem('fv_orders',JSON.stringify(framerOrders));framerRender();}
+  if(framerUseLocal){framerOrders=framerOrders.map(o=>o.id===id?{...o,status:'Ready'}:o);localStorage.setItem('fv_orders',JSON.stringify(framerOrders));}
   else { try{await framerDb.collection('orders').doc(id).update({status:'Ready'});}catch(e){toast('Error','error');return;} }
   toast('✅ Order marked Ready!','success');
+  framerRender(); // re-render current tab — card auto-moves since Ready filters are different
+  // Switch to Ready tab to show it
+  framerTab('ready');
 };
 
 window.framerUndoReady = async function(id) {

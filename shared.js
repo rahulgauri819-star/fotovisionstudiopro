@@ -530,17 +530,87 @@ function parseServiceLabel(item) {
   const svcs = item.svcs || [item.svc] || [];
   const label = item.label || '';
   const price = item.price || 0;
-  const parts = label.split('·').map(s=>s.trim()).filter(Boolean);
 
-  // Build tree lines from label parts
-  const lines = parts.length > 0 ? parts : label.split('+').map(s=>s.trim()).filter(Boolean);
+  // Smart parser - different services have different label formats
+  const hasFraming = svcs.includes('Framing');
+  const hasPrinting = svcs.includes('Printing');
+  const hasEditing = svcs.includes('Photo Editing');
+  const hasPassport = svcs.includes('Passport Photos');
+  const hasVisa = svcs.includes('Visa Photos');
 
-  if(!lines.length) return { svcs, lines: [], price };
+  let lines = [];
+
+  if (hasFraming && hasPrinting) {
+    // Combined: split into print part and frame part
+    // Label like: "Print 10×12" HDR ×1 ₹310 · Frame 1" M4 +Mount 2" [Stand] Rs.404"
+    const midDot = label.indexOf('·');
+    if (midDot > 0) {
+      const printPart = label.slice(0, midDot).trim();
+      const framePart = label.slice(midDot + 1).trim();
+      lines = [
+        ...parsePrintPart(printPart),
+        ...parseFramePart(framePart)
+      ];
+    } else {
+      lines = smartSplit(label);
+    }
+  } else if (hasFraming) {
+    lines = parseFramePart(label);
+  } else if (hasPrinting) {
+    lines = parsePrintPart(label);
+  } else {
+    // Default: split by · or + 
+    lines = label.split('·').map(s=>s.trim()).filter(Boolean);
+    if (lines.length <= 1) lines = label.split('+').map(s=>s.trim()).filter(Boolean);
+    if (lines.length <= 1 && label) lines = [label];
+  }
+
+  if(!lines.length && label) lines = [label];
   return { svcs, lines, price };
 }
 
+function parsePrintPart(part) {
+  // "Print 10×12" HDR ×1 SunBoard 3mm ₹310"
+  const lines = [];
+  const sizeM = part.match(/(\d+[×x]\d+["']?)/);
+  const qualM = part.match(/\b(HDR|Vinyl|Canvas|NF|Lustre|Matte|Glossy)\b/i);
+  const qtyM = part.match(/[×x](\d+)\s*(?:prints?|pcs?|copies)?/i);
+  const backM = part.match(/\b(Sun\s?Board|Sunboard|MDF|Foam|Mount\s?Board)[^·+]*/i);
+  if (sizeM) lines.push('🖨️ Print Size: ' + sizeM[1]);
+  if (qualM) lines.push('Quality: ' + qualM[1]);
+  if (qtyM) lines.push('Qty: ' + qtyM[1] + ' print' + (+qtyM[1]>1?'s':''));
+  if (backM) lines.push('Backing: ' + backM[0].trim());
+  return lines.length ? lines : (part ? [part] : []);
+}
+
+function parseFramePart(part) {
+  // "Frame 1" M4-Rustic Wood +Mount 2" [Table Stand+Hanging Wire] +Sleeve(GoldenStripe) Rs.200 Rs.404"
+  const lines = [];
+  const mouldM = part.match(/Frame\s*([\d.]+["']?)\s*([^+\[]+?)(?:\s*\+Mount|\s*\[|$)/i);
+  const mountM = part.match(/\+?Mount\s*([\d.]+["']?)/i);
+  const accM = part.match(/\[([^\]]+)\]/);
+  const sleeveM = part.match(/\+Sleeve\(([^)]+)\)/i);
+
+  if (mouldM) lines.push('🖼️ Moulding: ' + mouldM[1] + ' ' + mouldM[2].trim());
+  if (mountM) lines.push('Mount: ' + mountM[1]);
+  if (accM) {
+    const accs = accM[1].split(/[+,]/).map(s=>s.trim()).filter(Boolean);
+    accs.forEach(a => lines.push('Acc: ' + a));
+  }
+  if (sleeveM) lines.push('Sleeve: ' + sleeveM[1]);
+  return lines.length ? lines : (part ? smartSplit(part) : []);
+}
+
+function smartSplit(label) {
+  let parts = label.split('·').map(s=>s.trim()).filter(Boolean);
+  if (parts.length > 1) return parts;
+  parts = label.split(/\s*\+(?=[A-Z\[])/).map(s=>s.trim()).filter(Boolean);
+  if (parts.length > 1) return parts;
+  return label ? [label] : [];
+}
+
 // Render service as tree HTML (for bottom sheets, cards etc)
-function renderServiceTree(item, compact=false) {
+function renderServiceTree(item, compact=false, hidePrice=false) {
   const {svcs, lines, price} = parseServiceLabel(item);
   const svcLabel = svcs.map(s=>(window.SVC_ICONS?.[s]||'📦')+' '+s).join(' + ');
   const fontSize = compact ? '11px' : '12px';
@@ -549,7 +619,7 @@ function renderServiceTree(item, compact=false) {
   if(!lines.length) {
     return `<div style="background:var(--paper);border-radius:8px;padding:${padding};margin-bottom:6px;border-left:3px solid var(--gold-dk);">
       <div style="font-weight:700;color:var(--gold-dk);margin-bottom:4px;">${svcLabel}</div>
-      <div style="font-weight:700;color:var(--gold-dk);font-size:13px;">Rs.${price}</div>
+      ${!hidePrice?`<div style="font-weight:700;color:var(--gold-dk);font-size:13px;">Rs.${price}</div>`:''}
     </div>`;
   }
 
@@ -565,6 +635,6 @@ function renderServiceTree(item, compact=false) {
   return `<div style="background:var(--paper);border-radius:8px;padding:${padding};margin-bottom:6px;border-left:3px solid var(--gold-dk);">
     <div style="font-weight:700;color:var(--gold-dk);margin-bottom:6px;font-size:${compact?'12px':'14px'};">${svcLabel}</div>
     ${treeLines}
-    <div style="font-weight:700;color:var(--gold-dk);margin-top:6px;font-size:13px;">Rs.${price}</div>
+    ${!hidePrice?`<div style="font-weight:700;color:var(--gold-dk);margin-top:6px;font-size:13px;">Rs.${price}</div>`:''}
   </div>`;
 }

@@ -18,7 +18,11 @@ function getFormHTML(existing, role) {
       <div class="form-group"><label class="form-label">Phone Number</label><input class="form-input" id="f-phone" type="tel" inputmode="tel" placeholder="9876543210"></div>
     </div>
     <div class="form-group" style="margin-bottom:12px;">
-      <label class="form-label">Address</label>
+      <label class="form-label">Email ID <span style="font-weight:400;color:var(--ink3);">(optional)</span></label>
+      <input class="form-input" id="f-email" type="email" inputmode="email" placeholder="customer@email.com">
+    </div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label">Address <span style="font-weight:400;color:var(--ink3);">(optional)</span></label>
       <textarea class="form-input" id="f-address" placeholder="Customer address (optional)" rows="2"></textarea>
     </div>
     <div class="form-grid-2">
@@ -110,8 +114,32 @@ function getFormHTML(existing, role) {
       <label class="toggle-option"><input type="radio" name="otype" value="Booking" onchange="onOrderType()"><span>📅 Booking Order</span></label>
     </div>
     <div id="delivery-box" class="hidden" style="margin-top:14px;padding:14px;background:var(--paper);border-radius:var(--r-md);border:1px solid var(--paper3);">
-      <label class="form-label" style="display:block;margin-bottom:8px;">Delivery Date &amp; Time</label>
-      <input class="form-input" id="f-delivery" type="datetime-local" style="max-width:320px;">
+      <label class="form-label" style="display:block;margin-bottom:10px;">📅 Delivery Date & Time</label>
+      <!-- Date scroller -->
+      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px;" id="delivery-date-scroller"></div>
+      <!-- Time picker -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div>
+          <label class="form-label" style="font-size:11px;">Hour</label>
+          <select class="form-input" id="f-del-hour" onchange="updateDeliveryDisplay()">
+            ${[...Array(12)].map((_,i)=>`<option value="${i+1}">${i+1}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="form-label" style="font-size:11px;">Minutes</label>
+          <select class="form-input" id="f-del-min" onchange="updateDeliveryDisplay()">
+            ${[0,5,10,15,20,25,30,35,40,45,50,55].map(m=>`<option value="${String(m).padStart(2,'0')}">${String(m).padStart(2,'0')}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="form-label" style="font-size:11px;">AM/PM</label>
+          <select class="form-input" id="f-del-ampm" onchange="updateDeliveryDisplay()">
+            <option>AM</option><option selected>PM</option>
+          </select>
+        </div>
+      </div>
+      <div id="delivery-display" style="font-size:13px;font-weight:700;color:var(--gold-dk);padding:8px 12px;background:#fff;border-radius:8px;border:1px solid var(--paper3);"></div>
+      <input type="hidden" id="f-delivery">
     </div>
     <div style="margin-top:14px;">
       <label class="form-label" style="display:block;margin-bottom:8px;">📝 Special Notes</label>
@@ -128,10 +156,10 @@ function getFormHTML(existing, role) {
     <!-- Billing Summary -->
     <div id="billing-summary" style="display:none;background:var(--paper);border:1px solid var(--paper3);border-radius:var(--r-md);padding:14px 16px;margin-bottom:16px;font-size:13px;"></div>
 
-    <!-- Discount -->
+    <!-- Discount + Complimentary -->
     <div style="margin-bottom:18px;">
-      <label class="form-label" style="display:block;margin-bottom:10px;">Discount</label>
-      <div class="pill-group">
+      <label class="form-label" style="display:block;margin-bottom:10px;">Discount & Complimentary</label>
+      <div class="pill-group" style="flex-wrap:wrap;gap:6px;">
         <label class="pill-option"><input type="radio" name="disc" value="0" checked onchange="onDiscountChange(0)"><span>No Discount</span></label>
         <label class="pill-option"><input type="radio" name="disc" value="5" onchange="onDiscountChange(5)"><span>5%</span></label>
         <label class="pill-option"><input type="radio" name="disc" value="10" onchange="onDiscountChange(10)"><span>10%</span></label>
@@ -141,6 +169,7 @@ function getFormHTML(existing, role) {
         <label class="pill-option"><input type="radio" name="disc" value="30" onchange="onDiscountChange(30)"><span>30%</span></label>
         <label class="pill-option"><input type="radio" name="disc" value="35" onchange="onDiscountChange(35)"><span>35%</span></label>
         <label class="pill-option"><input type="radio" name="disc" value="40" onchange="onDiscountChange(40)"><span>40%</span></label>
+        <button type="button" onclick="saveComplimentary()" style="padding:6px 14px;background:#fff3e0;border:2px solid #e65100;color:#e65100;border-radius:100px;font-size:13px;font-weight:700;cursor:pointer;">🎁 Complimentary</button>
       </div>
       <div id="discount-tag" class="price-tag hidden" style="margin-top:10px;background:linear-gradient(135deg,#2D8A5E,#3DAA74);"></div>
     </div>
@@ -226,10 +255,7 @@ function getFormHTML(existing, role) {
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
         <button class="btn btn-primary btn-lg" style="width:100%;margin-bottom:8px;" onclick="saveOrder()">📅 Book Order</button>
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-outline btn-lg" style="flex:1;border:2px solid var(--gold-dk);color:var(--gold-dk);background:#fff;" onclick="saveEstimate()">💰 Estimate</button>
-          <button class="btn btn-outline btn-lg" style="flex:1;border:2px solid #e65100;color:#e65100;background:#fff;" onclick="saveComplimentary()">🎁 Complimentary</button>
-        </div>
+        <button class="btn btn-outline btn-lg" style="width:100%;border:2px solid var(--gold-dk);color:var(--gold-dk);background:#fff;" onclick="saveEstimate()">💰 Save Estimate</button>
         <button class="btn btn-secondary" style="width:100%;" onclick="requestCancelOrder()">✕ Cancel</button>
       </div>
     </div>
@@ -932,7 +958,11 @@ window.calcFrame = function() {
 
 function onOrderType() {
   const otype = document.querySelector('input[name="otype"]:checked')?.value;
-  document.getElementById('delivery-box').classList.toggle('hidden', otype!=='Booking');
+  const box = document.getElementById('delivery-box');
+  box.classList.toggle('hidden', otype!=='Booking');
+  if(otype==='Booking') {
+    initDeliveryPicker();
+  }
   updatePaymentSection();
 }
 
@@ -1749,7 +1779,71 @@ window.onDiscountChange = function(pct) {
   }
 };
 
-// ── Owner Password Modal ──────────────────────────────────────
+// ── Custom Delivery Date Picker ───────────────────────────────
+window._selectedDeliveryDate = null;
+
+window.initDeliveryPicker = function() {
+  const scroller = document.getElementById('delivery-date-scroller');
+  if(!scroller) return;
+  const today = new Date();
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  scroller.innerHTML = '';
+  for(let i=0; i<14; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate()+i);
+    const isToday = i===0;
+    const btn = document.createElement('button');
+    btn.type='button';
+    btn.style.cssText='flex-shrink:0;padding:8px 12px;border-radius:10px;border:2px solid var(--paper3);background:#fff;cursor:pointer;text-align:center;min-width:52px;';
+    btn.innerHTML=`<div style="font-size:10px;font-weight:700;color:var(--ink3);">${days[d.getDay()]}</div><div style="font-size:16px;font-weight:900;color:var(--gold-dk);">${d.getDate()}</div><div style="font-size:10px;color:var(--ink3);">${months[d.getMonth()]}</div>${isToday?'<div style="font-size:9px;background:var(--gold-dk);color:#fff;border-radius:4px;padding:1px 4px;margin-top:2px;">TODAY</div>':''}`;
+    btn.dataset.date = d.toISOString().slice(0,10);
+    btn.onclick=()=>selectDeliveryDate(btn, d);
+    if(isToday) { selectDeliveryDate(btn, d); }
+    scroller.appendChild(btn);
+  }
+  updateDeliveryDisplay();
+};
+
+window.selectDeliveryDate = function(btn, d) {
+  document.querySelectorAll('#delivery-date-scroller button').forEach(b=>{
+    b.style.background='#fff'; b.style.borderColor='var(--paper3)'; b.style.color='var(--ink2)';
+  });
+  btn.style.background='var(--gold-dk)'; btn.style.borderColor='var(--gold-dk)'; btn.style.color='#fff';
+  btn.querySelectorAll('div').forEach(el=>{ if(el.style.color) el.style.color='#fff'; });
+  window._selectedDeliveryDate = d;
+  updateDeliveryDisplay();
+};
+
+window.updateDeliveryDisplay = function() {
+  const d = window._selectedDeliveryDate || new Date();
+  const hour = +document.getElementById('f-del-hour')?.value||10;
+  const min = document.getElementById('f-del-min')?.value||'00';
+  const ampm = document.getElementById('f-del-ampm')?.value||'PM';
+  const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const display=document.getElementById('delivery-display');
+  const hidden=document.getElementById('f-delivery');
+  if(display) display.textContent=`${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()} · ${hour}:${min} ${ampm}`;
+  if(hidden) {
+    let h24=hour; if(ampm==='PM'&&hour!==12)h24=hour+12; if(ampm==='AM'&&hour===12)h24=0;
+    hidden.value=`${d.toISOString().slice(0,10)}T${String(h24).padStart(2,'0')}:${min}:00`;
+  }
+};
+
+// ── Table Stand visibility ────────────────────────────────────
+window.checkTableStandVisibility = function() {
+  const fw = +document.getElementById('f-fw')?.value||0;
+  const fh = +document.getElementById('f-fh')?.value||0;
+  const tsRow = document.getElementById('table-stand-row');
+  if(!tsRow) return;
+  const hide = fw>10 || fh>12;
+  tsRow.style.display = hide ? 'none' : '';
+  if(hide) {
+    const tsCb = document.getElementById('acc-tablestand');
+    if(tsCb) tsCb.checked=false;
+  }
+};
 window.showOwnerPasswordModal = function(message, onApprove, onCancel) {
   const existing = document.getElementById('owner-pwd-modal');
   if(existing) existing.remove();

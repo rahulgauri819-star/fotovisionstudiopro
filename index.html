@@ -192,10 +192,14 @@ body{background:#0F0F0F;color:#fff;min-height:100vh;display:flex;flex-direction:
 
 <script>
 const ROLE_CONFIG = {
-  owner:  { name:'Owner',  icon:'👑',  pass:'owner123',  page:'owner/index.html',  hint:'Default: owner123' },
-  staff:  { name:'Staff',  icon:'🧑‍💼', pass:'staff123',  page:'staff/index.html',  hint:'Default: staff123'  },
-  framer: { name:'Framer', icon:'🖼️', pass:'framer123', page:'framer/index.html', hint:'Default: framer123' },
+  owner:  { name:'Owner',  icon:'👑',  defaultPass:'owner123',  page:'owner/index.html',  hint:'Contact owner for password' },
+  staff:  { name:'Staff',  icon:'🧑‍💼', defaultPass:'staff123',  page:'staff/index.html',  hint:'Contact owner for password'  },
+  framer: { name:'Framer', icon:'🖼️', defaultPass:'framer123', page:'framer/index.html', hint:'Contact owner for password' },
 };
+
+function getRolePassword(role) {
+  return localStorage.getItem(`fv_${role}_login_password`) || ROLE_CONFIG[role].defaultPass;
+}
 let selectedRole = null;
 
 function selectRole(r) {
@@ -224,7 +228,7 @@ function doLogin() {
   if (!selectedRole) return;
   const pass = document.getElementById('login-pass').value;
   const cfg  = ROLE_CONFIG[selectedRole];
-  if (pass !== cfg.pass) {
+  if (pass !== getRolePassword(selectedRole)) {
     const err = document.getElementById('login-err');
     err.style.display = 'block';
     document.getElementById('login-pass').value = '';

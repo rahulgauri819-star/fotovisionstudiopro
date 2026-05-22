@@ -69,10 +69,10 @@
     <div class="page-sub" id="dashdate"></div>
   </div>
   <div class="stat-grid" style="grid-template-columns:repeat(4,1fr);">
-    <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-value" id="s-tot">0</div><div class="stat-label">Total</div></div>
-    <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-value" id="s-pnd">0</div><div class="stat-label">Pending</div></div>
-    <div class="stat-card"><div class="stat-icon">⚙️</div><div class="stat-value" id="s-prg">0</div><div class="stat-label">In Progress</div></div>
-    <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value" id="s-rdy">0</div><div class="stat-label">Ready</div></div>
+    <div class="stat-card" onclick="staffGoToOrders('all')" style="cursor:pointer;"><div class="stat-icon">📦</div><div class="stat-value" id="s-tot">0</div><div class="stat-label">Total</div></div>
+    <div class="stat-card" onclick="staffGoToOrders('Pending')" style="cursor:pointer;"><div class="stat-icon">⏳</div><div class="stat-value" id="s-pnd">0</div><div class="stat-label">Pending</div></div>
+    <div class="stat-card" onclick="staffGoToOrders('In Progress')" style="cursor:pointer;"><div class="stat-icon">⚙️</div><div class="stat-value" id="s-prg">0</div><div class="stat-label">In Progress</div></div>
+    <div class="stat-card" onclick="staffGoToOrders('Ready')" style="cursor:pointer;"><div class="stat-icon">✅</div><div class="stat-value" id="s-rdy">0</div><div class="stat-label">Ready</div></div>
   </div>
   <div class="card" style="margin-top:16px;">
     <div class="card-header"><div class="card-title">📋 Recent Orders</div></div>
@@ -1095,7 +1095,74 @@ window.staffCreatePO = function() {
     createProductionOrder();
   }
 };
-window.cancelForm=()=>{window.cart=[];window.editId=null;showPage('orders');};
+window.staffGoToOrders = function(filter) {
+  window._staffOrdersFilter = filter;
+  showPage('orders');
+};
+
+window.renderEstimates = function() {
+  const el = document.getElementById('estimates-list');
+  if(!el) return;
+  const search = document.getElementById('est-search')?.value?.toLowerCase()||'';
+  let estimates = JSON.parse(localStorage.getItem('fv_estimates')||'[]');
+  const today = todayStr();
+  if(search) estimates=estimates.filter(e=>e.name?.toLowerCase().includes(search)||e.estNo?.toLowerCase().includes(search)||e.phone?.includes(search));
+  if(!estimates.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">💰</div><div class="empty-title">No estimates yet</div><div class="empty-sub">Save an estimate from the order form</div></div>';return;}
+  el.innerHTML=estimates.map(est=>{
+    const expired=est.expires&&est.expires<today;
+    const daysLeft=est.expires?Math.ceil((new Date(est.expires)-new Date(today))/(1000*60*60*24)):null;
+    return `<div class="card" style="margin-bottom:10px;${expired?'border-left:4px solid #e53935;':''}">
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+          <div><div style="font-weight:700;font-size:15px;">${est.name}</div>
+          <div style="font-size:12px;color:var(--ink3);">${est.estNo||''} · ${formatDate(est.date)} · ${est.phone||'—'}</div></div>
+          <div style="text-align:right;"><div style="font-weight:800;font-size:16px;color:var(--gold-dk);">Rs.${est.total||0}</div>
+          ${expired?'<span style="background:#e53935;color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;">EXPIRED</span>':daysLeft!==null?`<div style="font-size:11px;color:${daysLeft<=7?'#e65100':'#388e3c'};">${daysLeft}d left</div>`:''}
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button onclick="convertEstimateToOrder('${est.id}')" class="btn-gold" style="flex:1;padding:8px;font-size:12px;">✅ Convert to Order</button>
+          <button onclick="printEstimateById('${est.id}')" class="btn-outline" style="padding:8px 12px;font-size:12px;">🖨️</button>
+          <button onclick="deleteEstimate('${est.id}')" style="padding:8px 12px;background:#e53935;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;">🗑️</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+};
+
+window.deleteEstimate = function(id) {
+  let ests=JSON.parse(localStorage.getItem('fv_estimates')||'[]');
+  ests=ests.filter(e=>e.id!==id);
+  localStorage.setItem('fv_estimates',JSON.stringify(ests));
+  renderEstimates();
+  toast('🗑️ Estimate deleted');
+};
+
+window.printEstimateById = function(id) {
+  const ests=JSON.parse(localStorage.getItem('fv_estimates')||'[]');
+  const est=ests.find(e=>e.id===id);
+  if(est&&typeof printEstimate==='function') printEstimate(est);
+};
+
+window.convertEstimateToOrder = function(id) {
+  const ests=JSON.parse(localStorage.getItem('fv_estimates')||'[]');
+  const est=ests.find(e=>e.id===id);
+  if(!est)return;
+  window.cart=est.cartItems||[];
+  window.editId=null;
+  showPage('form');
+  setTimeout(()=>{
+    try{
+      document.getElementById('f-name').value=est.name||'';
+      document.getElementById('f-phone').value=est.phone||'';
+      if(document.getElementById('f-email'))document.getElementById('f-email').value=est.email||'';
+      document.getElementById('f-staff').value=est.staff||'';
+      document.getElementById('f-notes').value=est.notes||'';
+      if(typeof updateCartPanel==='function')updateCartPanel();
+      toast('✅ Estimate loaded — review and book','success');
+    }catch(e){}
+  },300);
+};
 window.chgStatus=chgStatus;window.editOrd=editOrd;window.billOrd=billOrd;window.requestDelete=requestDelete;window.doLogout=doLogout;
 
 // ── Staff Names (loaded from shared storage) ──────────────────
@@ -1248,3 +1315,4 @@ initDB().then(async()=>{
 <script src="../form.js"></script>
 </body>
 </html>
+window.cancelForm=()=>{window.cart=[];window.editId=null;showPage('orders');};

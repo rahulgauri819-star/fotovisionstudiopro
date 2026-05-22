@@ -112,16 +112,16 @@
   <!-- 2. TODAY'S STATS -->
   <div style="margin-bottom:6px;"><span class="t-label" style="color:var(--gold-dk);">📅 Today</span></div>
   <div class="stat-grid" style="grid-template-columns:1fr 1fr;margin-bottom:16px;">
-    <div class="stat-card gold-card">
+    <div class="stat-card gold-card" onclick="dashGoToOrders('today')" style="cursor:pointer;">
       <div class="stat-icon">💰</div>
       <div class="stat-value" id="s-today-sales">Rs.0</div>
       <div class="stat-label">Today's Sales</div>
       <div id="s-today-pay-breakdown" style="margin-top:8px;font-size:12px;line-height:1.8;text-align:left;"></div>
     </div>
-    <div class="stat-card gold-card">
+    <div class="stat-card gold-card" onclick="dashGoToOrders('today')" style="cursor:pointer;">
       <div class="stat-icon">📦</div>
       <div class="stat-value" id="s-today-orders">0</div>
-      <div class="stat-label">Today's Orders</div>
+      <div class="stat-label">Today's Orders →</div>
     </div>
   </div>
 
@@ -136,24 +136,23 @@
     </div>
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;" id="order-stat-cards">
-    <div style="flex:1;min-width:60px;background:#fff;border-radius:10px;padding:8px 10px;text-align:center;box-shadow:var(--shadow-sm);">
+    <div style="flex:1;min-width:60px;background:#fff;border-radius:10px;padding:8px 10px;text-align:center;box-shadow:var(--shadow-sm);cursor:pointer;" onclick="dashGoToOrders('all')">
       <div style="font-size:18px;font-weight:800;color:var(--ink1);" id="s-tot">0</div>
       <div style="font-size:10px;color:var(--ink3);">TOTAL</div>
     </div>
-    <div style="flex:1;min-width:60px;background:#fff;border-radius:10px;padding:8px 10px;text-align:center;box-shadow:var(--shadow-sm);">
+    <div style="flex:1;min-width:60px;background:#fff;border-radius:10px;padding:8px 10px;text-align:center;box-shadow:var(--shadow-sm);cursor:pointer;" onclick="dashGoToOrders('Pending')">
       <div style="font-size:18px;font-weight:800;color:#f57c00;" id="s-pnd">0</div>
       <div style="font-size:10px;color:var(--ink3);">PENDING</div>
     </div>
-    <div style="flex:1;min-width:60px;background:#fff;border-radius:10px;padding:8px 10px;text-align:center;box-shadow:var(--shadow-sm);">
+    <div style="flex:1;min-width:60px;background:#fff;border-radius:10px;padding:8px 10px;text-align:center;box-shadow:var(--shadow-sm);cursor:pointer;" onclick="dashGoToOrders('In Progress')">
       <div style="font-size:18px;font-weight:800;color:#1976d2;" id="s-prg">0</div>
       <div style="font-size:10px;color:var(--ink3);">IN PROG</div>
     </div>
-    <div style="flex:1;min-width:60px;background:#fff;border-radius:10px;padding:8px 10px;text-align:center;box-shadow:var(--shadow-sm);">
+    <div style="flex:1;min-width:60px;background:#fff;border-radius:10px;padding:8px 10px;text-align:center;box-shadow:var(--shadow-sm);cursor:pointer;" onclick="dashGoToOrders('Ready')">
       <div style="font-size:18px;font-weight:800;color:#388e3c;" id="s-rdy">0</div>
       <div style="font-size:10px;color:var(--ink3);">READY</div>
     </div>
-    <div style="flex:1;min-width:60px;background:#fff;border-radius:10px;padding:8px 10px;text-align:center;box-shadow:var(--shadow-sm);">
-      <div style="font-size:18px;font-weight:800;color:var(--gold-dk);" id="s-del">0</div>
+    <div style="flex:1;min-width:60px;background:#fff;border-radius:10px;padding:8px 10px;text-align:center;box-shadow:var(--shadow-sm);cursor:pointer;" onclick="dashGoToOrders('Delivered')"      <div style="font-size:18px;font-weight:800;color:var(--gold-dk);" id="s-del">0</div>
       <div style="font-size:10px;color:var(--ink3);">DELIVERED</div>
     </div>
   </div>
@@ -221,13 +220,25 @@
     <div class="page-title">🛒 Purchases</div>
     <div class="page-sub">Track all stock & material purchases</div>
   </div>
-  <!-- Type selector -->
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">
-    <button id="pt-moulding" onclick="setPurchaseType('moulding')" class="btn-gold" style="padding:10px;border-radius:10px;font-size:12px;font-weight:700;">📐 Moulding</button>
-    <button id="pt-raw" onclick="setPurchaseType('raw')" class="btn-outline" style="padding:10px;border-radius:10px;font-size:12px;font-weight:700;">🎨 Raw Material</button>
-    <button id="pt-stock" onclick="setPurchaseType('stock')" class="btn-outline" style="padding:10px;border-radius:10px;font-size:12px;font-weight:700;">📦 Readymade Stock</button>
+  <!-- Type dropdown -->
+  <div style="margin-bottom:16px;">
+    <label class="form-label">Purchase Type</label>
+    <select class="form-input" id="purchase-type-select" onchange="setPurchaseType(this.value)" style="font-size:14px;font-weight:600;">
+      <option value="moulding">📐 Moulding Purchase</option>
+      <option value="raw">🎨 Raw Material Purchase</option>
+      <option value="stock">📦 Readymade Stock Purchase</option>
+      <option value="freight">🚚 Freight / Transportation</option>
+      <option value="mdf">🪵 MDF Board</option>
+      <option value="sunboard">🟫 Sunboard</option>
+      <option value="glass">🔲 Glass</option>
+      <option value="other">📦 Other</option>
+    </select>
   </div>
   <div id="purchase-form-area"></div>
+  <!-- Pending items list -->
+  <div id="pending-purchase-items" style="margin-bottom:12px;"></div>
+  <!-- Save button -->
+  <div id="purchase-save-bar" style="display:none;"></div>
   <div id="purchase-history" style="margin-top:16px;"></div>
 </div>
 
@@ -438,7 +449,19 @@
   </div>
 
   <div class="card" style="margin-bottom:16px;">
-    <div class="card-header"><div class="card-title">🔐 Owner Approval Password</div></div>
+    <div class="card-header"><div class="card-title">🔑 Login Passwords</div></div>
+    <div class="card-body">
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:16px;">Change login passwords for each role</div>
+      ${['owner','staff','framer'].map(role=>`
+        <div style="margin-bottom:14px;">
+          <label class="form-label" style="text-transform:capitalize;">${role==='owner'?'👑':'role'==='staff'?'👤':'🔨'} ${role.charAt(0).toUpperCase()+role.slice(1)} Password</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="password" id="login-pwd-${role}" class="form-input" placeholder="New password" style="max-width:200px;">
+            <button onclick="changeLoginPassword('${role}')" class="btn-gold" style="padding:8px 16px;font-size:13px;">Save</button>
+          </div>
+        </div>`).join('')}
+    </div>
+  </div>
     <div class="card-body" id="owner-pwd-settings">
       <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;">Used for: Discount, Complimentary, Production Orders</div>
       <div style="display:flex;gap:8px;align-items:center;">
@@ -1148,6 +1171,18 @@ function recentRow(o) {
 // ── Orders ────────────────────────────────────────────────────
 function renderOrders() {
   try {
+  // Apply dashboard filter if set
+  if(window._ordersFilter) {
+    const fstEl = document.getElementById('fst');
+    if(fstEl) {
+      if(window._ordersFilter==='today'||window._ordersFilter==='all') { fstEl.value=''; }
+      else { fstEl.value=window._ordersFilter; }
+    }
+    if(window._ordersFilter==='today') {
+      const fdEl=document.getElementById('fdate'); if(fdEl) fdEl.value=todayStr();
+    }
+    window._ordersFilter = null; // reset after applying
+  }
   const q    = (document.getElementById('srch')?.value||'').toLowerCase();
   const fs   = document.getElementById('fst')?.value||'';
   const fv   = document.getElementById('fsv')?.value||'';
@@ -1776,6 +1811,7 @@ window.saveOrder = async function() {
 
   const data = {
     name, phone: document.getElementById('f-phone')?.value||'',
+    email: document.getElementById('f-email')?.value||'',
     address: document.getElementById('f-address')?.value||'',
     staff: document.getElementById('f-staff')?.value||'',
     status: window.editId?(orders.find(x=>x.id===window.editId)?.status||'Pending'):'Pending',
@@ -1789,7 +1825,8 @@ window.saveOrder = async function() {
     splitCash: payMode==='Cash+UPI'?splitCash:0,
     splitUPI:  payMode==='Cash+UPI'?splitUPI:0,
     bookedBy: 'owner', billNo,
-    photos: window._orderPhotos||[],
+    hasPhotos: (window._orderPhotos||[]).length>0,
+    photoCount: (window._orderPhotos||[]).length,
     isComplimentary: window._isComplimentary||false,
     originalTotal: window._isComplimentary?(window._originalTotal||finalTotal):finalTotal,
   };
@@ -1802,15 +1839,29 @@ window.saveOrder = async function() {
       data.created = Date.now();
       orders = [data, ...orders];
     }
+    // Save photos separately by order ID
+    if((window._orderPhotos||[]).length>0) {
+      const photoStore = JSON.parse(localStorage.getItem('fv_order_photos')||'{}');
+      photoStore[data.id] = window._orderPhotos;
+      localStorage.setItem('fv_order_photos', JSON.stringify(photoStore));
+    }
     saveLocal();
   } else {
     if(window.editId) {
       await updateDoc(doc(db,'orders',window.editId), data);
     } else {
       data.created = serverTimestamp();
-      await addDoc(collection(db,'orders'), data);
+      const ref = await addDoc(collection(db,'orders'), data);
+      // Save photos to localStorage by Firebase doc ID
+      if((window._orderPhotos||[]).length>0) {
+        const photoStore = JSON.parse(localStorage.getItem('fv_order_photos')||'{}');
+        photoStore[ref.id] = window._orderPhotos;
+        localStorage.setItem('fv_order_photos', JSON.stringify(photoStore));
+      }
     }
   }
+
+  window._orderPhotos = []; // reset photos after save
 
   const isF = cart.some(i=>(i.svcs||[]).some(s=>FRAMING_SVCS.includes(s)));
   toast(isF ? '✅ Saved! 🖼️ Framer notified' : window.editId?'✅ Order updated!':'✅ Order created!', 'success');
@@ -1989,99 +2040,280 @@ window.convertEstimateToOrder = function(id) {
 let currentPurchaseType = 'moulding';
 let purchases = JSON.parse(localStorage.getItem('fv_purchases')||'[]');
 let savedRawMaterials = JSON.parse(localStorage.getItem('fv_raw_materials')||'[]');
+let pendingPurchaseItems = []; // cart of items before final save
 
 window.setPurchaseType = function(type) {
   currentPurchaseType = type;
-  ['moulding','raw','stock'].forEach(t=>{
-    const btn=document.getElementById('pt-'+t);
-    if(btn){btn.className=t===type?'btn-gold':'btn-outline';btn.style.cssText='padding:10px;border-radius:10px;font-size:12px;font-weight:700;';}
-  });
+  const sel = document.getElementById('purchase-type-select');
+  if(sel) sel.value = type;
   renderPurchaseForm();
 };
 
 window.renderPurchases = function() {
-  setPurchaseType('moulding');
+  currentPurchaseType = 'moulding';
+  pendingPurchaseItems = [];
+  const sel = document.getElementById('purchase-type-select');
+  if(sel) sel.value = 'moulding';
+  renderPurchaseForm();
+  renderPendingPurchaseItems();
   renderPurchaseHistory();
 };
+
+function getPurchaseTypeLabel(type) {
+  const labels = {moulding:'📐 Moulding',raw:'🎨 Raw Material',stock:'📦 Readymade Stock',freight:'🚚 Freight/Transport',mdf:'🪵 MDF Board',sunboard:'🟫 Sunboard',glass:'🔲 Glass',other:'📦 Other'};
+  return labels[type]||type;
+}
 
 function renderPurchaseForm() {
   const el = document.getElementById('purchase-form-area');
   if(!el) return;
+  const t = todayStr();
+  const addBtn = `<button onclick="addToPurchaseList()" class="btn-gold" style="padding:10px 24px;margin-right:8px;">➕ Add to List</button>`;
+
   if(currentPurchaseType==='moulding') {
-    el.innerHTML = `<div class="card" style="margin-bottom:12px;"><div class="card-header"><div class="card-title">➕ Add Moulding Purchase</div></div><div class="card-body">
-      <div style="margin-bottom:10px;">
-        <label class="form-label">Vendor</label>
+    el.innerHTML = `<div class="card" style="margin-bottom:12px;"><div class="card-body">
+      <div class="form-group" style="margin-bottom:10px;"><label class="form-label">Item Name</label><input class="form-input" id="pur-item-name" placeholder="e.g. Golden Oak 1 inch"></div>
+      <div style="margin-bottom:10px;"><label class="form-label">Vendor</label>
         <div id="pur-vendor-pills" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;"></div>
         <div id="pur-vendor-other" class="hidden"><input class="form-input" id="pur-vendor-name" placeholder="Vendor name..."></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-        <div class="form-group"><label class="form-label">Moulding Size</label>
-          <select class="form-input" id="pur-msize"><option>0.5"</option><option>0.75"</option><option selected>1"</option><option>1.25"</option><option>1.5"</option><option>1.75"</option><option>2"</option><option>2.5"</option><option>3"</option></select>
-        </div>
-        <div class="form-group"><label class="form-label">Type/Color</label>
-          <input class="form-input" id="pur-mtype" placeholder="e.g. Golden Oak">
-        </div>
+        <div><label class="form-label">Size</label><select class="form-input" id="pur-msize"><option>0.5"</option><option>0.75"</option><option selected>1"</option><option>1.25"</option><option>1.5"</option><option>1.75"</option><option>2"</option><option>2.5"</option><option>3"</option></select></div>
+        <div><label class="form-label">Type/Color</label><input class="form-input" id="pur-mtype" placeholder="e.g. Golden Oak"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
-        <div class="form-group"><label class="form-label">Qty (lengths)</label><input class="form-input" id="pur-qty" type="number" min="1" value="1" oninput="calcPurchaseTotal()"></div>
-        <div class="form-group"><label class="form-label">Cost/length (Rs.)</label><input class="form-input" id="pur-unit" type="number" min="0" placeholder="0" oninput="calcPurchaseTotal()"></div>
-        <div class="form-group"><label class="form-label">Total Cost</label><input class="form-input" id="pur-total" readonly style="background:#f5f5f5;font-weight:700;color:var(--gold-dk);"></div>
+        <div><label class="form-label">Qty (lengths)</label><input class="form-input" id="pur-qty" type="number" min="1" value="1" oninput="calcPurchaseTotal()"></div>
+        <div><label class="form-label">Cost/length (Rs.)</label><input class="form-input" id="pur-unit" type="number" min="0" placeholder="0" oninput="calcPurchaseTotal()"></div>
+        <div><label class="form-label">Total Cost</label><input class="form-input" id="pur-total" readonly style="background:#f5f5f5;font-weight:700;color:var(--gold-dk);"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-        <div class="form-group"><label class="form-label">Invoice No (optional)</label><input class="form-input" id="pur-invoice" placeholder="INV-001"></div>
-        <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="pur-date" type="date" value="${todayStr()}"></div>
-      </div>
-      <button onclick="savePurchase('moulding')" class="btn-gold" style="padding:10px 24px;">💾 Save Purchase</button>
-    </div></div>`;
+        <div><label class="form-label">Invoice No</label><input class="form-input" id="pur-invoice" placeholder="INV-001"></div>
+        <div><label class="form-label">Date</label><input class="form-input" id="pur-date" type="date" value="${t}"></div>
+      </div>${addBtn}</div></div>`;
     renderPurchaseVendorPills();
   } else if(currentPurchaseType==='raw') {
-    el.innerHTML = `<div class="card" style="margin-bottom:12px;"><div class="card-header"><div class="card-title">➕ Add Raw Material Purchase</div></div><div class="card-body">
-      <div class="form-group" style="margin-bottom:10px;position:relative;">
-        <label class="form-label">Item Name</label>
-        <input class="form-input" id="pur-raw-name" placeholder="e.g. Inkjet Paper, Ink Cartridge..." oninput="showRawSuggestions()" autocomplete="off">
+    el.innerHTML = `<div class="card" style="margin-bottom:12px;"><div class="card-body">
+      <div class="form-group" style="margin-bottom:10px;position:relative;"><label class="form-label">Item Name</label>
+        <input class="form-input" id="pur-item-name" placeholder="e.g. Inkjet Paper..." oninput="showRawSuggestions()" autocomplete="off">
         <div id="raw-suggestions" style="position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--paper3);border-radius:8px;max-height:150px;overflow-y:auto;z-index:100;display:none;"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-        <div class="form-group"><label class="form-label">Category</label>
-          <select class="form-input" id="pur-raw-cat"><option>Printing</option><option>Framing</option><option>Packaging</option><option>General</option></select>
-        </div>
-        <div class="form-group"><label class="form-label">Unit</label>
-          <select class="form-input" id="pur-raw-unit"><option>Pcs</option><option>Rolls</option><option>Litres</option><option>Kg</option><option>Box</option><option>Set</option></select>
-        </div>
+        <div><label class="form-label">Category</label><select class="form-input" id="pur-raw-cat"><option>Printing</option><option>Framing</option><option>Packaging</option><option>General</option></select></div>
+        <div><label class="form-label">Unit</label><select class="form-input" id="pur-raw-unit"><option>Pcs</option><option>Rolls</option><option>Litres</option><option>Kg</option><option>Box</option><option>Set</option></select></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
-        <div class="form-group"><label class="form-label">Qty</label><input class="form-input" id="pur-raw-qty" type="number" min="1" value="1" oninput="calcPurchaseTotal()"></div>
-        <div class="form-group"><label class="form-label">Cost/unit (Rs.)</label><input class="form-input" id="pur-raw-cost" type="number" min="0" placeholder="0" oninput="calcPurchaseTotal()"></div>
-        <div class="form-group"><label class="form-label">Total</label><input class="form-input" id="pur-total" readonly style="background:#f5f5f5;font-weight:700;color:var(--gold-dk);"></div>
+        <div><label class="form-label">Qty</label><input class="form-input" id="pur-raw-qty" type="number" min="1" value="1" oninput="calcPurchaseTotal()"></div>
+        <div><label class="form-label">Cost/unit (Rs.)</label><input class="form-input" id="pur-raw-cost" type="number" min="0" placeholder="0" oninput="calcPurchaseTotal()"></div>
+        <div><label class="form-label">Total</label><input class="form-input" id="pur-total" readonly style="background:#f5f5f5;font-weight:700;color:var(--gold-dk);"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-        <div class="form-group"><label class="form-label">Vendor (optional)</label><input class="form-input" id="pur-raw-vendor" placeholder="Vendor name..."></div>
-        <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="pur-date" type="date" value="${todayStr()}"></div>
-      </div>
-      <button onclick="savePurchase('raw')" class="btn-gold" style="padding:10px 24px;">💾 Save Purchase</button>
-    </div></div>`;
-  } else {
-    el.innerHTML = `<div class="card" style="margin-bottom:12px;"><div class="card-header"><div class="card-title">➕ Add Readymade Stock Purchase</div></div><div class="card-body">
+        <div><label class="form-label">Vendor (optional)</label><input class="form-input" id="pur-raw-vendor" placeholder="Vendor name..."></div>
+        <div><label class="form-label">Date</label><input class="form-input" id="pur-date" type="date" value="${t}"></div>
+      </div>${addBtn}</div></div>`;
+  } else if(currentPurchaseType==='stock') {
+    el.innerHTML = `<div class="card" style="margin-bottom:12px;"><div class="card-body">
+      <div class="form-group" style="margin-bottom:10px;"><label class="form-label">Item Name</label><input class="form-input" id="pur-item-name" placeholder="5×7 White Frame"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-        <div class="form-group"><label class="form-label">Category</label>
-          <select class="form-input" id="pur-stk-cat"><option value="Readymade Frames">🖼️ Frames</option><option value="Slip In Albums">📒 Albums</option><option value="Gift Items">🎁 Gifts</option></select>
-        </div>
-        <div class="form-group"><label class="form-label">Item Code</label><input class="form-input" id="pur-stk-code" placeholder="F5X7WHITE"></div>
+        <div><label class="form-label">Category</label><select class="form-input" id="pur-stk-cat"><option value="Readymade Frames">🖼️ Frames</option><option value="Slip In Albums">📒 Albums</option><option value="Gift Items">🎁 Gifts</option></select></div>
+        <div><label class="form-label">Item Code</label><input class="form-input" id="pur-stk-code" placeholder="F5X7WHITE"></div>
       </div>
-      <div class="form-group" style="margin-bottom:10px;"><label class="form-label">Item Name</label><input class="form-input" id="pur-stk-name" placeholder="5×7 White Frame"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
-        <div class="form-group"><label class="form-label">Qty</label><input class="form-input" id="pur-stk-qty" type="number" min="1" value="1" oninput="calcPurchaseTotal()"></div>
-        <div class="form-group"><label class="form-label">Cost/unit</label><input class="form-input" id="pur-stk-cost" type="number" min="0" placeholder="0" oninput="calcPurchaseTotal()"></div>
-        <div class="form-group"><label class="form-label">Sell Price</label><input class="form-input" id="pur-stk-sell" type="number" min="0" placeholder="0"></div>
-        <div class="form-group"><label class="form-label">Total</label><input class="form-input" id="pur-total" readonly style="background:#f5f5f5;font-weight:700;color:var(--gold-dk);"></div>
+        <div><label class="form-label">Qty</label><input class="form-input" id="pur-stk-qty" type="number" min="1" value="1" oninput="calcPurchaseTotal()"></div>
+        <div><label class="form-label">Cost/unit</label><input class="form-input" id="pur-stk-cost" type="number" min="0" placeholder="0" oninput="calcPurchaseTotal()"></div>
+        <div><label class="form-label">Sell Price</label><input class="form-input" id="pur-stk-sell" type="number" min="0" placeholder="0"></div>
+        <div><label class="form-label">Total</label><input class="form-input" id="pur-total" readonly style="background:#f5f5f5;font-weight:700;color:var(--gold-dk);"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-        <div class="form-group"><label class="form-label">Vendor (optional)</label><input class="form-input" id="pur-stk-vendor" placeholder="Vendor name..."></div>
-        <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="pur-date" type="date" value="${todayStr()}"></div>
+        <div><label class="form-label">Vendor (optional)</label><input class="form-input" id="pur-stk-vendor" placeholder="Vendor name..."></div>
+        <div><label class="form-label">Date</label><input class="form-input" id="pur-date" type="date" value="${t}"></div>
+      </div>${addBtn}</div></div>`;
+  } else if(currentPurchaseType==='freight') {
+    el.innerHTML = `<div class="card" style="margin-bottom:12px;"><div class="card-body">
+      <div class="form-group" style="margin-bottom:10px;"><label class="form-label">Description</label><input class="form-input" id="pur-item-name" placeholder="e.g. Delivery from National Frames Delhi"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div><label class="form-label">From (Supplier/City)</label><input class="form-input" id="pur-freight-from" placeholder="Delhi"></div>
+        <div><label class="form-label">Amount (Rs.)</label><input class="form-input" id="pur-freight-amt" type="number" min="0" placeholder="0" oninput="document.getElementById('pur-total').value='Rs.'+this.value"></div>
       </div>
-      <button onclick="savePurchase('stock')" class="btn-gold" style="padding:10px 24px;">💾 Save Purchase</button>
-    </div></div>`;
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div><label class="form-label">Invoice No (optional)</label><input class="form-input" id="pur-invoice" placeholder="INV-001"></div>
+        <div><label class="form-label">Date</label><input class="form-input" id="pur-date" type="date" value="${t}"></div>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;"><label class="form-label">Notes (optional)</label><input class="form-input" id="pur-notes" placeholder="Any notes..."></div>
+      <div><label class="form-label">Total</label><input class="form-input" id="pur-total" readonly style="background:#f5f5f5;font-weight:700;color:var(--gold-dk);"></div>
+      ${addBtn}</div></div>`;
+  } else if(currentPurchaseType==='mdf') {
+    el.innerHTML = `<div class="card" style="margin-bottom:12px;"><div class="card-body">
+      <div class="form-group" style="margin-bottom:10px;"><label class="form-label">Item Name</label><input class="form-input" id="pur-item-name" placeholder="e.g. MDF Board 3mm 4x8ft"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div><label class="form-label">Size</label><input class="form-input" id="pur-board-size" placeholder="4×8 ft"></div>
+        <div><label class="form-label">Thickness</label><select class="form-input" id="pur-board-thick"><option>3mm</option><option>6mm</option><option>9mm</option><option>12mm</option><option>18mm</option></select></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div><label class="form-label">Qty (sheets)</label><input class="form-input" id="pur-qty" type="number" min="1" value="1" oninput="calcPurchaseTotal()"></div>
+        <div><label class="form-label">Cost/sheet (Rs.)</label><input class="form-input" id="pur-unit" type="number" min="0" placeholder="0" oninput="calcPurchaseTotal()"></div>
+        <div><label class="form-label">Total</label><input class="form-input" id="pur-total" readonly style="background:#f5f5f5;font-weight:700;color:var(--gold-dk);"></div>
+      </div>
+      <div><label class="form-label">Date</label><input class="form-input" id="pur-date" type="date" value="${t}" style="max-width:200px;"></div>
+      ${addBtn}</div></div>`;
+  } else if(currentPurchaseType==='sunboard') {
+    el.innerHTML = `<div class="card" style="margin-bottom:12px;"><div class="card-body">
+      <div class="form-group" style="margin-bottom:10px;"><label class="form-label">Item Name</label><input class="form-input" id="pur-item-name" placeholder="e.g. Sunboard 3mm 4x8ft"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div><label class="form-label">Size</label><input class="form-input" id="pur-board-size" placeholder="4×8 ft"></div>
+        <div><label class="form-label">Thickness</label><select class="form-input" id="pur-board-thick"><option>3mm</option><option>5mm</option><option>10mm</option></select></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div><label class="form-label">Qty (sheets)</label><input class="form-input" id="pur-qty" type="number" min="1" value="1" oninput="calcPurchaseTotal()"></div>
+        <div><label class="form-label">Cost/sheet (Rs.)</label><input class="form-input" id="pur-unit" type="number" min="0" placeholder="0" oninput="calcPurchaseTotal()"></div>
+        <div><label class="form-label">Total</label><input class="form-input" id="pur-total" readonly style="background:#f5f5f5;font-weight:700;color:var(--gold-dk);"></div>
+      </div>
+      <div><label class="form-label">Date</label><input class="form-input" id="pur-date" type="date" value="${t}" style="max-width:200px;"></div>
+      ${addBtn}</div></div>`;
+  } else if(currentPurchaseType==='glass') {
+    el.innerHTML = `<div class="card" style="margin-bottom:12px;"><div class="card-body">
+      <div class="form-group" style="margin-bottom:10px;"><label class="form-label">Item Name</label><input class="form-input" id="pur-item-name" placeholder="e.g. Clear Glass 2mm 8x10"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div><label class="form-label">Type</label><select class="form-input" id="pur-glass-type"><option>Clear</option><option>Frosted</option><option>Anti-Glare</option></select></div>
+        <div><label class="form-label">Size</label><input class="form-input" id="pur-board-size" placeholder="8×10 inches"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div><label class="form-label">Qty (pcs)</label><input class="form-input" id="pur-qty" type="number" min="1" value="1" oninput="calcPurchaseTotal()"></div>
+        <div><label class="form-label">Cost/pc (Rs.)</label><input class="form-input" id="pur-unit" type="number" min="0" placeholder="0" oninput="calcPurchaseTotal()"></div>
+        <div><label class="form-label">Total</label><input class="form-input" id="pur-total" readonly style="background:#f5f5f5;font-weight:700;color:var(--gold-dk);"></div>
+      </div>
+      <div><label class="form-label">Date</label><input class="form-input" id="pur-date" type="date" value="${t}" style="max-width:200px;"></div>
+      ${addBtn}</div></div>`;
+  } else {
+    el.innerHTML = `<div class="card" style="margin-bottom:12px;"><div class="card-body">
+      <div class="form-group" style="margin-bottom:10px;"><label class="form-label">Item Name</label><input class="form-input" id="pur-item-name" placeholder="Item name..."></div>
+      <div class="form-group" style="margin-bottom:10px;"><label class="form-label">Description (optional)</label><input class="form-input" id="pur-notes" placeholder="Description..."></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div><label class="form-label">Qty</label><input class="form-input" id="pur-qty" type="number" min="1" value="1" oninput="calcPurchaseTotal()"></div>
+        <div><label class="form-label">Unit</label><select class="form-input" id="pur-raw-unit"><option>Pcs</option><option>Rolls</option><option>Kg</option><option>Box</option><option>Set</option></select></div>
+        <div><label class="form-label">Cost/unit</label><input class="form-input" id="pur-unit" type="number" min="0" placeholder="0" oninput="calcPurchaseTotal()"></div>
+        <div><label class="form-label">Total</label><input class="form-input" id="pur-total" readonly style="background:#f5f5f5;font-weight:700;color:var(--gold-dk);"></div>
+      </div>
+      <div><label class="form-label">Date</label><input class="form-input" id="pur-date" type="date" value="${t}" style="max-width:200px;"></div>
+      ${addBtn}</div></div>`;
   }
+}
+
+// Add item to pending list
+window.addToPurchaseList = function() {
+  const name = document.getElementById('pur-item-name')?.value.trim();
+  if(!name){toast('⚠️ Enter item name','error');return;}
+  const qty = +(document.getElementById('pur-qty')?.value||document.getElementById('pur-raw-qty')?.value||document.getElementById('pur-stk-qty')?.value||1);
+  const unitCost = +(document.getElementById('pur-unit')?.value||document.getElementById('pur-raw-cost')?.value||document.getElementById('pur-stk-cost')?.value||document.getElementById('pur-freight-amt')?.value||0);
+  const total = currentPurchaseType==='freight' ? unitCost : qty*unitCost;
+  const date = document.getElementById('pur-date')?.value||todayStr();
+  const item = {
+    id:'tmp-'+Date.now(), type:currentPurchaseType, name,
+    qty, unitCost, total, date,
+    vendor: document.getElementById('pur-vendor-name')?.value||document.getElementById('pur-raw-vendor')?.value||document.getElementById('pur-stk-vendor')?.value||'',
+    extra: {
+      msize: document.getElementById('pur-msize')?.value,
+      mtype: document.getElementById('pur-mtype')?.value,
+      cat: document.getElementById('pur-raw-cat')?.value||document.getElementById('pur-stk-cat')?.value,
+      code: document.getElementById('pur-stk-code')?.value,
+      sell: document.getElementById('pur-stk-sell')?.value,
+      size: document.getElementById('pur-board-size')?.value,
+      thick: document.getElementById('pur-board-thick')?.value,
+      glassType: document.getElementById('pur-glass-type')?.value,
+      from: document.getElementById('pur-freight-from')?.value,
+      notes: document.getElementById('pur-notes')?.value,
+      invoice: document.getElementById('pur-invoice')?.value,
+    }
+  };
+  pendingPurchaseItems.push(item);
+  toast(`✅ "${name}" added to list`,'success');
+  renderPurchaseForm(); // reset form
+  renderPendingPurchaseItems();
+};
+
+function renderPendingPurchaseItems() {
+  const el = document.getElementById('pending-purchase-items');
+  const barEl = document.getElementById('purchase-save-bar');
+  if(!el) return;
+  if(!pendingPurchaseItems.length) {el.innerHTML='';if(barEl)barEl.style.display='none';return;}
+  const total = pendingPurchaseItems.reduce((s,i)=>s+i.total,0);
+  el.innerHTML = `
+    <div class="card" style="margin-bottom:12px;border:2px solid var(--gold-dk);">
+      <div class="card-header"><div class="card-title">🛒 Items to Purchase (${pendingPurchaseItems.length})</div></div>
+      <div class="card-body">
+        ${pendingPurchaseItems.map((item,idx)=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--paper3);">
+            <div>
+              <div style="font-weight:600;font-size:13px;">${getPurchaseTypeLabel(item.type)} · ${item.name}</div>
+              <div style="font-size:11px;color:var(--ink3);">Qty:${item.qty} · Rs.${item.unitCost}/unit</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-weight:700;color:var(--gold-dk);">Rs.${item.total}</span>
+              <button onclick="removePendingItem(${idx})" style="background:#e53935;color:#fff;border:none;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:12px;">✕</button>
+            </div>
+          </div>`).join('')}
+        <div style="display:flex;justify-content:space-between;font-weight:700;font-size:15px;margin-top:10px;">
+          <span>Total</span><span style="color:var(--gold-dk);">Rs.${total.toLocaleString('en-IN')}</span>
+        </div>
+      </div>
+    </div>`;
+  if(barEl) {
+    barEl.style.display='block';
+    barEl.innerHTML=`<button onclick="saveAllPurchases()" class="btn-gold" style="width:100%;padding:14px;font-size:15px;font-weight:700;">💾 Save All Purchases (Rs.${total.toLocaleString('en-IN')})</button>`;
+  }
+}
+
+window.removePendingItem = function(idx) {
+  pendingPurchaseItems.splice(idx,1);
+  renderPendingPurchaseItems();
+};
+
+window.saveAllPurchases = async function() {
+  if(!pendingPurchaseItems.length) return;
+  // Check if staff — needs owner approval
+  const role = typeof getCurrentRole==='function'?getCurrentRole():'owner';
+  if(role==='staff') {
+    const total=pendingPurchaseItems.reduce((s,i)=>s+i.total,0);
+    showOwnerPasswordModal(`Approve purchase of Rs.${total}?`, _doSaveAllPurchases, ()=>{});
+  } else {
+    _doSaveAllPurchases();
+  }
+};
+
+async function _doSaveAllPurchases() {
+  for(const item of pendingPurchaseItems) {
+    await _saveSinglePurchase(item);
+  }
+  pendingPurchaseItems=[];
+  renderPendingPurchaseItems();
+  renderPurchaseHistory();
+  toast(`✅ All purchases saved!`,'success');
+}
+
+async function _saveSinglePurchase(item) {
+  const purchase = {...item, id:'PUR-'+Date.now(), created:Date.now()};
+  // Stock updates
+  if(item.type==='moulding' && item.extra?.msize && item.extra?.mtype) {
+    const sz=item.extra.msize; const key=`${item.vendor||'Others'} — ${item.extra.mtype}`;
+    if(!mouldingStock[sz]) mouldingStock[sz]={};
+    if(!mouldingStock[sz][key]) mouldingStock[sz][key]=[];
+    for(let i=0;i<item.qty;i++) mouldingStock[sz][key].push(114);
+    saveMouldingStock();
+  }
+  if(item.type==='stock' && item.extra?.code && item.extra?.cat) {
+    const existing=window.stockItems?.find(x=>x.code===item.extra.code);
+    if(existing){existing.qty=(+existing.qty||0)+item.qty;updateStockQty(existing.id,existing.qty);}
+    else {
+      const si={code:item.extra.code,name:item.name,qty:item.qty,sellingPrice:+(item.extra.sell||0),costPrice:item.unitCost,category:item.extra.cat,created:Date.now()};
+      if(useLocal){si.id='STK-'+Date.now();window.stockItems.push(si);localStorage.setItem('fv_stock',JSON.stringify(window.stockItems));}
+      else{try{const ref=await window.db.collection('stock').add(si);si.id=ref.id;window.stockItems.push(si);}catch(e){}}
+    }
+  }
+  if(item.type==='raw' && item.name) {
+    if(!savedRawMaterials.includes(item.name)){savedRawMaterials.push(item.name);localStorage.setItem('fv_raw_materials',JSON.stringify(savedRawMaterials));}
+  }
+  purchases.unshift(purchase);
+  localStorage.setItem('fv_purchases',JSON.stringify(purchases));
+  try{if(window.db)await window.db.collection('purchases').add(purchase);}catch(e){}
 }
 
 function renderPurchaseVendorPills() {
@@ -2350,16 +2582,77 @@ window.printSelectedBarcodes = function() {
   updatePrintBar();
 };
 
-window.viewPhoto = function(idx, orderId) {
+window.changeLoginPassword = function(role) {
+  const pwd = document.getElementById(`login-pwd-${role}`)?.value.trim();
+  if(!pwd||pwd.length<3){toast('⚠️ Enter at least 3 characters','error');return;}
+  localStorage.setItem(`fv_${role}_login_password`, pwd);
+  document.getElementById(`login-pwd-${role}`).value='';
+  toast(`✅ ${role.charAt(0).toUpperCase()+role.slice(1)} password updated!`,'success');
+};
+
+window.viewPhotoArr = function(idx, orderId) {
+  const photoStore = JSON.parse(localStorage.getItem('fv_order_photos')||'{}');
   const o = orders.find(x=>x.id===orderId);
-  if(!o?.photos?.length) return;
+  const photos = photoStore[orderId] || o?.photos || [];
+  if(!photos.length) return;
   const modal = document.createElement('div');
   modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:99999;display:flex;align-items:center;justify-content:center;';
   modal.onclick=()=>modal.remove();
-  modal.innerHTML=`<img src="${o.photos[+idx]}" style="max-width:95vw;max-height:95vh;object-fit:contain;border-radius:8px;">
+  modal.innerHTML=`<img src="${photos[+idx]}" style="max-width:95vw;max-height:95vh;object-fit:contain;border-radius:8px;">
     <button onclick="this.parentElement.remove()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:100%;width:36px;height:36px;font-size:20px;cursor:pointer;">✕</button>`;
   document.body.appendChild(modal);
 };
+window.viewPhoto = window.viewPhotoArr;
+
+// ── Dashboard Clickable Cards ─────────────────────────────────
+window.dashGoToOrders = function(filter) {
+  window._ordersFilter = filter;
+  showPage('orders');
+};
+
+// ── Delivery Alert System ─────────────────────────────────────
+let _alertSnoozed = {};
+function startDeliveryAlerts() {
+  setInterval(checkDeliveryAlerts, 60000);
+  checkDeliveryAlerts();
+}
+function checkDeliveryAlerts() {
+  const now = new Date();
+  const todayDate = now.toISOString().slice(0,10);
+  const active = orders.filter(o=>o.delivery&&o.delivery.startsWith(todayDate)&&o.status!=='Ready'&&o.status!=='Delivered');
+  active.forEach(o=>{
+    const del = new Date(o.delivery);
+    const diffMin = Math.round((del-now)/60000);
+    const key = o.id+'-'+Math.floor(diffMin/30);
+    if(_alertSnoozed[key]) return;
+    if(diffMin<=60&&diffMin>0||diffMin<=1&&diffMin>=-5) {
+      showDeliveryAlert(o, diffMin);
+      _alertSnoozed[key]=true;
+    }
+  });
+}
+function showDeliveryAlert(o, diffMin) {
+  const existing=document.getElementById('delivery-alert-modal');
+  if(existing)existing.remove();
+  const urgent=diffMin<=10;
+  const timeStr=formatDatetime(o.delivery).split('·').pop()?.trim()||'';
+  const modal=document.createElement('div');
+  modal.id='delivery-alert-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML=`
+    <div style="background:#fff;border-radius:20px;padding:28px 24px;max-width:340px;width:100%;text-align:center;${urgent?'border:3px solid #e53935;':''}">
+      <div style="font-size:32px;margin-bottom:8px;">${urgent?'🚨':'⏰'}</div>
+      <div style="font-size:${urgent?'20px':'18px'};font-weight:800;color:${urgent?'#e53935':'var(--gold-dk)'};margin-bottom:12px;">${urgent?'ORDER DUE NOW!':'Upcoming Delivery!'}</div>
+      <div style="font-size:14px;color:var(--ink2);margin-bottom:8px;"><b>${o.name}</b>'s order ${urgent?'is due NOW':'is due at'}:</div>
+      <div style="font-size:3rem;font-weight:900;color:${urgent?'#e53935':'var(--gold-dk)'};margin:12px 0;line-height:1;">${timeStr}</div>
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:16px;">${diffMin>0?`Time remaining: ${diffMin} min`:'Due now!'} · ${o.billNo||o.id.slice(0,8)}</div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="chgStatus('${o.id}','Ready');document.getElementById('delivery-alert-modal').remove();" style="flex:1;background:#388e3c;color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;">✅ Mark Ready</button>
+        <button onclick="document.getElementById('delivery-alert-modal').remove();" style="flex:1;background:#f5f5f5;color:#333;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;">🔕 Dismiss</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
 window.creditCompanies = [];
 let selectedCreditCompany = null;
 
@@ -3525,6 +3818,9 @@ window.ownerPrintLabels = function(id) {
 // ── Order Detail Bottom Sheet ─────────────────────────────────
 window.openOrderSheet = function(id) {
   const o=orders.find(x=>x.id===id);if(!o)return;
+  // Load photos from localStorage (saved separately to avoid Firebase limits)
+  const photoStore = JSON.parse(localStorage.getItem('fv_order_photos')||'{}');
+  const photos = photoStore[id] || o.photos || [];
   const bal=(+o.total||0)-(+o.advance||0);
   const payIcon=o.payMode==='UPI'?'📱':o.payMode==='Cash+UPI'?'💵📱':'💵';
   document.getElementById('ods-title').textContent=o.name+' · '+(o.billNo||o.id);
@@ -3536,14 +3832,15 @@ window.openOrderSheet = function(id) {
       <div style="background:var(--paper);border-radius:8px;padding:10px;"><div style="font-size:10px;color:var(--ink3);">📦 Status</div><div style="font-weight:600;font-size:13px;">${STATUS_CFG[o.status]?.icon||''} ${o.status}</div></div>
       <div style="background:var(--paper);border-radius:8px;padding:10px;"><div style="font-size:10px;color:var(--ink3);">💳 Payment</div><div style="font-weight:600;font-size:13px;">${payIcon} ${o.payMode||'Cash'}</div></div>
       ${o.phone?`<div style="background:var(--paper);border-radius:8px;padding:10px;"><div style="font-size:10px;color:var(--ink3);">📞 Phone</div><div style="font-weight:600;font-size:13px;">${o.phone}</div></div>`:''}
+      ${o.email?`<div style="background:var(--paper);border-radius:8px;padding:10px;"><div style="font-size:10px;color:var(--ink3);">📧 Email</div><div style="font-weight:600;font-size:13px;">${o.email}</div></div>`:''}
     </div>
     <div style="font-weight:700;font-size:14px;margin-bottom:8px;">🛒 Services</div>
     ${(o.cartItems||[]).map(item=>renderServiceTree(item,false)).join('')}
-    ${(o.photos&&o.photos.length)?`
+    ${photos.length?`
     <div style="margin-bottom:12px;">
-      <div style="font-weight:700;font-size:14px;margin-bottom:8px;">📸 Reference Photos (${o.photos.length})</div>
+      <div style="font-weight:700;font-size:14px;margin-bottom:8px;">📸 Reference Photos (${photos.length})</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;">
-        ${o.photos.map((src,i)=>`<img src="${src}" onclick="viewPhoto('${i}','${o.id}')" style="width:80px;height:80px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid var(--paper3);">`).join('')}
+        ${photos.map((src,i)=>`<img src="${src}" onclick="viewPhotoArr(${i},'${id}')" style="width:80px;height:80px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid var(--paper3);">`).join('')}
       </div>
     </div>`:''}
     ${o.isComplimentary?`<div style="background:#fff3e0;border-radius:8px;padding:10px;margin-bottom:12px;font-size:13px;color:#e65100;font-weight:700;">🎁 COMPLIMENTARY ORDER (Value: Rs.${o.originalTotal||0})</div>`:''}
