@@ -1702,11 +1702,12 @@ window.addToCart = function() {
 
   window.cart.push({svcs,price,label,details});
   renderCart();
-  updateCartPanel();
-  // Reset panels
+  // FIX 18: Clear panels FIRST, then update cart panel so FILLING NOW disappears
   document.querySelectorAll('input[name="groupA"],input[name="groupB"]').forEach(e=>e.checked=false);
+  groupAsel = []; // FIX 18: reset global so getLiveFillingPreview returns null
   document.getElementById('svc-panel-area').innerHTML='';
   document.getElementById('svc-warn-ab').style.display='none';
+  updateCartPanel(); // FIX 18: called AFTER panel clear so live preview is gone
   toast(`✅ ${svcs.join('+')} added to cart`,'success');
 };
 
@@ -1804,6 +1805,11 @@ function updateCartPanel() {
 
 // Get live preview of what's currently being filled
 function getLiveFillingPreview() {
+  // FIX 18: Return null immediately if no service checkbox is checked
+  const hasGroupA = document.querySelector('input[name="groupA"]:checked');
+  const hasGroupB = document.querySelector('input[name="groupB"]:checked');
+  if(!hasGroupA && !hasGroupB) return null;
+
   const lines = [];
 
   // ── Framing panel ────────────────────────────────────────────

@@ -219,28 +219,30 @@
 <div id="pg-purchases" class="hidden">
   <div class="page-header">
     <div class="page-title">🛒 Purchases</div>
-    <div class="page-sub">Track all stock & material purchases</div>
+    <div class="page-sub">Track all stock &amp; material purchases</div>
   </div>
-  <!-- Type dropdown -->
-  <div style="margin-bottom:16px;">
-    <label class="form-label">Purchase Type</label>
-    <select class="form-input" id="purchase-type-select" onchange="setPurchaseType(this.value)" style="font-size:14px;font-weight:600;">
-      <option value="moulding">📐 Moulding Purchase</option>
-      <option value="raw">🎨 Raw Material Purchase</option>
-      <option value="stock">📦 Readymade Stock Purchase</option>
-      <option value="freight">🚚 Freight / Transportation</option>
-      <option value="mdf">🪵 MDF Board</option>
-      <option value="sunboard">🟫 Sunboard</option>
-      <option value="glass">🔲 Glass</option>
-      <option value="other">📦 Other</option>
-    </select>
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header"><div class="card-title">➕ Add Purchase</div></div>
+    <div class="card-body">
+      <div style="margin-bottom:12px;">
+        <label class="form-label">Category</label>
+        <select class="form-input" id="purchase-type-select" onchange="setPurchaseType(this.value)" style="font-size:14px;font-weight:600;">
+          <option value="moulding">📐 Moulding</option>
+          <option value="raw">🎨 Raw Material</option>
+          <option value="stock">📦 Readymade Stock</option>
+          <option value="freight">🚚 Freight / Transport</option>
+          <option value="mdf">🪵 MDF Board</option>
+          <option value="sunboard">🟫 Sunboard</option>
+          <option value="glass">🔲 Glass</option>
+          <option value="other">📦 Other</option>
+        </select>
+      </div>
+      <div id="purchase-form-area"></div>
+    </div>
   </div>
-  <div id="purchase-form-area"></div>
-  <!-- Pending items list -->
   <div id="pending-purchase-items" style="margin-bottom:12px;"></div>
-  <!-- Save button -->
-  <div id="purchase-save-bar" style="display:none;"></div>
-  <div id="purchase-history" style="margin-top:16px;"></div>
+  <div id="purchase-save-bar" style="display:none;margin-bottom:16px;"></div>
+  <div id="purchase-history"></div>
 </div>
 
 <!-- ═══ CREDIT LEDGER ═══ -->
@@ -267,67 +269,124 @@
     <button onclick="showPage('production')" style="background:none;border:none;color:#e65100;font-size:12px;cursor:pointer;text-decoration:underline;padding:0;margin-top:4px;">Review Now →</button>
   </div>
 
-  <!-- New Production Order Form -->
+  <!-- FIX 20: New Production Order Form — multi-item with dropdowns -->
   <div class="card" style="margin-bottom:16px;">
-    <div class="card-header"><div class="card-title">➕ Add Frame Type</div></div>
+    <div class="card-header"><div class="card-title">➕ Add Frame to Production List</div></div>
     <div class="card-body">
-      <!-- Frame Size Dropdown -->
-      <div style="margin-bottom:10px;">
+
+      <!-- Row 1: Frame Size dropdown + Custom -->
+      <div style="margin-bottom:12px;">
         <label class="form-label">Frame Size</label>
         <select class="form-input" id="po-size-select" onchange="onPOSizeSelect()" style="margin-bottom:6px;">
           <option value="">— Select Size —</option>
-          <option value="4x6">4×6"</option><option value="5x7">5×7"</option>
-          <option value="6x8">6×8"</option><option value="8x10">8×10"</option>
-          <option value="8x12">8×12"</option><option value="10x12">10×12"</option>
-          <option value="10x15">10×15"</option><option value="12x15">12×15"</option>
-          <option value="12x16">12×16"</option><option value="12x18">12×18"</option>
-          <option value="16x20">16×20"</option><option value="20x24">20×24"</option>
-          <option value="20x30">20×30"</option><option value="24x30">24×30"</option>
-          <option value="24x36">24×36"</option><option value="30x40">30×40"</option>
+          <option value="4x6">4×6"</option>
+          <option value="5x7">5×7"</option>
+          <option value="6x6">6×6"</option>
+          <option value="6x8">6×8"</option>
+          <option value="6x9">6×9"</option>
+          <option value="8x10">8×10"</option>
+          <option value="8x12">8×12"</option>
+          <option value="10x12">10×12"</option>
+          <option value="10x15">10×15"</option>
+          <option value="12x15">12×15"</option>
+          <option value="12x16">12×16"</option>
+          <option value="12x18">12×18"</option>
+          <option value="16x20">16×20"</option>
+          <option value="20x24">20×24"</option>
+          <option value="20x30">20×30"</option>
+          <option value="24x30">24×30"</option>
+          <option value="24x36">24×36"</option>
+          <option value="30x40">30×40"</option>
           <option value="custom">✏️ Custom Size...</option>
         </select>
-        <div id="po-custom-size" style="display:none;display:flex;gap:8px;align-items:center;">
-          <input class="form-input" id="po-fw" type="number" placeholder="Width" style="max-width:100px;">
-          <span style="color:var(--gold-dk);font-weight:700;">×</span>
-          <input class="form-input" id="po-fh" type="number" placeholder="Height" style="max-width:100px;">
-          <span style="font-size:12px;color:var(--ink3);">inches</span>
+        <div id="po-custom-size" style="display:none;gap:8px;align-items:center;margin-top:6px;">
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input class="form-input" id="po-fw" type="number" min="1" placeholder="Width" style="max-width:100px;" oninput="updatePOSizeLabel()">
+            <span style="color:var(--gold-dk);font-weight:700;">×</span>
+            <input class="form-input" id="po-fh" type="number" min="1" placeholder="Height" style="max-width:100px;" oninput="updatePOSizeLabel()">
+            <span style="font-size:12px;color:var(--ink3);">inches</span>
+          </div>
         </div>
-        <input type="hidden" id="po-fw" value=""><input type="hidden" id="po-fh" value="">
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-        <div class="form-group"><label class="form-label">Frame Name</label><input class="form-input" id="po-name" placeholder="e.g. 5×7 White Frame"></div>
-        <div class="form-group"><label class="form-label">Item Code</label><input class="form-input" id="po-code" placeholder="F5X7WHITE"></div>
+      <!-- Row 2: Frame Name + Item Code -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div class="form-group">
+          <label class="form-label">Frame Name <span style="color:var(--ink3);font-weight:400;">(auto-filled)</span></label>
+          <input class="form-input" id="po-name" placeholder="e.g. 5×7 White Frame">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Item Code <span style="color:var(--ink3);font-weight:400;">(optional)</span></label>
+          <input class="form-input" id="po-code" placeholder="F5X7WHITE">
+        </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+
+      <!-- Row 3: Moulding Size + Moulding Type dropdowns -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
         <div class="form-group">
           <label class="form-label">Moulding Size</label>
           <select class="form-input" id="po-msize" onchange="updatePOMouldingTypes()">
-            <option>0.5"</option><option>0.75"</option><option selected>1"</option>
-            <option>1.25"</option><option>1.5"</option><option>1.75"</option>
-            <option>2"</option><option>2.5"</option><option>3"</option>
+            <option value="">— Select —</option>
+            <option value="0.5">0.5"</option>
+            <option value="0.75">0.75"</option>
+            <option value="1">1"</option>
+            <option value="1.5">1.5"</option>
+            <option value="2">2"</option>
+            <option value="2.5">2.5"</option>
+            <option value="3">3"</option>
+            <option value="3.5">3.5"</option>
+            <option value="4">4"</option>
+            <option value="5">5"</option>
           </select>
         </div>
-        <div class="form-group"><label class="form-label">Moulding Type</label><select class="form-input" id="po-mtype"></select></div>
+        <div class="form-group">
+          <label class="form-label">Moulding Type</label>
+          <select class="form-input" id="po-mtype">
+            <option value="">— Select size first —</option>
+          </select>
+        </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+
+      <!-- Row 4: Mount + Mount Size + Quantity -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
         <div class="form-group">
           <label class="form-label">Mount</label>
           <select class="form-input" id="po-mount" onchange="togglePOMount()">
-            <option value="No">No Mount</option><option value="Yes">With Mount</option>
+            <option value="No">No Mount</option>
+            <option value="Yes">With Mount</option>
           </select>
         </div>
         <div class="form-group" id="po-mount-size-group" style="display:none;">
           <label class="form-label">Mount Size"</label>
-          <input class="form-input" id="po-msize-val" type="number" placeholder="2">
+          <select class="form-input" id="po-msize-val">
+            <option value="1">1"</option>
+            <option value="1.5">1.5"</option>
+            <option value="2">2"</option>
+            <option value="2.5">2.5"</option>
+            <option value="3">3"</option>
+            <option value="3.5">3.5"</option>
+            <option value="4">4"</option>
+          </select>
         </div>
-        <div class="form-group"><label class="form-label">Quantity</label><input class="form-input" id="po-qty" type="number" min="1" value="1"></div>
+        <div class="form-group">
+          <label class="form-label">Quantity</label>
+          <input class="form-input" id="po-qty" type="number" min="1" value="1" inputmode="numeric">
+        </div>
       </div>
-      <div class="form-group" style="margin-bottom:12px;"><label class="form-label">Notes for Framer</label><input class="form-input" id="po-notes" placeholder="Any special instructions..."></div>
+
+      <!-- Row 5: Notes -->
+      <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label">Notes for Framer <span style="color:var(--ink3);font-weight:400;">(optional)</span></label>
+        <input class="form-input" id="po-notes" placeholder="e.g. No glass, tight corners...">
+      </div>
+
+      <!-- Stock check info -->
       <div id="po-stock-check" style="margin-bottom:10px;"></div>
+
+      <!-- Add buttons -->
       <div style="display:flex;gap:8px;">
-        <button onclick="addFrameToList()" class="btn-gold" style="flex:1;padding:12px;font-size:14px;">➕ Add to List</button>
-        <button onclick="duplicateLastFrame()" class="btn-outline" style="padding:12px 16px;font-size:14px;">📋 Duplicate</button>
+        <button onclick="addFrameToList()" class="btn-gold" style="flex:1;padding:12px;font-size:14px;font-weight:700;">➕ Add to List</button>
+        <button onclick="duplicateLastFrame()" class="btn-outline" style="padding:12px 16px;font-size:13px;">📋 Duplicate Last</button>
       </div>
     </div>
   </div>
@@ -335,7 +394,7 @@
   <!-- Pending frame types list -->
   <div id="po-pending-list" style="margin-bottom:12px;"></div>
 
-  <!-- Send buttons -->
+  <!-- Send buttons — appear when list has items -->
   <div id="po-send-bar" style="display:none;"></div>
 
   <!-- Existing Production Orders -->
@@ -464,10 +523,11 @@
     <div class="page-title">⚙️ Settings</div>
     <div class="page-sub">Manage staff names and app settings</div>
   </div>
+
   <div class="card" style="margin-bottom:16px;">
     <div class="card-header"><div class="card-title">👥 Staff Names</div></div>
     <div class="card-body">
-      <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;">Used in: Order Taken By & Expenses Added By</div>
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;">Used in: Order Taken By &amp; Expenses Added By</div>
       <div id="staff-names-list" style="margin-bottom:16px;"></div>
       <div style="display:flex;gap:8px;">
         <input class="form-input" id="new-staff-name" placeholder="Add new name..." style="max-width:240px;" onkeydown="if(event.key==='Enter')addStaffName()">
@@ -480,7 +540,6 @@
     <div class="card-header"><div class="card-title">🔑 Login Passwords</div></div>
     <div class="card-body">
       <div style="font-size:13px;color:var(--ink3);margin-bottom:16px;">Change login passwords for each role</div>
-      <!-- Role selector -->
       <div style="display:flex;gap:8px;margin-bottom:16px;">
         <button id="lpw-btn-owner" onclick="selectLoginPwdRole('owner')" style="flex:1;padding:10px;border:2px solid var(--gold-dk);border-radius:10px;background:var(--gold-dk);color:#fff;font-weight:700;cursor:pointer;font-size:13px;">👑 Owner</button>
         <button id="lpw-btn-staff" onclick="selectLoginPwdRole('staff')" style="flex:1;padding:10px;border:2px solid var(--paper3);border-radius:10px;background:#fff;color:var(--ink2);font-weight:700;cursor:pointer;font-size:13px;">🧑‍💼 Staff</button>
@@ -494,6 +553,9 @@
       <div id="lpw-msg" style="font-size:12px;color:#388e3c;margin-top:8px;display:none;"></div>
     </div>
   </div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header"><div class="card-title">🔐 Owner Approval Password</div></div>
     <div class="card-body" id="owner-pwd-settings">
       <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;">Used for: Discount, Complimentary, Production Orders</div>
       <div style="display:flex;gap:8px;align-items:center;">
@@ -503,7 +565,7 @@
     </div>
   </div>
 
-  <div class="card" style="margin-top:16px;">
+  <div class="card" style="margin-bottom:16px;">
     <div class="card-header"><div class="card-title">🏢 Credit Companies</div></div>
     <div class="card-body">
       <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;">Companies that pay later — appear as payment options in orders</div>
@@ -514,6 +576,9 @@
       </div>
     </div>
   </div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header"><div class="card-title">🏭 Vendors &amp; Moulding Types</div></div>
     <div class="card-body">
       <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;">Each vendor has their own moulding types/colors</div>
       <div id="vendor-list" style="margin-bottom:16px;"></div>
@@ -523,6 +588,7 @@
       </div>
     </div>
   </div>
+
 </div>
 
 <!-- ═══ STOCK (old, keep for compatibility) ═══ -->
@@ -2191,13 +2257,19 @@ window.setPurchaseType = function(type) {
 };
 
 window.renderPurchases = function() {
-  currentPurchaseType = 'moulding';
-  pendingPurchaseItems = [];
-  const sel = document.getElementById('purchase-type-select');
-  if(sel) sel.value = 'moulding';
-  renderPurchaseForm();
-  renderPendingPurchaseItems();
-  renderPurchaseHistory();
+  try {
+    // FIX 21: Keep current type if already set, default to moulding
+    if(!currentPurchaseType) currentPurchaseType = 'moulding';
+    const sel = document.getElementById('purchase-type-select');
+    if(sel) sel.value = currentPurchaseType;
+    renderPurchaseForm();
+    renderPendingPurchaseItems();
+    renderPurchaseHistory();
+  } catch(err) {
+    console.error('renderPurchases error:', err);
+    const fa = document.getElementById('purchase-form-area');
+    if(fa) fa.innerHTML = '<div style="color:#e53935;padding:12px;">Error loading purchases form. Please refresh.</div>';
+  }
 };
 
 function getPurchaseTypeLabel(type) {
@@ -2573,26 +2645,50 @@ window.savePurchase = async function(type) {
 function renderPurchaseHistory() {
   const el = document.getElementById('purchase-history');
   if(!el) return;
-  if(!purchases.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">🛒</div><div class="empty-title">No purchases yet</div></div>';return;}
-  const totalThisMonth = purchases.filter(p=>normDate(p.date||'').startsWith(thisMonthStr())).reduce((s,p)=>s+(p.total||0),0);
+  if(!purchases.length){
+    el.innerHTML='<div class="empty-state"><div class="empty-icon">🛒</div><div class="empty-title">No purchases yet</div><div class="empty-sub">Add a purchase above</div></div>';
+    return;
+  }
+  const typeLabels = {moulding:'📐 Moulding',raw:'🎨 Raw Material',stock:'📦 Stock',freight:'🚚 Freight',mdf:'🪵 MDF',sunboard:'🟫 Sunboard',glass:'🔲 Glass',other:'📦 Other'};
+  const totalThisMonth = purchases.filter(p=>normDate(p.date||'').startsWith(thisMonthStr())).reduce((s,p)=>s+(+p.total||0),0);
   el.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <div style="font-weight:700;font-size:15px;">📋 Purchase History</div>
       <div style="font-size:12px;color:var(--ink3);">This month: <b style="color:var(--gold-dk);">Rs.${totalThisMonth.toLocaleString('en-IN')}</b></div>
     </div>
-    ${purchases.slice(0,30).map(p=>`
+    ${purchases.slice(0,50).map((p,idx)=>`
       <div class="card" style="margin-bottom:8px;">
         <div class="card-body" style="padding:10px 14px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div>
-              <div style="font-weight:600;font-size:13px;">${p.type==='moulding'?`📐 ${p.size} ${p.mtype}`:p.type==='raw'?`🎨 ${p.name}`:`📦 ${p.name}`}</div>
-              <div style="font-size:11px;color:var(--ink3);">${formatDate(normDate(p.date||''))} · ${p.vendor||'—'} · Qty:${p.qty}</div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+            <div style="flex:1;">
+              <div style="font-weight:600;font-size:13px;">${typeLabels[p.type]||'📦'} — ${p.name||p.mtype||'—'}</div>
+              <div style="font-size:11px;color:var(--ink3);">
+                ${formatDate(normDate(p.date||''))}
+                ${p.vendor?' · '+p.vendor:''}
+                ${p.qty?' · Qty: '+p.qty:''}
+                ${p.extra?.invoice?' · Inv: '+p.extra.invoice:''}
+              </div>
             </div>
-            <div style="font-weight:700;color:var(--gold-dk);">Rs.${(p.total||0).toLocaleString('en-IN')}</div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+              <div style="font-weight:700;color:var(--gold-dk);font-size:14px;">Rs.${(+p.total||0).toLocaleString('en-IN')}</div>
+              <div style="display:flex;gap:4px;">
+                <button onclick="deletePurchase('${p.id}')" style="background:#fce4ec;color:#c62828;border:none;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;">🗑️ Delete</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>`).join('')}`;
 }
+
+// FIX 22: Delete a purchase entry
+window.deletePurchase = function(id) {
+  if(!confirm('Delete this purchase entry?')) return;
+  purchases = purchases.filter(p=>p.id!==id);
+  localStorage.setItem('fv_purchases', JSON.stringify(purchases));
+  try { if(window.db) window.db.collection('purchases').doc(id).delete(); } catch(e){}
+  renderPurchaseHistory();
+  toast('🗑️ Purchase deleted','success');
+};
 
 // ── Smart Barcode Printing ────────────────────────────────────
 let selectedBarcodeItems = {}; // {itemId: qty}
@@ -2964,9 +3060,22 @@ async function loadProductionOrders() {
 
 window.updatePOMouldingTypes=function(){
   const typeSel=document.getElementById('po-mtype');
-  if(!typeSel)return;
-  const allTypes=Object.entries(vendors||{}).flatMap(([v,types])=>types.map(t=>`${v} — ${t}`));
-  typeSel.innerHTML=allTypes.length?allTypes.map(t=>`<option value="${t}">${t}</option>`).join(''):'<option value="default">Default</option>';
+  const msizeSel=document.getElementById('po-msize');
+  if(!typeSel||!msizeSel)return;
+  const size=msizeSel.value;
+  if(!size){typeSel.innerHTML='<option value="">— Select moulding size first —</option>';return;}
+  // FIX 20: Use mouldingsCache (same as form) then fallback to vendors
+  const cached=(window.mouldingsCache&&window.mouldingsCache[size])||DEFAULT_MOULDINGS[size]||[];
+  if(cached.length){
+    typeSel.innerHTML='<option value="">— Select Type —</option>'+
+      cached.map((m,i)=>`<option value="${i}">${m.code} — ${m.name} (Rs.${m.price||10}/ft)</option>`).join('');
+    typeSel.dataset.mouldSize=size;
+  } else {
+    const vendorTypes=Object.entries(vendors||{}).flatMap(([v,types])=>types.map(t=>`${v} — ${t}`));
+    typeSel.innerHTML=vendorTypes.length?
+      '<option value="">— Select Type —</option>'+vendorTypes.map(t=>`<option value="${t}">${t}</option>`).join(''):
+      '<option value="default">Default</option>';
+  }
 };
 
 window.togglePOMount=function(){
@@ -3008,27 +3117,57 @@ window.duplicateLastFrame = function() {
 };
 
 window.addFrameToList = function() {
-  const fw=+(document.getElementById('po-fw')?.value)||0;
-  const fh=+(document.getElementById('po-fh')?.value)||0;
-  const name=document.getElementById('po-name')?.value.trim()||`${fw}×${fh}" Frame`;
-  const msize=document.getElementById('po-msize')?.value||'1"';
-  const mtype=document.getElementById('po-mtype')?.value||'default';
-  const mount=document.getElementById('po-mount')?.value||'No';
-  const mval=mount==='Yes'?(+(document.getElementById('po-msize-val')?.value)||0):0;
-  const qty=+(document.getElementById('po-qty')?.value)||1;
-  const notes=document.getElementById('po-notes')?.value||'';
-  const code=document.getElementById('po-code')?.value||'';
+  // FIX 20: Read fw/fh from size-select or custom inputs
+  const sizeVal = document.getElementById('po-size-select')?.value;
+  let fw=0, fh=0;
+  if(sizeVal && sizeVal !== 'custom') {
+    const parts = sizeVal.split('x').map(Number);
+    fw = parts[0]||0; fh = parts[1]||0;
+  } else {
+    fw = +(document.getElementById('po-fw')?.value)||0;
+    fh = +(document.getElementById('po-fh')?.value)||0;
+  }
   if(!fw||!fh){toast('⚠️ Select frame size first','error');return;}
-  const frame={id:'ft-'+Date.now(),name,code,fw,fh,msize,mtype,mount,mountSize:mval,qty,notes};
+  const msizeVal = document.getElementById('po-msize')?.value||'1';
+  if(!msizeVal){toast('⚠️ Select moulding size','error');return;}
+  // Get moulding type display name
+  const mtypeSel = document.getElementById('po-mtype');
+  const mtypeIdx = mtypeSel?.value;
+  const mtypeText = mtypeSel?.options[mtypeSel?.selectedIndex]?.text || 'Default';
+  const cachedMoulds = (window.mouldingsCache&&window.mouldingsCache[msizeVal])||DEFAULT_MOULDINGS[msizeVal]||[];
+  const mouldItem = cachedMoulds[+mtypeIdx];
+  const mtypeDisplay = mouldItem ? `${mouldItem.code}—${mouldItem.name}` : (mtypeText||'Default');
+  const name = document.getElementById('po-name')?.value.trim()||`${fw}×${fh}" Frame`;
+  const mount = document.getElementById('po-mount')?.value||'No';
+  const mval = mount==='Yes'?(+(document.getElementById('po-msize-val')?.value)||0):0;
+  const qty = +(document.getElementById('po-qty')?.value)||1;
+  const notes = document.getElementById('po-notes')?.value||'';
+  const code = document.getElementById('po-code')?.value||'';
+  const frame = {id:'ft-'+Date.now(),name,code,fw,fh,
+    msize:msizeVal, mtype:mtypeDisplay, mtypeIdx,
+    mouldPrice: mouldItem?.price||FRAME_PRICE_PER_FT,
+    mount, mountSize:mval, qty, notes};
   pendingFrameTypes.push(frame);
-  // Reset form
-  ['po-name','po-code','po-qty','po-notes','po-msize-val'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=el.id==='po-qty'?'1':'';});
+  // Reset form fields but keep moulding size selected for quick multi-add
+  document.getElementById('po-name').value='';
+  document.getElementById('po-code').value='';
+  document.getElementById('po-qty').value='1';
+  document.getElementById('po-notes').value='';
   document.getElementById('po-size-select').value='';
-  document.getElementById('po-fw').value='';
-  document.getElementById('po-fh').value='';
-  document.getElementById('po-custom-size').style.display='none';
+  const customBox=document.getElementById('po-custom-size');
+  if(customBox) customBox.style.display='none';
+  const fwEl=document.getElementById('po-fw'); if(fwEl) fwEl.value='';
+  const fhEl=document.getElementById('po-fh'); if(fhEl) fhEl.value='';
   renderPendingFrameTypes();
-  toast(`✅ "${name}" added to list`,'success');
+  toast(`✅ "${name}" added — keep adding more or send to framer`,'success');
+};
+
+// FIX 20: auto-fill frame name when custom size entered
+window.updatePOSizeLabel = function() {
+  const fw = document.getElementById('po-fw')?.value;
+  const fh = document.getElementById('po-fh')?.value;
+  const nameEl = document.getElementById('po-name');
+  if(fw && fh && nameEl && !nameEl.value) nameEl.value = `${fw}×${fh}" Frame`;
 };
 
 function renderPendingFrameTypes() {
@@ -4692,9 +4831,10 @@ window.ownerPrintLabels = function(id) {
 // ── Order Detail Bottom Sheet ─────────────────────────────────
 window.openOrderSheet = function(id) {
   const o=orders.find(x=>x.id===id);if(!o)return;
-  // Load photos from localStorage (saved separately to avoid Firebase limits)
+  // FIX 19: Try multiple keys — id, billNo, local id formats
   const photoStore = JSON.parse(localStorage.getItem('fv_order_photos')||'{}');
-  const photos = photoStore[id] || o.photos || [];
+  const photos = photoStore[id] || photoStore[o.billNo] || photoStore[o.localId]
+    || o.photos || o._photos || [];
   const bal=(+o.total||0)-(+o.advance||0);
   const payIcon=o.payMode==='UPI'?'📱':o.payMode==='Cash+UPI'?'💵📱':'💵';
   document.getElementById('ods-title').textContent=o.name+' · '+(o.billNo||o.id);
