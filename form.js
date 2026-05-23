@@ -97,10 +97,17 @@ function getFormHTML(existing, role) {
 <div class="card" style="margin-bottom:16px;">
   <div class="card-header"><div class="card-title">📸 Reference Photos <span style="font-size:11px;color:var(--ink3);font-weight:400;">(Optional)</span></div></div>
   <div class="card-body">
-    <input type="file" id="f-photos" accept="image/*" multiple capture="environment" style="display:none;" onchange="onPhotosSelected()">
-    <button type="button" onclick="document.getElementById('f-photos').click()" class="btn-outline" style="padding:10px 20px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
-      <span style="font-size:18px;">📷</span> Take Photo / Upload
-    </button>
+    <!-- FIX 6: Two inputs - camera and gallery -->
+    <input type="file" id="f-photos-cam" accept="image/*" capture="environment" style="display:none;" onchange="onPhotosSelected(this)">
+    <input type="file" id="f-photos-gal" accept="image/*" multiple style="display:none;" onchange="onPhotosSelected(this)">
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button type="button" onclick="document.getElementById('f-photos-cam').click()" class="btn-outline" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <span style="font-size:18px;">📷</span> Camera
+      </button>
+      <button type="button" onclick="document.getElementById('f-photos-gal').click()" class="btn-outline" style="flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <span style="font-size:18px;">🖼️</span> Gallery
+      </button>
+    </div>
     <div id="photo-preview" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
   </div>
 </div>
@@ -715,6 +722,9 @@ function getBPanelHTML(svc) {
 }
 
 // ── Form Init & Interactions ──────────────────────────────────
+// FIX 1: Global groupAsel so getFrameLB() can access it without crashing
+let groupAsel = [];
+
 function initFormJS(existing, role) {
   updatePaymentSection();
   updateCartPanel();
@@ -746,6 +756,7 @@ function initFormJS(existing, role) {
 // ── Service panel toggle ──────────────────────────────────────
 window.onGroupA = function() {
   const sel = [...document.querySelectorAll('input[name="groupA"]:checked')].map(c=>c.value);
+  groupAsel = sel; // FIX 1: keep global in sync
   document.querySelectorAll('input[name="groupB"]').forEach(r=>r.checked=false);
   document.getElementById('panel-b')?.remove();
 
@@ -870,6 +881,7 @@ window.onMouldSizeChange = function(size) {
   sel.innerHTML = opts;
   sel.dataset.mouldSize = size;
   document.getElementById('frm-mount-section')?.classList.remove('hidden');
+  updateTableStandVisibility();
   calcFrame();
 };
 
@@ -903,6 +915,7 @@ window.onMountChange = function() {
     document.getElementById('frm-sleeve-opts')?.classList.add('hidden');
   }
   document.getElementById('frm-accessories')?.classList.remove('hidden');
+  updateTableStandVisibility();
   calcFrame();
 };
 
@@ -929,16 +942,19 @@ window.onFrameSizeSelect = function() {
     if(customBox) customBox.style.display = 'block';
     if(hidL) hidL.value = '';
     if(hidB) hidB.value = '';
+    updateTableStandVisibility();
   } else if(val) {
     if(customBox) customBox.style.display = 'none';
     const [w,h] = val.split('x').map(Number);
     if(hidL) hidL.value = w;
     if(hidB) hidB.value = h;
+    updateTableStandVisibility();
     calcFrame();
   } else {
     if(customBox) customBox.style.display = 'none';
     if(hidL) hidL.value = '';
     if(hidB) hidB.value = '';
+    updateTableStandVisibility();
   }
 };
 
@@ -949,8 +965,50 @@ window.onFrameCustomInput = function() {
   const hidB = document.getElementById('frm-B');
   if(hidL) hidL.value = w||'';
   if(hidB) hidB.value = h||'';
+  updateTableStandVisibility();
   calcFrame();
 };
+
+// ── Table Stand Visibility ────────────────────────────────────
+// Called immediately whenever size or mount changes — no dependency on moulding being selected
+function updateTableStandVisibility() {
+  const tsRow = document.getElementById('table-stand-row');
+  if (!tsRow) return;
+
+  let l = 0, b = 0;
+
+  // If printing panel is active, read size from print size select
+  const printingPanel = document.getElementById('panel-printing');
+  const isPrintingActive = printingPanel && !printingPanel.classList.contains('hidden');
+  if (isPrintingActive) {
+    const size = document.getElementById('pr-size')?.value;
+    if (size && window.SIZE_DIMS && SIZE_DIMS[size]) {
+      l = SIZE_DIMS[size].w;
+      b = SIZE_DIMS[size].h;
+    }
+  } else {
+    // Framing-only: read from hidden inputs (set by size select or custom inputs)
+    l = +(document.getElementById('frm-L')?.value) || 0;
+    b = +(document.getElementById('frm-B')?.value) || 0;
+  }
+
+  // Also account for mount size — frame+mount may push over threshold
+  const mnt = document.querySelector('input[name="mnt"]:checked')?.value || 'No';
+  const mountSize = +(document.querySelector('input[name="mntS"]:checked')?.value) || 0;
+  if (mnt === 'Yes' && mountSize > 0) {
+    l = l + mountSize * 2;
+    b = b + mountSize * 2;
+  }
+
+  // Hide if either dimension exceeds 10×12
+  const hide = (l > 0 && b > 0) && (l > 10 || b > 12);
+  tsRow.style.display = hide ? 'none' : '';
+  if (hide) {
+    const tsCb = document.querySelector('input[name="acc"][value="Table Stand"]');
+    if (tsCb) tsCb.checked = false;
+  }
+}
+window.updateTableStandVisibility = updateTableStandVisibility;
 
 function getFrameLB() {
   if (groupAsel.includes('Printing')) {
@@ -979,13 +1037,8 @@ window.calcFrame = function() {
   if (mnt === 'Yes' && !mountSize) { costTag.classList.add('hidden'); totalTag?.classList.add('hidden'); return; }
   const { l, b } = lb;
 
-  // Hide table stand for large frames
-  const tsRow = document.getElementById('table-stand-row');
-  if(tsRow) {
-    const hide = l > 10 || b > 12;
-    tsRow.style.display = hide ? 'none' : '';
-    if(hide) { const tsCb = document.querySelector('input[name="acc"][value="Table Stand"]'); if(tsCb) tsCb.checked = false; }
-  }
+  // Hide table stand for large frames (delegated to shared function)
+  updateTableStandVisibility();
   const mouldItem = (window.mouldingsCache[mouldSize] || DEFAULT_MOULDINGS[mouldSize] || [])[+mouldIdx];
   const pricePerFt = mouldItem?.price || FRAME_PRICE_PER_FT;
   let frameCost = 0, costLabel = '';
@@ -1217,6 +1270,7 @@ window.onPrintSizeChange = function() {
     if (no && !document.querySelector('input[name="stretch"]:checked')) no.checked = true;
   }
 
+  updateTableStandVisibility();
   calcPrint();
 };
 
@@ -1382,6 +1436,7 @@ window.calcVisa = () => {
   const total = base+soft;
   const ct = document.getElementById('vp-cost-tag');
   if(ct) ct.textContent = soft ? `Total: Rs.${total} (Print Rs.${base} + Soft Copy Rs.${soft})` : `Total: Rs.${base}`;
+  updateCartPanel(); // FIX 3: live panel update for visa
 };
 window.calcScanning    = () => { const q=+(document.getElementById('scan-qty')?.value)||1; const t=document.getElementById('scan-cost-tag'); if(t) t.textContent=`Total: Rs.${q*50} (${q} × Rs.50)`; };
 window.calcCustom      = () => {
@@ -1459,7 +1514,7 @@ window.calcDoorVisa     = ()=>{ const c=+(document.getElementById('dvp-copies')?
 
 // ── Add to Cart ───────────────────────────────────────────────
 window.addToCart = function() {
-  const groupAsel = [...document.querySelectorAll('input[name="groupA"]:checked')].map(c=>c.value);
+  groupAsel = [...document.querySelectorAll('input[name="groupA"]:checked')].map(c=>c.value); // FIX 1: update global
   const groupBsel = document.querySelector('input[name="groupB"]:checked')?.value;
 
   let svcs=[], price=0, label='', details={};
@@ -1778,47 +1833,65 @@ function getLiveFillingPreview() {
     }
   }
 
-  // ── Printing panel ───────────────────────────────────────────
+  // ── Printing panel ── FIX 2: use correct IDs ───────────────
   const printingPanel = document.getElementById('panel-printing');
-  if(printingPanel && !printingPanel.classList.contains('hidden')) {
-    const psizeEl = document.getElementById('print-size-select') || document.getElementById('print-size');
-    const psize = psizeEl?.value || document.querySelector('.print-size-btn.act')?.dataset?.size;
-    const qty = document.getElementById('print-qty')?.value || document.getElementById('p-qty')?.value;
-    const qual = document.querySelector('input[name="pqual"]:checked')?.value || document.querySelector('input[name="print-qual"]:checked')?.value;
-    const totalTag = document.getElementById('print-total-tag') || document.getElementById('prn-total-tag');
-    const printPrice = totalTag?.textContent;
-
-    if(psize||qty) {
-      if(psize) lines.push(`📏 Print Size: ${psize}`);
+  if(printingPanel) {
+    const size = document.getElementById('pr-size')?.value;
+    const qual = document.querySelector('input[name="pq"]:checked')?.value;
+    const qty = qual === 'NP'
+      ? document.getElementById('pr-qty-np')?.value
+      : document.getElementById('pr-qty')?.value;
+    const totalTag = document.getElementById('print-total-tag');
+    const printPrice = totalTag && !totalTag.classList.contains('hidden') ? totalTag.textContent : null;
+    if(size || qual) {
       if(qual) lines.push(`✨ Quality: ${qual}`);
-      if(qty) lines.push(`🔢 Qty: ${qty} print${+qty>1?'s':''}`);
+      if(size) lines.push(`📏 Size: ${size.replace('x','×')}`);
+      if(qty && +qty > 0) lines.push(`🔢 Qty: ${qty} print${+qty!==1?'s':''}`);
       if(printPrice) lines.push(`💰 ${printPrice}`);
     }
   }
 
-  // ── Photo Editing panel ──────────────────────────────────────
+  // ── Photo Editing panel ── FIX 2: correct IDs ───────────────
   const editingPanel = document.getElementById('panel-editing');
-  if(editingPanel && !editingPanel.classList.contains('hidden')) {
-    const cost = document.getElementById('edit-cost')?.value || document.getElementById('editing-cost')?.value;
-    if(cost) lines.push(`🎨 Photo Editing: Rs.${cost}`);
+  if(editingPanel) {
+    const ep = document.querySelector('input[name="ep"]:checked')?.value;
+    const epv = ep === 'custom' ? document.getElementById('ep-val')?.value : ep;
+    if(epv && +epv > 0) lines.push(`🎨 Photo Editing: Rs.${epv}`);
   }
 
-  // ── Passport panel ───────────────────────────────────────────
-  const passportPanel = document.getElementById('panel-passport');
-  if(passportPanel && !passportPanel.classList.contains('hidden')) {
+  // ── Passport panel ── FIX 2: correct IDs ────────────────────
+  const panelB = document.getElementById('panel-b');
+  const groupBSel = document.querySelector('input[name="groupB"]:checked')?.value;
+  if(panelB && groupBSel === 'Passport Photos') {
     const copies = document.getElementById('pp-copies')?.value;
     const totalTag = document.getElementById('pp-total-tag');
     if(copies) lines.push(`📷 Passport: ${copies} copies`);
-    if(totalTag?.textContent) lines.push(`💰 ${totalTag.textContent}`);
+    if(totalTag && !totalTag.classList.contains('hidden')) lines.push(`💰 ${totalTag.textContent}`);
   }
 
-  // ── Visa panel ───────────────────────────────────────────────
-  const visaPanel = document.getElementById('panel-visa');
-  if(visaPanel && !visaPanel.classList.contains('hidden')) {
-    const country = document.getElementById('visa-country')?.value;
-    const copies = document.getElementById('visa-copies')?.value;
+  // ── Visa panel ── FIX 2: correct IDs ────────────────────────
+  if(panelB && groupBSel === 'Visa Photos') {
+    const vtVal = document.getElementById('visa-type')?.value || '';
+    const country = vtVal ? vtVal.split('|')[0] : '';
+    const copies = document.getElementById('vp-copies')?.value;
+    const ct = document.getElementById('vp-cost-tag');
     if(country) lines.push(`🛂 Visa: ${country}`);
     if(copies) lines.push(`📷 Copies: ${copies}`);
+    if(ct?.textContent) lines.push(`💰 ${ct.textContent}`);
+  }
+
+  // ── Scanning panel ───────────────────────────────────────────
+  if(panelB && groupBSel === 'Scanning') {
+    const qty = document.getElementById('scan-qty')?.value;
+    if(qty && +qty > 0) lines.push(`🔍 Scanning: ${qty} pics · Rs.${+qty*50}`);
+  }
+
+  // ── Custom Order panel ───────────────────────────────────────
+  if(panelB && groupBSel === 'Custom Order') {
+    const name = document.getElementById('custom-name')?.value;
+    const totalTag = document.getElementById('custom-total-tag');
+    if(name) lines.push(`✏️ ${name}`);
+    if(totalTag && !totalTag.classList.contains('hidden')) lines.push(`💰 ${totalTag.textContent}`);
   }
 
   if(!lines.length) return null;
@@ -2000,8 +2073,9 @@ window.cancelOwnerPassword = function() {
 // ── Photo Upload ──────────────────────────────────────────────
 window._orderPhotos = [];
 
-window.onPhotosSelected = function() {
-  const input = document.getElementById('f-photos');
+window.onPhotosSelected = function(inputEl) {
+  // FIX 6: accept either camera or gallery input
+  const input = inputEl || document.getElementById('f-photos-cam') || document.getElementById('f-photos-gal');
   if(!input?.files?.length) return;
   Array.from(input.files).forEach(file => {
     const reader = new FileReader();
@@ -2023,7 +2097,7 @@ window.onPhotosSelected = function() {
     };
     reader.readAsDataURL(file);
   });
-  input.value=''; // reset so same file can be selected again
+  if(input) input.value=''; // reset so same file can be selected again
 };
 
 function renderPhotoPreview() {

@@ -1337,6 +1337,9 @@ initDB().then(async()=>{
 });
 </script>
 <script src="../form.js"></script>
+<script>
+// FIX 8: cancelForm was outside </html> — moved inside
+window.cancelForm=()=>{window.cart=[];window.editId=null;showPage('orders');};
+</script>
 </body>
 </html>
-window.cancelForm=()=>{window.cart=[];window.editId=null;showPage('orders');};

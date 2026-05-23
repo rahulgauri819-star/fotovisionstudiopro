@@ -64,6 +64,7 @@
     <button onclick="showPage('framer');ownerCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">🔨</span>Framing</button>
     <button onclick="showPage('dayreports');ownerCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">📋</span>Day Rpts</button>
     <button onclick="showPage('mouldings');ownerCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">🖼️</span>Mouldings</button>
+    <button onclick="showPage('stock');ownerCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">📊</span>Retally</button>
   </div>
   <button onclick="ownerCloseMore()" style="width:100%;padding:12px;border:none;background:#f0ede6;border-radius:10px;font-size:14px;font-weight:700;color:#666;cursor:pointer;">✕ Close</button>
 </div>
@@ -525,7 +526,19 @@
 </div>
 
 <!-- ═══ STOCK (old, keep for compatibility) ═══ -->
-<div id="pg-stock" class="hidden"></div>
+<div id="pg-stock" class="hidden">
+  <div class="page-header">
+    <div class="page-title">📊 Stock Retally</div>
+    <div class="page-sub">Physical count vs app count — sync your stock</div>
+  </div>
+  <!-- Retally tabs -->
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+    <button id="rt-tab-readymade" onclick="switchRTTab('readymade')" class="btn-gold" style="padding:8px 16px;font-size:13px;">📦 Readymade Stock</button>
+    <button id="rt-tab-moulding" onclick="switchRTTab('moulding')" class="btn-outline" style="padding:8px 16px;font-size:13px;">📐 Moulding Stock</button>
+    <button id="rt-tab-history" onclick="switchRTTab('history')" class="btn-outline" style="padding:8px 16px;font-size:13px;">📋 Retally History</button>
+  </div>
+  <div id="rt-content"></div>
+</div>
 
 <!-- ═══ DAY END ═══ -->
 <div id="pg-dayend" class="hidden">
@@ -922,14 +935,15 @@ let currentPage = 'dashboard';
 window.showPage = window._realShowPage = function(p) {
   try {
     currentPage = p;
-    ['dashboard','orders','framer','form','mouldings','bookings','expenses','customers','dayend','dayreports','stock','readymade-stock','moulding-stock','settings','reports','credit','production','estimates','purchases'].forEach(x => {
-      document.getElementById('pg-'+x)?.classList.add('hidden');
-    });
+    // FIX 14/16: Hide ALL pages including any that may have been missed
+    document.querySelectorAll('[id^="pg-"]').forEach(el => el.classList.add('hidden'));
     document.getElementById('pg-'+p)?.classList.remove('hidden');
     document.querySelectorAll('.hdr-nav-btn, .tab-btn').forEach(b => b.classList.remove('act'));
     document.getElementById('nav-'+p)?.classList.add('act');
     document.getElementById('tnb-'+p)?.classList.add('act');
+    // FIX 14/16: Reset scroll on both window and main container
     window.scrollTo(0,0);
+    document.querySelector('.main')?.scrollTo(0,0);
     if(p==='dashboard')       renderDash();
     if(p==='orders')          renderOrders();
     if(p==='framer')          renderFramer();
@@ -945,6 +959,7 @@ window.showPage = window._realShowPage = function(p) {
     if(p==='dayend')          renderDayEnd();
     if(p==='dayreports')      { if(typeof renderDayReports==='function') renderDayReports(); }
     if(p==='readymade-stock') renderReadymadeStock();
+    if(p==='stock')           renderReTally();
     if(p==='moulding-stock')  renderMouldingStock();
     if(p==='settings')        renderSettings();
   } catch(err) { console.error('showPage error:', err); }
@@ -1014,14 +1029,15 @@ window.setSvcFilter = function(f) {
   renderSvcBars();
 };
 
+// FIX 13+17: Enhanced sales chart with hourly Today/Yesterday + tap highlight
+let _chartSelectedBar = null;
+
 function renderSalesDisplay() {
   const el = document.getElementById('sales-display');
   if (!el) return;
-  const fil = getFilteredOrders(salesFilter, 'sf-date');
-  const totalAmt = fil.reduce((s,o)=>s+(+o.total||0),0);
+  _chartSelectedBar = null;
 
   if (salesFilter === 'month' || salesFilter === 'date') {
-    // Determine month to show
     let month = thisMonthStr();
     if (salesFilter === 'date') {
       const d = document.getElementById('sf-date')?.value||'';
@@ -1029,39 +1045,132 @@ function renderSalesDisplay() {
     }
     const [yr, mo] = month.split('-').map(Number);
     const daysInMonth = new Date(yr, mo, 0).getDate();
-    const dayTotals = {};
-    for (let d=1; d<=daysInMonth; d++) dayTotals[d]=0;
-
-    // Get ALL orders for this month (not filtered by date)
+    const dayTotals = {}, dayOrders = {};
+    for (let d=1; d<=daysInMonth; d++) { dayTotals[d]=0; dayOrders[d]=0; }
     const monthOrds = orders.filter(o=>(o.date||'').startsWith(month));
     monthOrds.forEach(o => {
       const od = +(o.date||'').split('-')[2];
-      if (od) dayTotals[od] = (dayTotals[od]||0) + (+o.total||0);
+      if (od) { dayTotals[od] = (dayTotals[od]||0) + (+o.total||0); dayOrders[od] = (dayOrders[od]||0)+1; }
     });
     const monthTotal = monthOrds.reduce((s,o)=>s+(+o.total||0),0);
     const maxVal = Math.max(...Object.values(dayTotals), 1);
+    const todayDay = +todayStr().split('-')[2];
+    const isThisMonth = month === thisMonthStr();
 
     el.innerHTML = `
-      <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;">Total: <b style="color:var(--gold-dk);font-size:16px;">Rs.${monthTotal.toLocaleString('en-IN')}</b> · ${monthOrds.length} orders</div>
-      <div style="display:flex;align-items:flex-end;gap:3px;height:110px;overflow-x:auto;padding-bottom:4px;">
+      <div id="chart-callout" style="min-height:36px;margin-bottom:8px;padding:6px 12px;background:var(--paper);border-radius:8px;border-left:3px solid var(--gold-dk);display:none;">
+        <span id="chart-callout-text" style="font-size:13px;font-weight:700;color:var(--gold-dk);"></span>
+      </div>
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:10px;" id="chart-total-line">Total: <b style="color:var(--gold-dk);font-size:16px;">Rs.${monthTotal.toLocaleString('en-IN')}</b> · ${monthOrds.length} orders</div>
+      <div style="display:flex;align-items:flex-end;gap:2px;height:110px;overflow-x:auto;padding-bottom:4px;" id="chart-bars">
         ${Array.from({length:daysInMonth},(_,i)=>{
-          const day=i+1, amt=dayTotals[day]||0;
+          const day=i+1, amt=dayTotals[day]||0, cnt=dayOrders[day]||0;
           const barH = Math.max(Math.round((amt/maxVal)*90), amt>0?6:2);
-          const isToday = (`${yr}-${String(mo).padStart(2,'0')}-${String(day).padStart(2,'0')}`) === todayStr();
-          return `<div style="flex:1;min-width:10px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;height:110px;" title="Day ${day}: Rs.${amt.toLocaleString('en-IN')}">
-            <div style="width:100%;background:${amt>0?(isToday?'#e65100':'var(--gold-dk)'):'#e8e8e8'};height:${barH}px;border-radius:3px 3px 0 0;transition:height .3s;"></div>
+          const isToday = isThisMonth && day===todayDay;
+          const baseColor = amt>0?(isToday?'#e65100':'var(--gold-dk)'):'#e8e8e8';
+          const dateStr = `${yr}-${String(mo).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+          return `<div class="chart-bar-wrap" data-day="${day}" data-amt="${amt}" data-cnt="${cnt}" data-date="${dateStr}"
+            style="flex:1;min-width:10px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;height:110px;cursor:${amt>0?'pointer':'default'};"
+            onclick="onChartBarTap(this,'month')">
+            <div class="chart-bar" style="width:100%;background:${baseColor};height:${barH}px;border-radius:3px 3px 0 0;transition:all .2s;" data-base-color="${baseColor}"></div>
             <div style="font-size:7px;color:${isToday?'var(--gold-dk)':'var(--ink3)'};font-weight:${isToday?'700':'400'};">${day}</div>
           </div>`;
         }).join('')}
       </div>
-      <div style="font-size:10px;color:var(--ink3);margin-top:4px;">🟠 Today &nbsp; 🟡 Other days</div>`;
+      <div style="font-size:10px;color:var(--ink3);margin-top:4px;">🟠 Today &nbsp; 🟡 Other days &nbsp; Tap a bar for details</div>`;
+
   } else {
-    // Single total for Today/Yesterday
+    // FIX 13: Today / Yesterday — hourly bar chart
+    const targetDate = salesFilter === 'yesterday' ? yesterdayStr() : todayStr();
+    const dayOrds = orders.filter(o=>normDate(o.date||'')===targetDate);
+    const hourTotals = {}, hourOrders = {};
+    for(let h=0;h<24;h++){hourTotals[h]=0;hourOrders[h]=0;}
+    dayOrds.forEach(o => {
+      let hr = 0;
+      if(o.created) { const d = new Date(o.created); hr = d.getHours(); }
+      hourTotals[hr] = (hourTotals[hr]||0)+(+o.total||0);
+      hourOrders[hr] = (hourOrders[hr]||0)+1;
+    });
+    const totalAmt = dayOrds.reduce((s,o)=>s+(+o.total||0),0);
+    const maxVal = Math.max(...Object.values(hourTotals), 1);
+    const nowHour = new Date().getHours();
+
     el.innerHTML = `
-      <div style="font-size:32px;font-weight:800;color:var(--gold-dk);">Rs.${totalAmt.toLocaleString('en-IN')}</div>
-      <div style="font-size:13px;color:var(--ink3);margin-top:4px;">${fil.length} order${fil.length!==1?'s':''}</div>`;
+      <div id="chart-callout" style="min-height:36px;margin-bottom:8px;padding:6px 12px;background:var(--paper);border-radius:8px;border-left:3px solid var(--gold-dk);display:none;">
+        <span id="chart-callout-text" style="font-size:13px;font-weight:700;color:var(--gold-dk);"></span>
+      </div>
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:10px;" id="chart-total-line">Total: <b style="color:var(--gold-dk);font-size:16px;">Rs.${totalAmt.toLocaleString('en-IN')}</b> · ${dayOrds.length} orders</div>
+      <div style="display:flex;align-items:flex-end;gap:2px;height:110px;overflow-x:auto;padding-bottom:4px;" id="chart-bars">
+        ${Array.from({length:24},(_,h)=>{
+          const amt=hourTotals[h]||0, cnt=hourOrders[h]||0;
+          const barH = Math.max(Math.round((amt/maxVal)*90), amt>0?6:2);
+          const isNow = salesFilter==='today' && h===nowHour;
+          const baseColor = amt>0?(isNow?'#e65100':'var(--gold-dk)'):'#e8e8e8';
+          const label = h===0?'12a':h<12?h+'a':h===12?'12p':(h-12)+'p';
+          return `<div class="chart-bar-wrap" data-hour="${h}" data-amt="${amt}" data-cnt="${cnt}"
+            style="flex:1;min-width:10px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;height:110px;cursor:${amt>0?'pointer':'default'};"
+            onclick="onChartBarTap(this,'hour')">
+            <div class="chart-bar" style="width:100%;background:${baseColor};height:${barH}px;border-radius:3px 3px 0 0;transition:all .2s;" data-base-color="${baseColor}"></div>
+            <div style="font-size:7px;color:${isNow?'var(--gold-dk)':'var(--ink3)'};font-weight:${isNow?'700':'400'};">${label}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="font-size:10px;color:var(--ink3);margin-top:4px;">🟠 Now &nbsp; 🟡 Earlier &nbsp; Tap a bar for details</div>`;
   }
 }
+
+// FIX 17: Tap bar to highlight and show callout
+window.onChartBarTap = function(wrap, mode) {
+  const amt = +wrap.dataset.amt || 0;
+  if(amt === 0) return;
+  const allWraps = document.querySelectorAll('.chart-bar-wrap');
+  const callout = document.getElementById('chart-callout');
+  const calloutText = document.getElementById('chart-callout-text');
+
+  // Deselect if tapping same bar
+  if(_chartSelectedBar === wrap) {
+    _chartSelectedBar = null;
+    allWraps.forEach(w => {
+      const bar = w.querySelector('.chart-bar');
+      if(bar) { bar.style.background = bar.dataset.baseColor; bar.style.opacity='1'; }
+    });
+    if(callout) callout.style.display='none';
+    return;
+  }
+  _chartSelectedBar = wrap;
+
+  // Highlight selected, dim others
+  allWraps.forEach(w => {
+    const bar = w.querySelector('.chart-bar');
+    if(!bar) return;
+    if(w === wrap) {
+      bar.style.background = '#C9973A';
+      bar.style.opacity = '1';
+      bar.style.boxShadow = '0 0 0 2px #9A6E1E';
+    } else {
+      bar.style.background = '#e0d5c0';
+      bar.style.opacity = '0.5';
+      bar.style.boxShadow = 'none';
+    }
+  });
+
+  // Show callout
+  if(callout && calloutText) {
+    let label = '';
+    if(mode === 'month') {
+      const dateStr = wrap.dataset.date || '';
+      label = dateStr ? formatDate(dateStr) : `Day ${wrap.dataset.day}`;
+    } else {
+      const h = +wrap.dataset.hour;
+      const ampm = h < 12 ? 'AM' : 'PM';
+      const h12 = h === 0 ? 12 : h > 12 ? h-12 : h;
+      label = `${h12}:00 ${ampm}`;
+    }
+    const cnt = +wrap.dataset.cnt || 0;
+    calloutText.innerHTML = `📅 ${label} &nbsp;·&nbsp; Rs.${amt.toLocaleString('en-IN')} &nbsp;·&nbsp; ${cnt} order${cnt!==1?'s':''}`;
+    callout.style.display = 'block';
+  }
+};
 
 function renderOrderStats() {
   const fil = getFilteredOrders(orderFilter, 'of-date');
@@ -1858,6 +1967,7 @@ window.saveOrder = async function() {
     bookedBy: 'owner', billNo,
     hasPhotos: (window._orderPhotos||[]).length>0,
     photoCount: (window._orderPhotos||[]).length,
+    photos: window._orderPhotos||[], // FIX 5: embed photos directly on order
     isComplimentary: window._isComplimentary||false,
     originalTotal: window._isComplimentary?(window._originalTotal||finalTotal):finalTotal,
   };
@@ -3149,6 +3259,556 @@ function renderReportDateSelector() {
       <select class="form-input" id="rpt-month" style="max-width:220px;">${months.map(m=>`<option value="${m.val}">${m.label}</option>`).join('')}</select>
       <button onclick="generateReport()" class="btn-gold" style="padding:10px 20px;margin-top:10px;">Generate Report</button>`;
   }
+}
+
+// ══════════════════════════════════════════════════════════════
+// FIX 12: STOCK RETALLY SYSTEM
+// ══════════════════════════════════════════════════════════════
+let _rtTab = 'readymade';
+let _reTallyHistory = JSON.parse(localStorage.getItem('fv_retally_history')||'[]');
+
+window.switchRTTab = function(tab) {
+  _rtTab = tab;
+  ['readymade','moulding','history'].forEach(t => {
+    const btn = document.getElementById('rt-tab-'+t);
+    if(btn) { btn.className = t===tab ? 'btn-gold' : 'btn-outline'; btn.style.padding='8px 16px'; btn.style.fontSize='13px'; }
+  });
+  renderReTally();
+};
+
+// Called when stock page opens
+window.renderStockRetally = function() {
+  _rtTab = 'readymade';
+  switchRTTab('readymade');
+};
+
+// renderReTally is called from showPage dispatch already via pg-stock
+
+function renderReTally() {
+  const el = document.getElementById('rt-content');
+  if(!el) return;
+
+  if(_rtTab === 'readymade') {
+    const items = window.stockItems || [];
+    if(!items.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-title">No stock items found</div></div>'; return; }
+    el.innerHTML = `
+      <div style="background:#fff3e0;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#e65100;">
+        📋 Enter physical count for each item. Only items with differences will be updated.
+      </div>
+      <div class="card" style="margin-bottom:12px;">
+        <div class="card-body" style="padding:0;">
+          ${items.map(item => `
+            <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--paper3);">
+              <div style="flex:1;">
+                <div style="font-weight:600;font-size:13px;">${item.name}</div>
+                <div style="font-size:11px;color:var(--ink3);">${item.category||''} · Code: ${item.code||'—'}</div>
+              </div>
+              <div style="text-align:center;min-width:60px;">
+                <div style="font-size:10px;color:var(--ink3);">App Qty</div>
+                <div style="font-weight:800;font-size:18px;color:var(--gold-dk);">${item.qty||0}</div>
+              </div>
+              <div style="text-align:center;min-width:80px;">
+                <div style="font-size:10px;color:var(--ink3);margin-bottom:4px;">Physical</div>
+                <input type="number" id="rt-${item.id}" min="0" value="${item.qty||0}"
+                  style="width:72px;padding:6px 8px;border:2px solid var(--paper3);border-radius:8px;text-align:center;font-size:15px;font-weight:700;"
+                  oninput="onRTInput(this,'${item.id}',${item.qty||0})">
+              </div>
+              <div id="rt-diff-${item.id}" style="min-width:50px;text-align:center;font-size:12px;font-weight:700;"></div>
+            </div>`).join('')}
+        </div>
+      </div>
+      <button onclick="saveReTally('readymade')" class="btn-gold" style="width:100%;padding:14px;font-size:15px;font-weight:700;">
+        ✅ Save Retally & Sync Stock
+      </button>`;
+
+  } else if(_rtTab === 'moulding') {
+    const sizes = Object.keys(mouldingStock || {});
+    if(!sizes.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">📐</div><div class="empty-title">No moulding stock found</div></div>'; return; }
+    let rows = '';
+    sizes.forEach(sz => {
+      const types = Object.keys(mouldingStock[sz]||{});
+      types.forEach(tp => {
+        const lengths = mouldingStock[sz][tp] || [];
+        const totalFt = lengths.filter(l=>l>4).reduce((s,l)=>s+Math.floor(l/12),0);
+        const totalIn = lengths.filter(l=>l>4).reduce((s,l)=>s+l,0);
+        const key = `${sz}__${tp.replace(/[^a-zA-Z0-9]/g,'_')}`;
+        rows += `
+          <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--paper3);">
+            <div style="flex:1;">
+              <div style="font-weight:600;font-size:13px;">${sz}" — ${tp}</div>
+              <div style="font-size:11px;color:var(--ink3);">${lengths.filter(l=>l>4).length} pieces · ~${totalFt} ft total</div>
+            </div>
+            <div style="text-align:center;min-width:70px;">
+              <div style="font-size:10px;color:var(--ink3);">App Pieces</div>
+              <div style="font-weight:800;font-size:18px;color:var(--gold-dk);">${lengths.filter(l=>l>4).length}</div>
+            </div>
+            <div style="text-align:center;min-width:80px;">
+              <div style="font-size:10px;color:var(--ink3);margin-bottom:4px;">Physical</div>
+              <input type="number" id="rt-mo-${key}" min="0" value="${lengths.filter(l=>l>4).length}"
+                style="width:72px;padding:6px 8px;border:2px solid var(--paper3);border-radius:8px;text-align:center;font-size:15px;font-weight:700;"
+                oninput="onRTInput(this,'mo-${key}',${lengths.filter(l=>l>4).length})">
+            </div>
+            <div id="rt-diff-mo-${key}" style="min-width:50px;text-align:center;font-size:12px;font-weight:700;"></div>
+          </div>`;
+      });
+    });
+    el.innerHTML = `
+      <div style="background:#fff3e0;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#e65100;">
+        📋 Enter physical piece count. App will adjust pieces to match your count.
+      </div>
+      <div class="card" style="margin-bottom:12px;"><div class="card-body" style="padding:0;">${rows}</div></div>
+      <button onclick="saveReTally('moulding')" class="btn-gold" style="width:100%;padding:14px;font-size:15px;font-weight:700;">
+        ✅ Save Retally & Sync Moulding Stock
+      </button>`;
+
+  } else if(_rtTab === 'history') {
+    if(!_reTallyHistory.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No retally records yet</div></div>';
+      return;
+    }
+    el.innerHTML = `
+      <div class="card">
+        <div class="card-header"><div class="card-title">📋 Retally History</div></div>
+        <div class="card-body" style="padding:0;">
+          ${_reTallyHistory.slice(0,50).map(r => `
+            <div style="padding:10px 14px;border-bottom:1px solid var(--paper3);">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-weight:600;font-size:13px;">${r.name}</div>
+                  <div style="font-size:11px;color:var(--ink3);">${formatDate(r.date)} · ${r.type}</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:12px;color:var(--ink3);">${r.oldQty} → <b>${r.newQty}</b></div>
+                  <div style="font-size:12px;font-weight:700;color:${r.diff>0?'#388e3c':r.diff<0?'#e53935':'var(--ink3)'};">
+                    ${r.diff>0?'+':''}${r.diff}
+                  </div>
+                </div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+  }
+}
+
+window.onRTInput = function(input, id, appQty) {
+  const physical = +input.value;
+  const diff = physical - appQty;
+  const diffEl = document.getElementById('rt-diff-'+id);
+  if(diffEl) {
+    if(diff === 0) { diffEl.textContent = '✓'; diffEl.style.color = '#388e3c'; }
+    else if(diff > 0) { diffEl.textContent = '+'+diff; diffEl.style.color = '#388e3c'; }
+    else { diffEl.textContent = diff; diffEl.style.color = '#e53935'; }
+    input.style.borderColor = diff === 0 ? 'var(--paper3)' : diff > 0 ? '#388e3c' : '#e53935';
+  }
+};
+
+window.saveReTally = function(type) {
+  const today = todayStr();
+  let changed = 0;
+
+  if(type === 'readymade') {
+    const items = window.stockItems || [];
+    items.forEach(item => {
+      const input = document.getElementById('rt-'+item.id);
+      if(!input) return;
+      const newQty = +input.value;
+      const oldQty = +item.qty || 0;
+      if(newQty !== oldQty) {
+        _reTallyHistory.unshift({ name: item.name, type:'Readymade', date: today, oldQty, newQty, diff: newQty - oldQty });
+        item.qty = newQty;
+        updateStockQty(item.id, newQty);
+        changed++;
+      }
+    });
+    localStorage.setItem('fv_stock', JSON.stringify(window.stockItems));
+  } else if(type === 'moulding') {
+    Object.keys(mouldingStock||{}).forEach(sz => {
+      Object.keys(mouldingStock[sz]||{}).forEach(tp => {
+        const key = `${sz}__${tp.replace(/[^a-zA-Z0-9]/g,'_')}`;
+        const input = document.getElementById('rt-mo-'+key);
+        if(!input) return;
+        const pieces = mouldingStock[sz][tp].filter(l=>l>4);
+        const oldCount = pieces.length;
+        const newCount = +input.value;
+        if(newCount !== oldCount) {
+          _reTallyHistory.unshift({ name: `${sz}" ${tp}`, type:'Moulding', date: today, oldQty: oldCount, newQty: newCount, diff: newCount - oldCount });
+          // Adjust: add or remove pieces of standard 114" length
+          if(newCount > oldCount) {
+            for(let i=0;i<(newCount-oldCount);i++) mouldingStock[sz][tp].push(114);
+          } else {
+            // Remove shortest usable pieces first
+            let toRemove = oldCount - newCount;
+            mouldingStock[sz][tp] = mouldingStock[sz][tp].filter(l => {
+              if(l > 4 && toRemove > 0) { toRemove--; return false; }
+              return true;
+            });
+          }
+          changed++;
+        }
+      });
+    });
+    saveMouldingStock();
+  }
+
+  localStorage.setItem('fv_retally_history', JSON.stringify(_reTallyHistory));
+  if(changed > 0) {
+    toast(`✅ ${changed} item${changed!==1?'s':''} updated!`, 'success');
+    renderReTally();
+  } else {
+    toast('ℹ️ No changes — stock already matches', 'info');
+  }
+};
+
+// Add stock retally to More menu nav
+window.openRetally = function() { showPage('stock'); };
+
+// ══════════════════════════════════════════════════════════════
+// FIX 15: ENHANCED REPORTS — Credit, Purchase, Stock, Production, P&L
+// ══════════════════════════════════════════════════════════════
+window.renderReports = function() {
+  const el = document.getElementById('pg-reports');
+  if(!el) return;
+  // Check if enhanced report tabs exist, if not inject them
+  if(!document.getElementById('rpt-tab-bar')) {
+    const existingContent = el.innerHTML;
+    el.innerHTML = `
+      <div class="page-header">
+        <div class="page-title">📊 Reports</div>
+        <div class="page-sub">Generate & download reports</div>
+      </div>
+      <div id="rpt-tab-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;overflow-x:auto;padding-bottom:4px;">
+        <button onclick="switchRptTab('sales')" id="rtb-sales" class="btn-gold" style="padding:8px 14px;font-size:12px;white-space:nowrap;">📊 Sales</button>
+        <button onclick="switchRptTab('pl')" id="rtb-pl" class="btn-outline" style="padding:8px 14px;font-size:12px;white-space:nowrap;">💰 P&L</button>
+        <button onclick="switchRptTab('credit')" id="rtb-credit" class="btn-outline" style="padding:8px 14px;font-size:12px;white-space:nowrap;">🏢 Credit</button>
+        <button onclick="switchRptTab('purchase')" id="rtb-purchase" class="btn-outline" style="padding:8px 14px;font-size:12px;white-space:nowrap;">🛒 Purchases</button>
+        <button onclick="switchRptTab('stock')" id="rtb-stock" class="btn-outline" style="padding:8px 14px;font-size:12px;white-space:nowrap;">📦 Stock</button>
+        <button onclick="switchRptTab('production')" id="rtb-production" class="btn-outline" style="padding:8px 14px;font-size:12px;white-space:nowrap;">🏭 Production</button>
+      </div>
+      <div id="rpt-body"></div>`;
+  }
+  switchRptTab('sales');
+};
+
+window.switchRptTab = function(tab) {
+  ['sales','pl','credit','purchase','stock','production'].forEach(t => {
+    const btn = document.getElementById('rtb-'+t);
+    if(btn) { btn.className = t===tab ? 'btn-gold' : 'btn-outline'; btn.style.padding='8px 14px'; btn.style.fontSize='12px'; btn.style.whiteSpace='nowrap'; }
+  });
+  const body = document.getElementById('rpt-body');
+  if(!body) return;
+
+  if(tab === 'sales') { renderSalesReport(body); }
+  else if(tab === 'pl') { renderPLReport(body); }
+  else if(tab === 'credit') { renderCreditReport(body); }
+  else if(tab === 'purchase') { renderPurchaseReport(body); }
+  else if(tab === 'stock') { renderStockReport(body); }
+  else if(tab === 'production') { renderProductionReport(body); }
+};
+
+function rptDateFilter(prefix) {
+  const m = thisMonthStr();
+  return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px;">
+    <select id="${prefix}-period" onchange="refreshRpt('${prefix}')" class="form-input" style="max-width:180px;">
+      <option value="today">Today</option>
+      <option value="yesterday">Yesterday</option>
+      <option value="week">This Week</option>
+      <option value="month" selected>This Month</option>
+      <option value="lastmonth">Last Month</option>
+      <option value="year">This Year</option>
+    </select>
+    <button onclick="refreshRpt('${prefix}')" class="btn-gold" style="padding:8px 16px;font-size:13px;">Generate</button>
+  </div>`;
+}
+
+function getOrdersForPeriod(period) {
+  const t = todayStr(), m = thisMonthStr(), y = new Date().getFullYear();
+  if(period==='today') return orders.filter(o=>normDate(o.date||'')===t);
+  if(period==='yesterday') return orders.filter(o=>normDate(o.date||'')===yesterdayStr());
+  if(period==='week') {
+    const wStart = new Date(); wStart.setDate(wStart.getDate()-wStart.getDay());
+    return orders.filter(o=>normDate(o.date||'')>=wStart.toISOString().slice(0,10));
+  }
+  if(period==='month') return orders.filter(o=>normDate(o.date||'').startsWith(m));
+  if(period==='lastmonth') {
+    const lm = new Date(); lm.setMonth(lm.getMonth()-1);
+    return orders.filter(o=>normDate(o.date||'').startsWith(lm.toISOString().slice(0,7)));
+  }
+  if(period==='year') return orders.filter(o=>normDate(o.date||'').startsWith(String(y)));
+  return orders;
+}
+
+function getExpensesForPeriod(period) {
+  const t = todayStr(), m = thisMonthStr(), y = new Date().getFullYear();
+  if(period==='today') return expenses.filter(e=>normDate(e.date||'')===t);
+  if(period==='yesterday') return expenses.filter(e=>normDate(e.date||'')===yesterdayStr());
+  if(period==='month') return expenses.filter(e=>normDate(e.date||'').startsWith(m));
+  if(period==='lastmonth') {
+    const lm = new Date(); lm.setMonth(lm.getMonth()-1);
+    return expenses.filter(e=>normDate(e.date||'').startsWith(lm.toISOString().slice(0,7)));
+  }
+  if(period==='year') return expenses.filter(e=>normDate(e.date||'').startsWith(String(y)));
+  return expenses;
+}
+
+function getPurchasesForPeriod(period) {
+  const t = todayStr(), m = thisMonthStr(), y = new Date().getFullYear();
+  if(period==='today') return purchases.filter(p=>normDate(p.date||'')===t);
+  if(period==='month') return purchases.filter(p=>normDate(p.date||'').startsWith(m));
+  if(period==='lastmonth') {
+    const lm = new Date(); lm.setMonth(lm.getMonth()-1);
+    return purchases.filter(p=>normDate(p.date||'').startsWith(lm.toISOString().slice(0,7)));
+  }
+  if(period==='year') return purchases.filter(p=>normDate(p.date||'').startsWith(String(y)));
+  return purchases;
+}
+
+window.refreshRpt = function(prefix) {
+  const tab = {sales:'sales',pl:'pl',credit:'credit',purchase:'purchase',stock:'stock',production:'production'}[prefix]||prefix;
+  const body = document.getElementById('rpt-body');
+  if(!body) return;
+  if(tab==='sales') renderSalesReport(body);
+  else if(tab==='pl') renderPLReport(body);
+  else if(tab==='credit') renderCreditReport(body);
+  else if(tab==='purchase') renderPurchaseReport(body);
+  else if(tab==='stock') renderStockReport(body);
+  else if(tab==='production') renderProductionReport(body);
+};
+
+function statBox(label, val, color='var(--gold-dk)', bg='var(--paper)') {
+  return `<div style="background:${bg};border-radius:10px;padding:12px;text-align:center;">
+    <div style="font-size:11px;color:var(--ink3);">${label}</div>
+    <div style="font-size:18px;font-weight:800;color:${color};">${val}</div>
+  </div>`;
+}
+
+function renderSalesReport(body) {
+  const period = document.getElementById('sales-period')?.value || 'month';
+  const ords = getOrdersForPeriod(period);
+  const total = ords.reduce((s,o)=>s+(+o.total||0),0);
+  const cash = ords.reduce((s,o)=>o.payMode==='Cash'?s+(+o.total||0):o.payMode==='Cash+UPI'?s+(+o.splitCash||0):s,0);
+  const upi = ords.reduce((s,o)=>o.payMode==='UPI'?s+(+o.total||0):o.payMode==='Cash+UPI'?s+(+o.splitUPI||0):s,0);
+  const svcTotals = {};
+  ords.forEach(o=>(o.cartItems||[]).forEach(item=>(item.svcs||[item.svc]).forEach(s=>{svcTotals[s]=(svcTotals[s]||0)+(+item.price||0);})));
+  const staffTotals = {};
+  ords.forEach(o=>{const st=o.staff||'Unknown';staffTotals[st]=(staffTotals[st]||0)+(+o.total||0);});
+
+  body.innerHTML = rptDateFilter('sales') + `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      ${statBox('Total Orders', ords.length)}
+      ${statBox('Total Sales', 'Rs.'+total.toLocaleString('en-IN'))}
+      ${statBox('💵 Cash', 'Rs.'+cash.toLocaleString('en-IN'), '#2e7d32', '#e8f5e9')}
+      ${statBox('📱 UPI', 'Rs.'+upi.toLocaleString('en-IN'), '#1565c0', '#e3f2fd')}
+    </div>
+    ${Object.keys(svcTotals).length ? `<div class="card" style="margin-bottom:12px;">
+      <div class="card-header"><div class="card-title">🛒 By Service</div></div>
+      <div class="card-body" style="padding:0;">
+        ${Object.entries(svcTotals).sort((a,b)=>b[1]-a[1]).map(([s,a])=>`
+          <div style="display:flex;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--paper3);">
+            <span>${SVC_ICONS[s]||'📦'} ${s}</span>
+            <b style="color:var(--gold-dk);">Rs.${a.toLocaleString('en-IN')}</b>
+          </div>`).join('')}
+      </div></div>` : ''}
+    ${Object.keys(staffTotals).length ? `<div class="card" style="margin-bottom:12px;">
+      <div class="card-header"><div class="card-title">👤 By Staff</div></div>
+      <div class="card-body" style="padding:0;">
+        ${Object.entries(staffTotals).sort((a,b)=>b[1]-a[1]).map(([s,a])=>`
+          <div style="display:flex;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--paper3);">
+            <span>👤 ${s}</span><b style="color:var(--gold-dk);">Rs.${a.toLocaleString('en-IN')}</b>
+          </div>`).join('')}
+      </div></div>` : ''}`;
+}
+
+function renderPLReport(body) {
+  const period = document.getElementById('pl-period')?.value || 'month';
+  const ords = getOrdersForPeriod(period);
+  const exps = getExpensesForPeriod(period);
+  const purs = getPurchasesForPeriod(period);
+  const revenue = ords.reduce((s,o)=>s+(+o.total||0),0);
+  const expTotal = exps.reduce((s,e)=>s+(+e.amount||0),0);
+  const purTotal = purs.reduce((s,p)=>s+(+p.total||0),0);
+  const gross = revenue - purTotal;
+  const net = gross - expTotal;
+
+  // Compare with last month
+  const lm = new Date(); lm.setMonth(lm.getMonth()-1);
+  const lmStr = lm.toISOString().slice(0,7);
+  const lmRevenue = orders.filter(o=>normDate(o.date||'').startsWith(lmStr)).reduce((s,o)=>s+(+o.total||0),0);
+  const diff = revenue - lmRevenue;
+
+  body.innerHTML = rptDateFilter('pl') + `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      ${statBox('💰 Revenue', 'Rs.'+revenue.toLocaleString('en-IN'), 'var(--gold-dk)')}
+      ${statBox('🛒 Purchases', 'Rs.'+purTotal.toLocaleString('en-IN'), '#c62828', '#fce4ec')}
+      ${statBox('💸 Expenses', 'Rs.'+expTotal.toLocaleString('en-IN'), '#e65100', '#fff3e0')}
+      ${statBox('📈 Gross Profit', 'Rs.'+gross.toLocaleString('en-IN'), gross>=0?'#2e7d32':'#c62828', gross>=0?'#e8f5e9':'#fce4ec')}
+    </div>
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-header"><div class="card-title">💰 Net Profit</div></div>
+      <div class="card-body">
+        <div style="font-size:32px;font-weight:900;color:${net>=0?'#388e3c':'#e53935'};">Rs.${net.toLocaleString('en-IN')}</div>
+        <div style="font-size:13px;color:var(--ink3);margin-top:4px;">Revenue Rs.${revenue.toLocaleString('en-IN')} − Purchases Rs.${purTotal.toLocaleString('en-IN')} − Expenses Rs.${expTotal.toLocaleString('en-IN')}</div>
+        ${period==='month'?`<div style="font-size:12px;margin-top:8px;color:${diff>=0?'#388e3c':'#e53935'};">
+          ${diff>=0?'▲':'▼'} Rs.${Math.abs(diff).toLocaleString('en-IN')} vs last month
+        </div>`:''}
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-header"><div class="card-title">📋 Breakdown</div></div>
+      <div class="card-body" style="padding:0;">
+        <div style="display:flex;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--paper3);">
+          <span>💰 Revenue</span><b style="color:#2e7d32;">+Rs.${revenue.toLocaleString('en-IN')}</b></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--paper3);">
+          <span>🛒 Purchases</span><b style="color:#c62828;">−Rs.${purTotal.toLocaleString('en-IN')}</b></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--paper3);">
+          <span>💸 Expenses</span><b style="color:#e65100;">−Rs.${expTotal.toLocaleString('en-IN')}</b></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 14px;font-weight:800;font-size:15px;">
+          <span>NET PROFIT</span><b style="color:${net>=0?'#2e7d32':'#c62828'};">Rs.${net.toLocaleString('en-IN')}</b></div>
+      </div>
+    </div>`;
+}
+
+function renderCreditReport(body) {
+  const companies = window.creditCompanies || [];
+  if(!companies.length) { body.innerHTML = '<div class="empty-state"><div class="empty-icon">🏢</div><div class="empty-title">No credit companies set up</div></div>'; return; }
+  const creditData = JSON.parse(localStorage.getItem('fv_credit_ledger')||'{}');
+  body.innerHTML = `<div class="card">
+    <div class="card-header"><div class="card-title">🏢 Credit Report</div></div>
+    <div class="card-body" style="padding:0;">
+      ${companies.map(co => {
+        const entries = creditData[co] || [];
+        const totalCredit = entries.filter(e=>e.type==='credit').reduce((s,e)=>s+(+e.amount||0),0);
+        const totalSettled = entries.filter(e=>e.type==='settle').reduce((s,e)=>s+(+e.amount||0),0);
+        const outstanding = totalCredit - totalSettled;
+        return `<div style="padding:12px 14px;border-bottom:1px solid var(--paper3);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="font-weight:700;font-size:14px;">🏢 ${co}</div>
+            <div style="font-weight:800;font-size:15px;color:${outstanding>0?'#c62828':'#388e3c'};">
+              ${outstanding>0?'Owes':'Settled'} Rs.${Math.abs(outstanding).toLocaleString('en-IN')}
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;font-size:12px;color:var(--ink3);">
+            <span>Total Credit: Rs.${totalCredit.toLocaleString('en-IN')}</span>
+            <span>Settled: Rs.${totalSettled.toLocaleString('en-IN')}</span>
+          </div>
+          <div style="margin-top:8px;max-height:120px;overflow-y:auto;">
+            ${entries.slice(0,10).map(e=>`<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid var(--paper3);">
+              <span>${formatDate(e.date)} · ${e.note||e.type}</span>
+              <span style="color:${e.type==='credit'?'#c62828':'#388e3c'};font-weight:700;">${e.type==='credit'?'+':'-'}Rs.${e.amount}</span>
+            </div>`).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+    </div></div>`;
+}
+
+function renderPurchaseReport(body) {
+  const period = document.getElementById('purchase-period')?.value || 'month';
+  const purs = getPurchasesForPeriod(period);
+  const total = purs.reduce((s,p)=>s+(+p.total||0),0);
+  const byType = {};
+  purs.forEach(p=>{const t=p.type||'other';byType[t]=(byType[t]||0)+(+p.total||0);});
+  const typeLabels = {moulding:'📐 Moulding',raw:'🎨 Raw Material',stock:'📦 Stock',freight:'🚚 Freight',mdf:'🪵 MDF',sunboard:'🟫 Sunboard',glass:'🔲 Glass',other:'📦 Other'};
+
+  body.innerHTML = rptDateFilter('purchase') + `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      ${statBox('Total Purchases', purs.length)}
+      ${statBox('Total Spend', 'Rs.'+total.toLocaleString('en-IN'), '#c62828', '#fce4ec')}
+    </div>
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-header"><div class="card-title">By Category</div></div>
+      <div class="card-body" style="padding:0;">
+        ${Object.entries(byType).sort((a,b)=>b[1]-a[1]).map(([t,a])=>`
+          <div style="display:flex;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--paper3);">
+            <span>${typeLabels[t]||t}</span><b style="color:#c62828;">Rs.${a.toLocaleString('en-IN')}</b>
+          </div>`).join('')||'<div style="padding:14px;color:var(--ink3);">No purchases</div>'}
+      </div></div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Purchase Log</div></div>
+      <div class="card-body" style="padding:0;max-height:300px;overflow-y:auto;">
+        ${purs.map(p=>`<div style="padding:8px 14px;border-bottom:1px solid var(--paper3);">
+          <div style="display:flex;justify-content:space-between;">
+            <div><div style="font-weight:600;font-size:13px;">${typeLabels[p.type]||p.type} — ${p.name||''}</div>
+            <div style="font-size:11px;color:var(--ink3);">${formatDate(normDate(p.date||''))} · Qty:${p.qty||1}</div></div>
+            <b style="color:#c62828;">Rs.${(p.total||0).toLocaleString('en-IN')}</b>
+          </div></div>`).join('')||'<div style="padding:14px;color:var(--ink3);">No purchases</div>'}
+      </div></div>`;
+}
+
+function renderStockReport(body) {
+  const stockItems = window.stockItems || [];
+  const totalItems = stockItems.length;
+  const totalQty = stockItems.reduce((s,i)=>s+(+i.qty||0),0);
+  const totalValue = stockItems.reduce((s,i)=>s+(+i.qty||0)*(+i.sellingPrice||0),0);
+  const lowStock = stockItems.filter(i=>(+i.qty||0)<=3);
+
+  body.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      ${statBox('Total Items', totalItems)}
+      ${statBox('Total Qty', totalQty)}
+      ${statBox('Stock Value', 'Rs.'+totalValue.toLocaleString('en-IN'))}
+      ${statBox('⚠️ Low Stock', lowStock.length, lowStock.length>0?'#c62828':'#388e3c', lowStock.length>0?'#fce4ec':'#e8f5e9')}
+    </div>
+    ${lowStock.length ? `<div class="card" style="margin-bottom:12px;border:2px solid #e53935;">
+      <div class="card-header"><div class="card-title" style="color:#c62828;">⚠️ Low Stock Items</div></div>
+      <div class="card-body" style="padding:0;">
+        ${lowStock.map(i=>`<div style="display:flex;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--paper3);">
+          <span>${i.name}</span><b style="color:#c62828;">Qty: ${i.qty}</b>
+        </div>`).join('')}
+      </div></div>` : ''}
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-header"><div class="card-title">📦 Full Stock List</div></div>
+      <div class="card-body" style="padding:0;max-height:400px;overflow-y:auto;">
+        ${stockItems.map(i=>`<div style="display:flex;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--paper3);">
+          <div><div style="font-weight:600;font-size:13px;">${i.name}</div>
+          <div style="font-size:11px;color:var(--ink3);">${i.category||''} · Rs.${i.sellingPrice||0}</div></div>
+          <div style="text-align:right;"><div style="font-weight:700;">Qty: ${i.qty||0}</div>
+          <div style="font-size:11px;color:var(--ink3);">Value: Rs.${((+i.qty||0)*(+i.sellingPrice||0)).toLocaleString('en-IN')}</div></div>
+        </div>`).join('')||'<div style="padding:14px;color:var(--ink3);">No stock items</div>'}
+      </div></div>
+    ${_reTallyHistory.length ? `<div class="card">
+      <div class="card-header"><div class="card-title">📋 Recent Retally Adjustments</div></div>
+      <div class="card-body" style="padding:0;">
+        ${_reTallyHistory.slice(0,10).map(r=>`<div style="display:flex;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--paper3);">
+          <div><div style="font-size:13px;font-weight:600;">${r.name}</div>
+          <div style="font-size:11px;color:var(--ink3);">${formatDate(r.date)}</div></div>
+          <div style="text-align:right;font-weight:700;color:${r.diff>0?'#388e3c':'#e53935'};">
+            ${r.oldQty} → ${r.newQty} (${r.diff>0?'+':''}${r.diff})</div>
+        </div>`).join('')}
+      </div></div>` : ''}`;
+}
+
+function renderProductionReport(body) {
+  const pos = productionOrders || [];
+  const total = pos.length;
+  const approved = pos.filter(p=>p.status==='Approved'||p.status==='Completed').length;
+  const pending = pos.filter(p=>p.status==='Pending Approval').length;
+  const completed = pos.filter(p=>p.status==='Completed').length;
+  const totalFrames = pos.reduce((s,p)=>s+(+p.qty||0),0);
+
+  body.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      ${statBox('Total Orders', total)}
+      ${statBox('Total Frames', totalFrames)}
+      ${statBox('✅ Approved', approved, '#2e7d32', '#e8f5e9')}
+      ${statBox('⏳ Pending', pending, '#e65100', '#fff3e0')}
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">🏭 Production Orders</div></div>
+      <div class="card-body" style="padding:0;max-height:500px;overflow-y:auto;">
+        ${pos.map(p=>{
+          const sc = p.status==='Completed'?{cl:'#2e7d32',bg:'#e8f5e9'}:p.status==='Approved'?{cl:'#1565c0',bg:'#e3f2fd'}:p.status==='Pending Approval'?{cl:'#e65100',bg:'#fff3e0'}:{cl:'#555',bg:'#f5f5f5'};
+          return `<div style="padding:10px 14px;border-bottom:1px solid var(--paper3);">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-weight:600;font-size:13px;">${p.name||'Production Order'}</div>
+                <div style="font-size:11px;color:var(--ink3);">${formatDate(normDate(new Date(p.created||Date.now()).toISOString().slice(0,10)))} · ${p.qty||1} frames</div>
+              </div>
+              <span style="background:${sc.bg};color:${sc.cl};padding:3px 10px;border-radius:100px;font-size:11px;font-weight:700;">${p.status}</span>
+            </div>
+            ${(p.frameTypes||[]).map(f=>`<div style="font-size:11px;color:var(--ink2);padding:2px 0 0 8px;">• ${f.name} × ${f.qty}</div>`).join('')}
+          </div>`;
+        }).join('')||'<div style="padding:14px;color:var(--ink3);">No production orders</div>'}
+      </div></div>`;
 }
 
 window.renderReports = function() {
