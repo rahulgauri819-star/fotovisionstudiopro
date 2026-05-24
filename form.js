@@ -2077,35 +2077,42 @@ window.cancelOwnerPassword = function() {
 };
 
 // ── Photo Upload ──────────────────────────────────────────────
-window._orderPhotos = [];
+// ══════════════════════════════════════════════════════════════
+// FIREBASE STORAGE PHOTO SYSTEM
+// Photos upload to Firebase Storage — accessible on ALL devices
+// ══════════════════════════════════════════════════════════════
+
+window._orderPhotos = [];      // base64 previews for display
+window._orderPhotoFiles = [];  // original File objects for upload
+window._orderPhotoURLs = [];   // Firebase Storage download URLs (set after upload)
 
 window.onPhotosSelected = function(inputEl) {
-  // FIX 6: accept either camera or gallery input
   const input = inputEl || document.getElementById('f-photos-cam') || document.getElementById('f-photos-gal');
   if(!input?.files?.length) return;
+
   Array.from(input.files).forEach(file => {
     const reader = new FileReader();
     reader.onload = function(e) {
-      // Compress image
       const img = new Image();
       img.onload = function() {
         const canvas = document.createElement('canvas');
-        // FIX 38: Compress aggressively — max 600px, 50% quality
-        // Keeps photos under ~80KB each so multiple photos fit in Firestore 1MB limit
-        const MAX = 600;
+        // Preview: max 800px, 70% quality for good display quality
+        const MAX = 800;
         let w = img.width, h = img.height;
         if(w>MAX||h>MAX) { if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;} }
         canvas.width=w; canvas.height=h;
         canvas.getContext('2d').drawImage(img,0,0,w,h);
-        const compressed = canvas.toDataURL('image/jpeg', 0.5);
-        window._orderPhotos.push(compressed);
+        const preview = canvas.toDataURL('image/jpeg', 0.7);
+        window._orderPhotos.push(preview);
+        window._orderPhotoFiles.push(file);
+        window._orderPhotoURLs.push(null); // will be filled after upload
         renderPhotoPreview();
       };
       img.src = e.target.result;
     };
     reader.readAsDataURL(file);
   });
-  if(input) input.value=''; // reset so same file can be selected again
+  if(input) input.value='';
 };
 
 function renderPhotoPreview() {
@@ -2120,7 +2127,61 @@ function renderPhotoPreview() {
 
 window.removePhoto = function(idx) {
   window._orderPhotos.splice(idx,1);
+  window._orderPhotoFiles.splice(idx,1);
+  window._orderPhotoURLs.splice(idx,1);
   renderPhotoPreview();
+};
+
+// Upload photos to Firebase Storage and return download URLs
+window.uploadPhotosToStorage = async function(orderId) {
+  if(!window._orderPhotoFiles?.length) return [];
+  
+  // Check if Firebase Storage is available
+  if(!window.firebase?.storage || !window.firebaseApp) {
+    console.warn('Firebase Storage not available — saving locally only');
+    return window._orderPhotos; // fallback to base64
+  }
+
+  const storage = firebase.storage();
+  const urls = [];
+
+  for(let i = 0; i < window._orderPhotoFiles.length; i++) {
+    const file = window._orderPhotoFiles[i];
+    const preview = window._orderPhotos[i];
+    
+    // If file is null (already uploaded or removed), skip
+    if(!file) { urls.push(preview); continue; }
+
+    try {
+      // Convert preview canvas data to blob for upload
+      const blob = await new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          // Upload: max 1200px, 80% quality for good resolution
+          const MAX = 1200;
+          let w = img.width, h = img.height;
+          if(w>MAX||h>MAX) { if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;} }
+          canvas.width=w; canvas.height=h;
+          canvas.getContext('2d').drawImage(img,0,0,w,h);
+          canvas.toBlob(resolve, 'image/jpeg', 0.8);
+        };
+        img.src = preview;
+      });
+
+      const filename = `orders/${orderId}/photo_${i}_${Date.now()}.jpg`;
+      const storageRef = storage.ref(filename);
+      const snapshot = await storageRef.put(blob);
+      const downloadURL = await snapshot.ref.getDownloadURL();
+      urls.push(downloadURL);
+      console.log(`✅ Photo ${i+1} uploaded:`, downloadURL);
+    } catch(err) {
+      console.error(`❌ Photo ${i+1} upload failed:`, err);
+      urls.push(preview); // fallback to base64 if upload fails
+    }
+  }
+
+  return urls;
 };
 
 // ── Save Estimate ─────────────────────────────────────────────
