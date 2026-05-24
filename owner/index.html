@@ -1096,12 +1096,13 @@ window.setSvcFilter = function(f) {
 };
 
 // FIX 13+17: Enhanced sales chart with hourly Today/Yesterday + tap highlight
+// FIX 24: Declare at top scope to avoid initialization error
 let _chartSelectedBar = null;
 
 function renderSalesDisplay() {
   const el = document.getElementById('sales-display');
   if (!el) return;
-  _chartSelectedBar = null;
+  try { _chartSelectedBar = null; } catch(e) { window._chartSelectedBar = null; }
 
   if (salesFilter === 'month' || salesFilter === 'date') {
     let month = thisMonthStr();
@@ -4337,6 +4338,40 @@ function updateMouldingStockDropdowns() {
     if(el) renderVendorPills(el.dataset.target||id);
   });
 }
+
+// FIX 25: renderVendorPills was missing — now defined
+function renderVendorPills(targetId) {
+  const el = document.getElementById(targetId);
+  if(!el) return;
+  const vKeys = Object.keys(vendors||{});
+  if(!vKeys.length) { el.innerHTML = '<div style="font-size:12px;color:var(--ink3);">No vendors added yet</div>'; return; }
+  const currentVal = el.dataset.selected || vKeys[0];
+  el.innerHTML = vKeys.map(v => `
+    <button onclick="selectVendorPill('${targetId}','${v}')"
+      id="vpill-${targetId}-${v.replace(/[^a-z0-9]/gi,'_')}"
+      style="padding:6px 14px;border-radius:100px;border:2px solid ${v===currentVal?'var(--gold-dk)':'var(--paper3)'};
+      background:${v===currentVal?'var(--gold-dk)':'#fff'};color:${v===currentVal?'#fff':'var(--ink2)'};
+      font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">
+      ${v}
+    </button>`).join('');
+  el.dataset.selected = currentVal;
+}
+
+window.selectVendorPill = function(targetId, vendor) {
+  const el = document.getElementById(targetId);
+  if(!el) return;
+  el.dataset.selected = vendor;
+  renderVendorPills(targetId);
+  // Update moulding type dropdown based on selected vendor
+  const typeTarget = targetId.replace('vendor-pills','mtype') || 'ms-mtype';
+  const typeEl = document.getElementById(typeTarget);
+  if(typeEl) {
+    const types = vendors[vendor] || [];
+    typeEl.innerHTML = types.length
+      ? types.map(t=>`<option value="${t}">${t}</option>`).join('')
+      : '<option value="">No types for this vendor</option>';
+  }
+};
 
 window.addStaffName = async function() {
   const name = document.getElementById('new-staff-name')?.value.trim();

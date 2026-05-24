@@ -206,49 +206,158 @@
   <div id="estimates-list"></div>
 </div>
 
-<!-- PURCHASES -->
+<!-- PURCHASES FIX 29 -->
 <div id="pg-purchases" class="hidden">
   <div class="page-header"><div class="page-title">🛒 Purchases</div><div class="page-sub">Track all purchases</div></div>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">
-    <button id="pt-moulding" onclick="if(typeof setPurchaseType==='function')setPurchaseType('moulding')" style="padding:10px;border-radius:10px;font-size:12px;font-weight:700;background:var(--gold-dk);color:#fff;border:none;cursor:pointer;">📐 Moulding</button>
-    <button id="pt-raw" onclick="if(typeof setPurchaseType==='function')setPurchaseType('raw')" style="padding:10px;border-radius:10px;font-size:12px;font-weight:700;background:#f0ede6;color:#333;border:none;cursor:pointer;">🎨 Raw Material</button>
-    <button id="pt-stock" onclick="if(typeof setPurchaseType==='function')setPurchaseType('stock')" style="padding:10px;border-radius:10px;font-size:12px;font-weight:700;background:#f0ede6;color:#333;border:none;cursor:pointer;">📦 Stock</button>
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header"><div class="card-title">➕ Add Purchase</div></div>
+    <div class="card-body">
+      <div style="margin-bottom:12px;">
+        <label class="form-label">Category</label>
+        <select class="form-input" id="purchase-type-select" onchange="staffSetPurchaseType(this.value)" style="font-size:14px;font-weight:600;">
+          <option value="moulding">📐 Moulding</option>
+          <option value="raw">🎨 Raw Material</option>
+          <option value="stock">📦 Readymade Stock</option>
+          <option value="freight">🚚 Freight / Transport</option>
+          <option value="mdf">🪵 MDF Board</option>
+          <option value="sunboard">🟫 Sunboard</option>
+          <option value="glass">🔲 Glass</option>
+          <option value="other">📦 Other</option>
+        </select>
+      </div>
+      <div id="purchase-form-area"></div>
+    </div>
   </div>
-  <div id="purchase-form-area"></div>
-  <div id="purchase-history" style="margin-top:16px;"></div>
+  <div id="pending-purchase-items" style="margin-bottom:12px;"></div>
+  <div id="purchase-save-bar" style="display:none;margin-bottom:16px;"></div>
+  <div id="purchase-history"></div>
 </div>
 
 <!-- PRODUCTION -->
 <div id="pg-production" class="hidden">
   <div class="page-header"><div class="page-title">🏭 Production Orders</div><div class="page-sub">Frame production jobs</div></div>
+
+  <!-- FIX 28: Multi-item production order with size dropdown -->
   <div class="card" style="margin-bottom:16px;">
-    <div class="card-header"><div class="card-title">➕ New Production Order</div></div>
+    <div class="card-header"><div class="card-title">➕ Add Frame to List</div></div>
     <div class="card-body">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-        <div class="form-group"><label class="form-label">Frame Name</label><input class="form-input" id="po-name" placeholder="e.g. 5×7 White Frame"></div>
-        <div class="form-group"><label class="form-label">Item Code</label><input class="form-input" id="po-code" placeholder="e.g. F5X7WHITE"></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-        <div class="form-group"><label class="form-label">Width (inches)</label><input class="form-input" id="po-fw" type="number" placeholder="5"></div>
-        <div class="form-group"><label class="form-label">Height (inches)</label><input class="form-input" id="po-fh" type="number" placeholder="7"></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-        <div class="form-group"><label class="form-label">Moulding Size</label>
-          <select class="form-input" id="po-msize"><option>0.5"</option><option>0.75"</option><option selected>1"</option><option>1.25"</option><option>1.5"</option><option>2"</option><option>2.5"</option><option>3"</option></select>
+
+      <!-- Frame Size Dropdown -->
+      <div style="margin-bottom:12px;">
+        <label class="form-label">Frame Size</label>
+        <select class="form-input" id="po-size-select" onchange="staffOnPOSizeSelect()" style="margin-bottom:6px;">
+          <option value="">— Select Size —</option>
+          <option value="4x6">4×6"</option>
+          <option value="5x7">5×7"</option>
+          <option value="6x6">6×6"</option>
+          <option value="6x8">6×8"</option>
+          <option value="6x9">6×9"</option>
+          <option value="8x10">8×10"</option>
+          <option value="8x12">8×12"</option>
+          <option value="10x12">10×12"</option>
+          <option value="10x15">10×15"</option>
+          <option value="12x15">12×15"</option>
+          <option value="12x16">12×16"</option>
+          <option value="12x18">12×18"</option>
+          <option value="16x20">16×20"</option>
+          <option value="20x24">20×24"</option>
+          <option value="20x30">20×30"</option>
+          <option value="24x30">24×30"</option>
+          <option value="24x36">24×36"</option>
+          <option value="30x40">30×40"</option>
+          <option value="custom">✏️ Custom Size...</option>
+        </select>
+        <div id="po-custom-size" style="display:none;gap:8px;align-items:center;margin-top:6px;">
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input class="form-input" id="po-fw" type="number" min="1" placeholder="Width" style="max-width:100px;" oninput="staffUpdatePOSizeLabel()">
+            <span style="color:var(--gold-dk);font-weight:700;">×</span>
+            <input class="form-input" id="po-fh" type="number" min="1" placeholder="Height" style="max-width:100px;" oninput="staffUpdatePOSizeLabel()">
+            <span style="font-size:12px;color:var(--ink3);">inches</span>
+          </div>
         </div>
-        <div class="form-group"><label class="form-label">Moulding Type</label><select class="form-input" id="po-mtype"></select></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
-        <div class="form-group"><label class="form-label">Mount</label>
-          <select class="form-input" id="po-mount" onchange="togglePOMount()"><option value="No">No Mount</option><option value="Yes">With Mount</option></select>
+
+      <!-- Frame Name + Code -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div class="form-group">
+          <label class="form-label">Frame Name <span style="color:var(--ink3);font-weight:400;">(auto)</span></label>
+          <input class="form-input" id="po-name" placeholder="e.g. 5×7 White Frame">
         </div>
-        <div class="form-group" id="po-mount-size-group" style="display:none;"><label class="form-label">Mount Size</label><input class="form-input" id="po-msize-val" type="number" placeholder="2"></div>
-        <div class="form-group"><label class="form-label">Quantity</label><input class="form-input" id="po-qty" type="number" min="1" value="1"></div>
+        <div class="form-group">
+          <label class="form-label">Item Code <span style="color:var(--ink3);font-weight:400;">(optional)</span></label>
+          <input class="form-input" id="po-code" placeholder="F5X7">
+        </div>
       </div>
-      <div class="form-group" style="margin-bottom:12px;"><label class="form-label">Notes for Framer</label><input class="form-input" id="po-notes" placeholder="Any special instructions..."></div>
-      <button onclick="staffCreatePO()" class="btn-gold" style="padding:12px 24px;">📤 Send to Framer</button>
+
+      <!-- Moulding Size + Type -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div class="form-group">
+          <label class="form-label">Moulding Size</label>
+          <select class="form-input" id="po-msize" onchange="staffUpdatePOMouldingTypes()">
+            <option value="">— Select —</option>
+            <option value="0.5">0.5"</option>
+            <option value="0.75">0.75"</option>
+            <option value="1">1"</option>
+            <option value="1.5">1.5"</option>
+            <option value="2">2"</option>
+            <option value="2.5">2.5"</option>
+            <option value="3">3"</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Moulding Type</label>
+          <select class="form-input" id="po-mtype">
+            <option value="">— Select size first —</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Mount + Mount Size + Quantity -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div class="form-group">
+          <label class="form-label">Mount</label>
+          <select class="form-input" id="po-mount" onchange="staffTogglePOMount()">
+            <option value="No">No Mount</option>
+            <option value="Yes">With Mount</option>
+          </select>
+        </div>
+        <div class="form-group" id="po-mount-size-group" style="display:none;">
+          <label class="form-label">Mount Size"</label>
+          <select class="form-input" id="po-msize-val">
+            <option value="1">1"</option>
+            <option value="1.5">1.5"</option>
+            <option value="2">2"</option>
+            <option value="2.5">2.5"</option>
+            <option value="3">3"</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quantity</label>
+          <input class="form-input" id="po-qty" type="number" min="1" value="1" inputmode="numeric">
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label">Notes for Framer <span style="color:var(--ink3);font-weight:400;">(optional)</span></label>
+        <input class="form-input" id="po-notes" placeholder="e.g. No glass, tight corners...">
+      </div>
+
+      <!-- Add to List button -->
+      <div style="display:flex;gap:8px;">
+        <button onclick="staffAddFrameToList()" class="btn-gold" style="flex:1;padding:12px;font-size:14px;font-weight:700;">➕ Add to List</button>
+        <button onclick="staffDuplicateLastFrame()" class="btn-outline" style="padding:12px 16px;font-size:13px;">📋 Duplicate</button>
+      </div>
     </div>
   </div>
+
+  <!-- Pending frames list -->
+  <div id="po-pending-list" style="margin-bottom:12px;"></div>
+
+  <!-- Send to Framer button — appears when list has items -->
+  <div id="po-send-bar" style="display:none;margin-bottom:16px;"></div>
+
+  <!-- Existing Production Orders -->
   <div id="production-orders-list"></div>
 </div>
 
@@ -862,9 +971,10 @@ async function staffLoadExpenses() {
 // ── Order Detail Bottom Sheet ─────────────────────────────────
 window.openOrderSheet = function(id) {
   const o = orders.find(x=>x.id===id); if(!o) return;
-  // Load photos from localStorage
+  // FIX 26: Multi-key photo lookup
   const photoStore = JSON.parse(localStorage.getItem('fv_order_photos')||'{}');
-  const photos = photoStore[id] || o.photos || [];
+  const photos = photoStore[id] || photoStore[o.billNo] || photoStore[o.localId]
+    || o.photos || o._photos || [];
   const bal = (+o.total||0)-(+o.advance||0);
   const payIcon = o.payMode==='UPI'?'📱':o.payMode==='Cash+UPI'?'💵📱':'💵';
   document.getElementById('ods-title').textContent = o.name + ' · ' + (o.billNo||o.id);
@@ -1109,16 +1219,484 @@ window.staffAddMouldingStockFor = async function(size,type) {
   renderStaffMouldingStock();
 };
 
-window.staffCreatePO = function() {
-  if(typeof showOwnerPasswordModal==='function') {
-    showOwnerPasswordModal('Create production order?\nMoulding stock will be deducted.',
-      ()=>{ if(typeof createProductionOrder==='function') _doCreateProductionOrder(); },
-      ()=>{}
-    );
-  } else if(typeof createProductionOrder==='function') {
-    createProductionOrder();
+// ══════════════════════════════════════════════════════
+// FIX 28: Staff Production Order — multi-item with dropdowns
+// ══════════════════════════════════════════════════════
+let staffPendingFrames = [];
+
+window.staffOnPOSizeSelect = function() {
+  const sel = document.getElementById('po-size-select');
+  const customBox = document.getElementById('po-custom-size');
+  if(!sel || !customBox) return;
+  if(sel.value === 'custom') {
+    customBox.style.display = 'flex';
+  } else {
+    customBox.style.display = 'none';
+    const parts = sel.value.split('x').map(Number);
+    const fw = parts[0]||0, fh = parts[1]||0;
+    const nameEl = document.getElementById('po-name');
+    if(nameEl && !nameEl.value) nameEl.value = `${fw}×${fh}" Frame`;
   }
 };
+
+window.staffUpdatePOSizeLabel = function() {
+  const fw = document.getElementById('po-fw')?.value;
+  const fh = document.getElementById('po-fh')?.value;
+  const nameEl = document.getElementById('po-name');
+  if(fw && fh && nameEl && !nameEl.value) nameEl.value = `${fw}×${fh}" Frame`;
+};
+
+window.staffUpdatePOMouldingTypes = function() {
+  const typeSel = document.getElementById('po-mtype');
+  const msizeSel = document.getElementById('po-msize');
+  if(!typeSel || !msizeSel) return;
+  const size = msizeSel.value;
+  if(!size) { typeSel.innerHTML = '<option value="">— Select moulding size first —</option>'; return; }
+  const cached = (window.mouldingsCache && window.mouldingsCache[size]) || [];
+  if(cached.length) {
+    typeSel.innerHTML = '<option value="">— Select Type —</option>' +
+      cached.map((m,i) => `<option value="${i}">${m.code} — ${m.name}</option>`).join('');
+  } else {
+    const vendorTypes = Object.entries(vendors||{}).flatMap(([v,types]) => types.map(t=>`${v} — ${t}`));
+    typeSel.innerHTML = vendorTypes.length
+      ? '<option value="">— Select Type —</option>' + vendorTypes.map(t=>`<option value="${t}">${t}</option>`).join('')
+      : '<option value="default">Default</option>';
+  }
+};
+
+window.staffTogglePOMount = function() {
+  const mount = document.getElementById('po-mount')?.value;
+  const grp = document.getElementById('po-mount-size-group');
+  if(grp) grp.style.display = mount === 'Yes' ? 'block' : 'none';
+};
+
+window.staffAddFrameToList = function() {
+  const sizeVal = document.getElementById('po-size-select')?.value;
+  let fw = 0, fh = 0;
+  if(sizeVal && sizeVal !== 'custom') {
+    const parts = sizeVal.split('x').map(Number);
+    fw = parts[0]||0; fh = parts[1]||0;
+  } else {
+    fw = +(document.getElementById('po-fw')?.value)||0;
+    fh = +(document.getElementById('po-fh')?.value)||0;
+  }
+  if(!fw || !fh) { toast('⚠️ Select frame size first','error'); return; }
+  const msizeVal = document.getElementById('po-msize')?.value||'1';
+  const mtypeSel = document.getElementById('po-mtype');
+  const mtypeText = mtypeSel?.options[mtypeSel?.selectedIndex]?.text || 'Default';
+  const name = document.getElementById('po-name')?.value.trim() || `${fw}×${fh}" Frame`;
+  const mount = document.getElementById('po-mount')?.value || 'No';
+  const mval = mount === 'Yes' ? (document.getElementById('po-msize-val')?.value || '2') : '';
+  const qty = +(document.getElementById('po-qty')?.value)||1;
+  const notes = document.getElementById('po-notes')?.value || '';
+  const code = document.getElementById('po-code')?.value || '';
+
+  staffPendingFrames.push({
+    id: 'ft-' + Date.now(),
+    name, code, fw, fh,
+    msize: msizeVal,
+    mtype: mtypeText,
+    mount, mountSize: mval,
+    qty, notes
+  });
+
+  // Reset form but keep moulding size for quick multi-add
+  document.getElementById('po-name').value = '';
+  document.getElementById('po-code').value = '';
+  document.getElementById('po-qty').value = '1';
+  document.getElementById('po-notes').value = '';
+  document.getElementById('po-size-select').value = '';
+  const customBox = document.getElementById('po-custom-size');
+  if(customBox) customBox.style.display = 'none';
+  const fwEl = document.getElementById('po-fw'); if(fwEl) fwEl.value = '';
+  const fhEl = document.getElementById('po-fh'); if(fhEl) fhEl.value = '';
+
+  staffRenderPendingFrames();
+  toast(`✅ "${name}" added — add more or send to framer`, 'success');
+};
+
+window.staffDuplicateLastFrame = function() {
+  if(!staffPendingFrames.length) { toast('⚠️ Add a frame first', 'error'); return; }
+  const last = staffPendingFrames[staffPendingFrames.length - 1];
+  staffPendingFrames.push({...last, id: 'ft-' + Date.now()});
+  staffRenderPendingFrames();
+  toast('📋 Frame duplicated', 'success');
+};
+
+window.staffRemoveFrame = function(id) {
+  staffPendingFrames = staffPendingFrames.filter(f => f.id !== id);
+  staffRenderPendingFrames();
+};
+
+function staffRenderPendingFrames() {
+  const el = document.getElementById('po-pending-list');
+  const bar = document.getElementById('po-send-bar');
+  if(!el) return;
+
+  if(!staffPendingFrames.length) {
+    el.innerHTML = '';
+    if(bar) bar.style.display = 'none';
+    return;
+  }
+
+  const totalFrames = staffPendingFrames.reduce((s,f) => s + f.qty, 0);
+  el.innerHTML = `
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-header">
+        <div class="card-title">🏭 Frame List (${staffPendingFrames.length} types · ${totalFrames} total)</div>
+      </div>
+      <div class="card-body" style="padding:0;">
+        ${staffPendingFrames.map(f => `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--paper3);">
+            <div style="flex:1;">
+              <div style="font-weight:700;font-size:13px;">${f.name}</div>
+              <div style="font-size:11px;color:var(--ink3);">
+                ${f.msize}" · ${f.mtype||'Default'} · ${f.mount==='Yes'?`Mount ${f.mountSize}"`:'No Mount'}
+                ${f.notes ? ' · ' + f.notes : ''}
+              </div>
+            </div>
+            <div style="font-weight:800;color:var(--gold-dk);font-size:16px;">×${f.qty}</div>
+            <button onclick="staffRemoveFrame('${f.id}')"
+              style="background:#fce4ec;color:#c62828;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;">✕</button>
+          </div>`).join('')}
+      </div>
+    </div>`;
+
+  if(bar) {
+    bar.style.display = 'block';
+    bar.innerHTML = `
+      <button onclick="staffCreatePO()" class="btn-gold" style="width:100%;padding:14px;font-size:15px;font-weight:700;">
+        📤 Send ${totalFrames} Frame${totalFrames!==1?'s':''} to Framer
+      </button>`;
+  }
+}
+
+window.staffCreatePO = function() {
+  if(!staffPendingFrames.length) { toast('⚠️ Add at least one frame first', 'error'); return; }
+  const doCreate = () => {
+    if(typeof createProductionOrder === 'function') {
+      // Pass staffPendingFrames to the production order system
+      window._pendingFrameTypes = staffPendingFrames;
+      createProductionOrder();
+    } else {
+      // Fallback: save directly
+      const po = {
+        id: 'PO-' + Date.now(),
+        created: Date.now(),
+        status: 'Pending Approval',
+        frameTypes: staffPendingFrames,
+        qty: staffPendingFrames.reduce((s,f)=>s+f.qty, 0),
+        name: staffPendingFrames.map(f=>f.name).join(', '),
+        staff: window._staffName || 'Staff',
+      };
+      const pos = JSON.parse(localStorage.getItem('fv_production_orders')||'[]');
+      pos.unshift(po);
+      localStorage.setItem('fv_production_orders', JSON.stringify(pos));
+      staffPendingFrames = [];
+      staffRenderPendingFrames();
+      if(typeof renderProductionOrders === 'function') renderProductionOrders();
+      toast('✅ Production order sent!', 'success');
+    }
+  };
+  if(typeof showOwnerPasswordModal === 'function') {
+    showOwnerPasswordModal(
+      `Send ${staffPendingFrames.reduce((s,f)=>s+f.qty,0)} frames to production?`,
+      doCreate, ()=>{}
+    );
+  } else { doCreate(); }
+};
+// ══════════════════════════════════════════════════════
+// FIX 29: Staff Purchases — complete implementation
+// ══════════════════════════════════════════════════════
+let staffCurrentPurchaseType = 'moulding';
+let staffPendingPurchaseItems = [];
+
+window.staffSetPurchaseType = function(type) {
+  staffCurrentPurchaseType = type;
+  staffRenderPurchaseForm();
+};
+
+window.renderPurchases = function() {
+  try {
+    staffCurrentPurchaseType = staffCurrentPurchaseType || 'moulding';
+    const sel = document.getElementById('purchase-type-select');
+    if(sel) sel.value = staffCurrentPurchaseType;
+    staffRenderPurchaseForm();
+    staffRenderPendingPurchaseItems();
+    staffRenderPurchaseHistory();
+  } catch(err) {
+    console.error('Staff renderPurchases error:', err);
+    const fa = document.getElementById('purchase-form-area');
+    if(fa) fa.innerHTML = '<div style="color:#e53935;padding:12px;">Error loading form. Please refresh.</div>';
+  }
+};
+
+function staffRenderPurchaseForm() {
+  const el = document.getElementById('purchase-form-area');
+  if(!el) return;
+  const type = staffCurrentPurchaseType;
+  const typeLabels = {moulding:'📐 Moulding',raw:'🎨 Raw Material',stock:'📦 Readymade Stock',
+    freight:'🚚 Freight',mdf:'🪵 MDF Board',sunboard:'🟫 Sunboard',glass:'🔲 Glass',other:'📦 Other'};
+
+  let formHTML = '';
+
+  if(type === 'moulding') {
+    const sizes = ['0.5','0.75','1','1.5','2','2.5','3','3.5','4','5'];
+    formHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group"><label class="form-label">Vendor</label>
+          <input class="form-input" id="pur-vendor" placeholder="Vendor name" list="pur-vendor-list">
+          <datalist id="pur-vendor-list">${Object.keys(vendors||{}).map(v=>`<option value="${v}">`).join('')}</datalist>
+        </div>
+        <div class="form-group"><label class="form-label">Moulding Size</label>
+          <select class="form-input" id="pur-msize">
+            ${sizes.map(s=>`<option value="${s}">${s}"</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group"><label class="form-label">Type / Color</label>
+          <input class="form-input" id="pur-name" placeholder="e.g. Dark Walnut">
+        </div>
+        <div class="form-group"><label class="form-label">Qty (pieces)</label>
+          <input class="form-input" id="pur-qty" type="number" min="1" value="1" inputmode="numeric">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div class="form-group"><label class="form-label">Length (ft)</label>
+          <input class="form-input" id="pur-length" type="number" placeholder="10" oninput="staffCalcPurTotal()">
+        </div>
+        <div class="form-group"><label class="form-label">Rate/ft (Rs.)</label>
+          <input class="form-input" id="pur-rate" type="number" placeholder="20" oninput="staffCalcPurTotal()">
+        </div>
+        <div class="form-group"><label class="form-label">Total (Rs.)</label>
+          <input class="form-input" id="pur-total" type="number" placeholder="Auto">
+        </div>
+      </div>`;
+  } else if(type === 'raw') {
+    formHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group"><label class="form-label">Item Name</label>
+          <input class="form-input" id="pur-name" placeholder="e.g. Mounting Tape">
+        </div>
+        <div class="form-group"><label class="form-label">Category</label>
+          <select class="form-input" id="pur-subcategory">
+            <option>Printing</option><option>Framing</option><option>Packaging</option><option>Cleaning</option><option>General</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div class="form-group"><label class="form-label">Qty</label>
+          <input class="form-input" id="pur-qty" type="number" min="1" value="1" oninput="staffCalcPurTotal()">
+        </div>
+        <div class="form-group"><label class="form-label">Rate (Rs.)</label>
+          <input class="form-input" id="pur-rate" type="number" placeholder="100" oninput="staffCalcPurTotal()">
+        </div>
+        <div class="form-group"><label class="form-label">Total (Rs.)</label>
+          <input class="form-input" id="pur-total" type="number" placeholder="Auto">
+        </div>
+      </div>`;
+  } else if(type === 'stock') {
+    formHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group"><label class="form-label">Item Name</label>
+          <input class="form-input" id="pur-name" placeholder="e.g. 5×7 Frame">
+        </div>
+        <div class="form-group"><label class="form-label">Item Code</label>
+          <input class="form-input" id="pur-code" placeholder="F5X7">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div class="form-group"><label class="form-label">Qty</label>
+          <input class="form-input" id="pur-qty" type="number" min="1" value="1" oninput="staffCalcPurTotal()">
+        </div>
+        <div class="form-group"><label class="form-label">Cost Price</label>
+          <input class="form-input" id="pur-rate" type="number" placeholder="50" oninput="staffCalcPurTotal()">
+        </div>
+        <div class="form-group"><label class="form-label">Total (Rs.)</label>
+          <input class="form-input" id="pur-total" type="number" placeholder="Auto">
+        </div>
+      </div>`;
+  } else if(type === 'freight') {
+    formHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group"><label class="form-label">Description</label>
+          <input class="form-input" id="pur-name" placeholder="e.g. Moulding delivery">
+        </div>
+        <div class="form-group"><label class="form-label">Supplier / From</label>
+          <input class="form-input" id="pur-vendor" placeholder="Supplier name">
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label">Amount (Rs.)</label>
+        <input class="form-input" id="pur-total" type="number" placeholder="500" inputmode="numeric">
+      </div>`;
+  } else {
+    // MDF, Sunboard, Glass, Other
+    formHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group"><label class="form-label">Item Name</label>
+          <input class="form-input" id="pur-name" placeholder="Description">
+        </div>
+        <div class="form-group"><label class="form-label">Vendor</label>
+          <input class="form-input" id="pur-vendor" placeholder="Vendor name">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div class="form-group"><label class="form-label">Qty</label>
+          <input class="form-input" id="pur-qty" type="number" min="1" value="1" oninput="staffCalcPurTotal()">
+        </div>
+        <div class="form-group"><label class="form-label">Rate (Rs.)</label>
+          <input class="form-input" id="pur-rate" type="number" placeholder="0" oninput="staffCalcPurTotal()">
+        </div>
+        <div class="form-group"><label class="form-label">Total (Rs.)</label>
+          <input class="form-input" id="pur-total" type="number" placeholder="Auto">
+        </div>
+      </div>`;
+  }
+
+  el.innerHTML = formHTML + `
+    <button onclick="staffAddToPurchaseList()" class="btn-gold" style="width:100%;padding:12px;font-size:14px;font-weight:700;">
+      ➕ Add to List
+    </button>`;
+}
+
+window.staffCalcPurTotal = function() {
+  const qty = +(document.getElementById('pur-qty')?.value)||0;
+  const rate = +(document.getElementById('pur-rate')?.value)||0;
+  const length = +(document.getElementById('pur-length')?.value)||0;
+  const totalEl = document.getElementById('pur-total');
+  if(!totalEl) return;
+  if(staffCurrentPurchaseType === 'moulding' && length > 0) {
+    totalEl.value = Math.round(qty * length * rate);
+  } else if(qty > 0 && rate > 0) {
+    totalEl.value = Math.round(qty * rate);
+  }
+};
+
+window.staffAddToPurchaseList = function() {
+  const name = document.getElementById('pur-name')?.value.trim() || '';
+  const total = +(document.getElementById('pur-total')?.value)||0;
+  const qty = +(document.getElementById('pur-qty')?.value)||1;
+  const vendor = document.getElementById('pur-vendor')?.value.trim() || '';
+  if(!name && staffCurrentPurchaseType !== 'freight') { toast('⚠️ Enter item name', 'error'); return; }
+  if(!total) { toast('⚠️ Enter total amount', 'error'); return; }
+
+  const item = {
+    id: 'pi-' + Date.now(),
+    type: staffCurrentPurchaseType,
+    name: name || 'Freight',
+    qty, total, vendor,
+    rate: +(document.getElementById('pur-rate')?.value)||0,
+    size: document.getElementById('pur-msize')?.value || '',
+    code: document.getElementById('pur-code')?.value || '',
+    subcategory: document.getElementById('pur-subcategory')?.value || '',
+    date: todayStr(),
+    addedBy: window._staffName || 'Staff',
+  };
+
+  staffPendingPurchaseItems.push(item);
+  staffRenderPurchaseForm();
+  staffRenderPendingPurchaseItems();
+  toast(`✅ Added Rs.${total} — add more or save`, 'success');
+};
+
+function staffRenderPendingPurchaseItems() {
+  const el = document.getElementById('pending-purchase-items');
+  const bar = document.getElementById('purchase-save-bar');
+  if(!el) return;
+
+  if(!staffPendingPurchaseItems.length) {
+    el.innerHTML = '';
+    if(bar) bar.style.display = 'none';
+    return;
+  }
+
+  const typeLabels = {moulding:'📐',raw:'🎨',stock:'📦',freight:'🚚',mdf:'🪵',sunboard:'🟫',glass:'🔲',other:'📦'};
+  const grandTotal = staffPendingPurchaseItems.reduce((s,i)=>s+(+i.total||0),0);
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="card-header"><div class="card-title">🛒 Purchase Cart (${staffPendingPurchaseItems.length} items)</div></div>
+      <div class="card-body" style="padding:0;">
+        ${staffPendingPurchaseItems.map(item => `
+          <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--paper3);">
+            <div style="flex:1;">
+              <div style="font-weight:600;font-size:13px;">${typeLabels[item.type]||'📦'} ${item.name}</div>
+              <div style="font-size:11px;color:var(--ink3);">Qty:${item.qty} ${item.vendor?'· '+item.vendor:''}</div>
+            </div>
+            <div style="font-weight:700;color:var(--gold-dk);">Rs.${(+item.total).toLocaleString('en-IN')}</div>
+            <button onclick="staffRemovePurchaseItem('${item.id}')"
+              style="background:#fce4ec;color:#c62828;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px;">✕</button>
+          </div>`).join('')}
+        <div style="display:flex;justify-content:space-between;padding:12px 14px;font-weight:800;font-size:15px;">
+          <span>Total</span><span style="color:var(--gold-dk);">Rs.${grandTotal.toLocaleString('en-IN')}</span>
+        </div>
+      </div>
+    </div>`;
+
+  if(bar) {
+    bar.style.display = 'block';
+    bar.innerHTML = `<button onclick="staffSaveAllPurchases()" class="btn-gold" style="width:100%;padding:14px;font-size:15px;font-weight:700;">
+      💾 Save All Purchases (Rs.${grandTotal.toLocaleString('en-IN')})
+    </button>`;
+  }
+}
+
+window.staffRemovePurchaseItem = function(id) {
+  staffPendingPurchaseItems = staffPendingPurchaseItems.filter(i => i.id !== id);
+  staffRenderPendingPurchaseItems();
+};
+
+window.staffSaveAllPurchases = async function() {
+  if(!staffPendingPurchaseItems.length) return;
+  const saved = JSON.parse(localStorage.getItem('fv_purchases')||'[]');
+  staffPendingPurchaseItems.forEach(item => {
+    item.id = 'pur-' + Date.now() + '-' + Math.random().toString(36).slice(2,6);
+    saved.unshift(item);
+    // Save to Firestore if available
+    if(window.db && !window.useLocal) {
+      try { window.db.collection('purchases').add(item); } catch(e){}
+    }
+  });
+  localStorage.setItem('fv_purchases', JSON.stringify(saved));
+  const grandTotal = staffPendingPurchaseItems.reduce((s,i)=>s+(+i.total||0),0);
+  toast(`✅ ${staffPendingPurchaseItems.length} purchase${staffPendingPurchaseItems.length!==1?'s':''} saved!`, 'success');
+  staffPendingPurchaseItems = [];
+  staffRenderPendingPurchaseItems();
+  staffRenderPurchaseHistory();
+};
+
+function staffRenderPurchaseHistory() {
+  const el = document.getElementById('purchase-history');
+  if(!el) return;
+  const saved = JSON.parse(localStorage.getItem('fv_purchases')||'[]');
+  if(!saved.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🛒</div><div class="empty-title">No purchases yet</div><div class="empty-sub">Add a purchase above</div></div>';
+    return;
+  }
+  const typeLabels = {moulding:'📐 Moulding',raw:'🎨 Raw Material',stock:'📦 Stock',freight:'🚚 Freight',mdf:'🪵 MDF',sunboard:'🟫 Sunboard',glass:'🔲 Glass',other:'📦 Other'};
+  const totalThisMonth = saved.filter(p=>normDate(p.date||'').startsWith(thisMonthStr())).reduce((s,p)=>s+(+p.total||0),0);
+
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="font-weight:700;font-size:15px;">📋 Purchase History</div>
+      <div style="font-size:12px;color:var(--ink3);">This month: <b style="color:var(--gold-dk);">Rs.${totalThisMonth.toLocaleString('en-IN')}</b></div>
+    </div>
+    ${saved.slice(0,30).map(p=>`
+      <div class="card" style="margin-bottom:8px;">
+        <div class="card-body" style="padding:10px 14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-weight:600;font-size:13px;">${typeLabels[p.type]||'📦'} — ${p.name||'—'}</div>
+              <div style="font-size:11px;color:var(--ink3);">${formatDate(normDate(p.date||''))} · Qty:${p.qty||1} ${p.vendor?'· '+p.vendor:''}</div>
+            </div>
+            <div style="font-weight:700;color:var(--gold-dk);">Rs.${(+p.total||0).toLocaleString('en-IN')}</div>
+          </div>
+        </div>
+      </div>`).join('')}`;
+}
+
 window.staffGoToOrders = function(filter) {
   window._staffOrdersFilter = filter;
   showPage('orders');
