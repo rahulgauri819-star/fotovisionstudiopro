@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <link rel="apple-touch-icon" href="../logo.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <!-- v23 -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Foto Vision">
 <meta name="theme-color" content="#FAFAF8">
@@ -1022,16 +1026,16 @@ let currentPage = 'dashboard';
 window.showPage = window._realShowPage = function(p) {
   try {
     currentPage = p;
-    // DEFINITIVE FIX: Force hide ALL pg- divs, then show only target
+    // DEFINITIVE FIX: Explicit display control on every page div
     const allPages = document.querySelectorAll('[id^="pg-"]');
     allPages.forEach(el => {
       el.classList.add('hidden');
-      el.style.display = 'none'; // belt AND suspenders
+      el.style.cssText = 'display:none !important;'; // force hide
     });
     const target = document.getElementById('pg-'+p);
     if(target) {
       target.classList.remove('hidden');
-      target.style.display = ''; // restore to CSS default
+      target.style.cssText = 'display:block;'; // force show
     }
     document.querySelectorAll('.hdr-nav-btn, .tab-btn').forEach(b => b.classList.remove('act'));
     document.getElementById('nav-'+p)?.classList.add('act');
