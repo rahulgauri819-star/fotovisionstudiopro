@@ -899,6 +899,15 @@ async function initDB() {
     const app = initializeApp(FIREBASE_CONFIG);
     db = getFirestore(app);
     window.db = db;
+    window.firebaseApp = app; // FIX: expose for Storage upload
+    // Ensure storage bucket is configured for compat SDK
+    try {
+      const storage = firebase.storage();
+      window._storage = storage;
+      console.log('✅ Firebase Storage ready');
+    } catch(e) {
+      console.warn('Storage init error:', e);
+    }
     const q = query(collection(db, 'orders'), orderBy('created', 'desc'));
     unsubscribe = onSnapshot(q, snap => {
       orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));

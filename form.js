@@ -2137,12 +2137,19 @@ window.uploadPhotosToStorage = async function(orderId) {
   if(!window._orderPhotoFiles?.length) return [];
   
   // Check if Firebase Storage is available
-  if(!window.firebase?.storage || !window.firebaseApp) {
-    console.warn('Firebase Storage not available — saving locally only');
-    return window._orderPhotos; // fallback to base64
+  try {
+    if(!window.firebase?.storage) {
+      console.warn('Firebase Storage SDK not loaded');
+      return window._orderPhotos;
+    }
+    // Try initializing storage — works with compat SDK
+  } catch(e) {
+    console.warn('Firebase Storage not available:', e);
+    return window._orderPhotos;
   }
 
-  const storage = firebase.storage();
+  // Use pre-initialized storage if available, otherwise init fresh
+  const storage = window._storage || firebase.storage();
   const urls = [];
 
   for(let i = 0; i < window._orderPhotoFiles.length; i++) {
