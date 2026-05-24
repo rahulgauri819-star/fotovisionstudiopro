@@ -138,6 +138,15 @@ function framerInitDB() {
   if (typeof firebase !== 'undefined') {
     try {
       if (!firebase.apps.length) firebase.initializeApp(FRAMER_FIREBASE_CONFIG);
+      // Initialize Firebase Storage for photo viewing
+      try {
+        const bucketURL = `gs://${FRAMER_FIREBASE_CONFIG.storageBucket}`;
+        window._storage = firebase.storage(firebase.app(), bucketURL);
+        window.firebaseApp = firebase.app();
+        console.log('✅ Framer: Firebase Storage ready');
+      } catch(e) {
+        try { window._storage = firebase.storage(); } catch(e2) {}
+      }
       framerDb = firebase.firestore();
       framerDb.collection('orders').orderBy('created','desc')
         .onSnapshot(snap => {

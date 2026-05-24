@@ -497,6 +497,15 @@ async function initDB() {
     const app=initializeApp(FIREBASE_CONFIG);
     db=getFirestore(app);
     window.db=db;
+    window.firebaseApp=app;
+    // Initialize Firebase Storage for photo viewing
+    try {
+      const bucketURL = `gs://${FIREBASE_CONFIG.storageBucket}`;
+      window._storage = firebase.storage(app, bucketURL);
+      console.log('✅ Staff: Firebase Storage ready');
+    } catch(e) {
+      try { window._storage = firebase.storage(); } catch(e2) {}
+    }
     const q=query(collection(db,'orders'),orderBy('created','desc'));
     onSnapshot(q,snap=>{orders=snap.docs.map(d=>({id:d.id,...d.data()}));refreshCurrentPage();});
   } catch(e) { useLocal=true; orders=JSON.parse(localStorage.getItem('fv_orders')||'[]'); }
