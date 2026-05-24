@@ -1022,9 +1022,17 @@ let currentPage = 'dashboard';
 window.showPage = window._realShowPage = function(p) {
   try {
     currentPage = p;
-    // FIX 14/16: Hide ALL pages including any that may have been missed
-    document.querySelectorAll('[id^="pg-"]').forEach(el => el.classList.add('hidden'));
-    document.getElementById('pg-'+p)?.classList.remove('hidden');
+    // DEFINITIVE FIX: Force hide ALL pg- divs, then show only target
+    const allPages = document.querySelectorAll('[id^="pg-"]');
+    allPages.forEach(el => {
+      el.classList.add('hidden');
+      el.style.display = 'none'; // belt AND suspenders
+    });
+    const target = document.getElementById('pg-'+p);
+    if(target) {
+      target.classList.remove('hidden');
+      target.style.display = ''; // restore to CSS default
+    }
     document.querySelectorAll('.hdr-nav-btn, .tab-btn').forEach(b => b.classList.remove('act'));
     document.getElementById('nav-'+p)?.classList.add('act');
     document.getElementById('tnb-'+p)?.classList.add('act');
@@ -1068,9 +1076,15 @@ window._realOpenForm = window.openForm = function() {
 window.showPage('dashboard');
 
 function refreshCurrentPage() {
-  if(currentPage==='dashboard') renderDash();
-  else if(currentPage==='orders') renderOrders();
-  else if(currentPage==='framer') renderFramer();
+  if(!currentPage) return;
+  try {
+    if(currentPage==='dashboard')      renderDash();
+    else if(currentPage==='orders')    renderOrders();
+    else if(currentPage==='bookings')  renderBookings();
+    else if(currentPage==='framer')    renderFramer();
+    else if(currentPage==='expenses')  { if(typeof renderExpenses==='function') renderExpenses(); }
+    else if(currentPage==='customers') { if(typeof renderCustomers==='function') renderCustomers(); }
+  } catch(e) { console.error('refreshCurrentPage error:', e); }
 }
 
 // ── Greeting ──────────────────────────────────────────────────
