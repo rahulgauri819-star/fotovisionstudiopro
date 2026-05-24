@@ -79,7 +79,7 @@
 <div class="main">
 
 <!-- ═══ DASHBOARD ═══ -->
-<div id="pg-dashboard">
+<div id="pg-dashboard" class="hidden">
   <div class="page-header">
     <div class="page-title">Good <span id="greeting-time"></span>, Harish 👑</div>
     <div class="page-sub" id="dashdate"></div>
@@ -1007,9 +1007,14 @@ window.showPage = window._realShowPage = function(p) {
     document.querySelectorAll('.hdr-nav-btn, .tab-btn').forEach(b => b.classList.remove('act'));
     document.getElementById('nav-'+p)?.classList.add('act');
     document.getElementById('tnb-'+p)?.classList.add('act');
-    // FIX 14/16: Reset scroll on both window and main container
-    window.scrollTo(0,0);
-    document.querySelector('.main')?.scrollTo(0,0);
+    // FIX 36: iOS Safari-safe scroll reset using requestAnimationFrame
+    requestAnimationFrame(() => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      const main = document.querySelector('.main');
+      if(main) main.scrollTop = 0;
+    });
     if(p==='dashboard')       renderDash();
     if(p==='orders')          renderOrders();
     if(p==='framer')          renderFramer();
@@ -2034,7 +2039,8 @@ window.saveOrder = async function() {
     bookedBy: 'owner', billNo,
     hasPhotos: (window._orderPhotos||[]).length>0,
     photoCount: (window._orderPhotos||[]).length,
-    photos: window._orderPhotos||[], // FIX 5: embed photos directly on order
+    // FIX 38: Do NOT embed full base64 photos in Firestore — exceeds 1MB limit
+    // Photos saved separately to localStorage under both billNo and ref.id keys
     isComplimentary: window._isComplimentary||false,
     originalTotal: window._isComplimentary?(window._originalTotal||finalTotal):finalTotal,
   };
@@ -2047,29 +2053,42 @@ window.saveOrder = async function() {
       data.created = Date.now();
       orders = [data, ...orders];
     }
-    // Save photos separately by order ID
+    // FIX 38: Save photos under BOTH id and billNo keys
     if((window._orderPhotos||[]).length>0) {
       const photoStore = JSON.parse(localStorage.getItem('fv_order_photos')||'{}');
       photoStore[data.id] = window._orderPhotos;
+      if(data.billNo) photoStore[data.billNo] = window._orderPhotos;
       localStorage.setItem('fv_order_photos', JSON.stringify(photoStore));
     }
     saveLocal();
   } else {
     if(window.editId) {
       await updateDoc(doc(db,'orders',window.editId), data);
-    } else {
-      data.created = serverTimestamp();
-      const ref = await addDoc(collection(db,'orders'), data);
-      // Save photos to localStorage by Firebase doc ID
+      // FIX 38: Also update photo store for edited order
       if((window._orderPhotos||[]).length>0) {
         const photoStore = JSON.parse(localStorage.getItem('fv_order_photos')||'{}');
-        photoStore[ref.id] = window._orderPhotos;
+        photoStore[window.editId] = window._orderPhotos;
+        const o = orders.find(x=>x.id===window.editId);
+        if(o?.billNo) photoStore[o.billNo] = window._orderPhotos;
+        localStorage.setItem('fv_order_photos', JSON.stringify(photoStore));
+      }
+    } else {
+      data.created = serverTimestamp();
+      // FIX 38: Save photos BEFORE addDoc so they're ready
+      const photosToSave = [...(window._orderPhotos||[])];
+      window._orderPhotos = []; // reset early to prevent double-save
+      const ref = await addDoc(collection(db,'orders'), data);
+      // Save under BOTH Firebase doc ID and billNo
+      if(photosToSave.length>0) {
+        const photoStore = JSON.parse(localStorage.getItem('fv_order_photos')||'{}');
+        photoStore[ref.id] = photosToSave;
+        if(billNo) photoStore[billNo] = photosToSave;
         localStorage.setItem('fv_order_photos', JSON.stringify(photoStore));
       }
     }
   }
 
-  window._orderPhotos = []; // reset photos after save
+  if(!window._orderPhotos?.length) window._orderPhotos = []; // ensure reset
 
   const isF = cart.some(i=>(i.svcs||[]).some(s=>FRAMING_SVCS.includes(s)));
   toast(isF ? '✅ Saved! 🖼️ Framer notified' : window.editId?'✅ Order updated!':'✅ Order created!', 'success');
