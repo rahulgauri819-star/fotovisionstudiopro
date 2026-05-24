@@ -1434,7 +1434,9 @@ window.renderPurchases = function() {
 function staffRenderPurchaseForm() {
   const el = document.getElementById('purchase-form-area');
   if(!el) return;
-  const type = staffCurrentPurchaseType;
+  // FIX 39: Guard all potentially undefined variables
+  const type = staffCurrentPurchaseType || 'moulding';
+  const safeVendors = (typeof vendors !== 'undefined' && vendors) ? vendors : {};
   const typeLabels = {moulding:'📐 Moulding',raw:'🎨 Raw Material',stock:'📦 Readymade Stock',
     freight:'🚚 Freight',mdf:'🪵 MDF Board',sunboard:'🟫 Sunboard',glass:'🔲 Glass',other:'📦 Other'};
 
@@ -1446,7 +1448,7 @@ function staffRenderPurchaseForm() {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
         <div class="form-group"><label class="form-label">Vendor</label>
           <input class="form-input" id="pur-vendor" placeholder="Vendor name" list="pur-vendor-list">
-          <datalist id="pur-vendor-list">${Object.keys(vendors||{}).map(v=>`<option value="${v}">`).join('')}</datalist>
+          <datalist id="pur-vendor-list">${Object.keys(safeVendors).map(v=>`<option value="${v}">`).join('')}</datalist>
         </div>
         <div class="form-group"><label class="form-label">Moulding Size</label>
           <select class="form-input" id="pur-msize">
@@ -1584,15 +1586,16 @@ window.staffAddToPurchaseList = function() {
 
   const item = {
     id: 'pi-' + Date.now(),
-    type: staffCurrentPurchaseType,
+    type: staffCurrentPurchaseType || 'other',
     name: name || 'Freight',
     qty, total, vendor,
     rate: +(document.getElementById('pur-rate')?.value)||0,
     size: document.getElementById('pur-msize')?.value || '',
     code: document.getElementById('pur-code')?.value || '',
     subcategory: document.getElementById('pur-subcategory')?.value || '',
-    date: todayStr(),
-    addedBy: window._staffName || 'Staff',
+    // FIX 39: Guard todayStr in case shared.js not fully loaded
+    date: (typeof todayStr === 'function') ? todayStr() : new Date().toISOString().slice(0,10),
+    addedBy: window._staffName || (typeof staffNames !== 'undefined' && staffNames[0]) || 'Staff',
   };
 
   staffPendingPurchaseItems.push(item);
@@ -1654,8 +1657,8 @@ window.staffSaveAllPurchases = async function() {
   staffPendingPurchaseItems.forEach(item => {
     item.id = 'pur-' + Date.now() + '-' + Math.random().toString(36).slice(2,6);
     saved.unshift(item);
-    // Save to Firestore if available
-    if(window.db && !window.useLocal) {
+    // FIX 39: Guard Firestore access
+    if(window.db && (typeof useLocal === 'undefined' || !useLocal)) {
       try { window.db.collection('purchases').add(item); } catch(e){}
     }
   });
@@ -1676,7 +1679,11 @@ function staffRenderPurchaseHistory() {
     return;
   }
   const typeLabels = {moulding:'📐 Moulding',raw:'🎨 Raw Material',stock:'📦 Stock',freight:'🚚 Freight',mdf:'🪵 MDF',sunboard:'🟫 Sunboard',glass:'🔲 Glass',other:'📦 Other'};
-  const totalThisMonth = saved.filter(p=>normDate(p.date||'').startsWith(thisMonthStr())).reduce((s,p)=>s+(+p.total||0),0);
+  // FIX 39: Guard helper functions in case shared.js still loading
+  const _normDate = (typeof normDate === 'function') ? normDate : (d=>d||'');
+  const _thisMonth = (typeof thisMonthStr === 'function') ? thisMonthStr() : new Date().toISOString().slice(0,7);
+  const _fmtDate = (typeof formatDate === 'function') ? formatDate : (d=>d||'');
+  const totalThisMonth = saved.filter(p=>_normDate(p.date||'').startsWith(_thisMonth)).reduce((s,p)=>s+(+p.total||0),0);
 
   el.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -1689,7 +1696,7 @@ function staffRenderPurchaseHistory() {
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div>
               <div style="font-weight:600;font-size:13px;">${typeLabels[p.type]||'📦'} — ${p.name||'—'}</div>
-              <div style="font-size:11px;color:var(--ink3);">${formatDate(normDate(p.date||''))} · Qty:${p.qty||1} ${p.vendor?'· '+p.vendor:''}</div>
+              <div style="font-size:11px;color:var(--ink3);">${_fmtDate(_normDate(p.date||''))} · Qty:${p.qty||1} ${p.vendor?'· '+p.vendor:''}</div>
             </div>
             <div style="font-weight:700;color:var(--gold-dk);">Rs.${(+p.total||0).toLocaleString('en-IN')}</div>
           </div>
