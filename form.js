@@ -2090,12 +2090,14 @@ window.onPhotosSelected = function(inputEl) {
       const img = new Image();
       img.onload = function() {
         const canvas = document.createElement('canvas');
-        const MAX = 1200;
+        // FIX 38: Compress aggressively — max 600px, 50% quality
+        // Keeps photos under ~80KB each so multiple photos fit in Firestore 1MB limit
+        const MAX = 600;
         let w = img.width, h = img.height;
         if(w>MAX||h>MAX) { if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;} }
         canvas.width=w; canvas.height=h;
         canvas.getContext('2d').drawImage(img,0,0,w,h);
-        const compressed = canvas.toDataURL('image/jpeg', 0.7);
+        const compressed = canvas.toDataURL('image/jpeg', 0.5);
         window._orderPhotos.push(compressed);
         renderPhotoPreview();
       };
