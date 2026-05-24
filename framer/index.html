@@ -17,6 +17,20 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 <style>
+/* Fix .main layout — gutted in style.css for owner dashboard fixed-page system */
+.main {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: calc(var(--hh, 56px) + 20px) 16px 40px;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+@media (min-width: 600px) {
+  .main { padding: calc(var(--hh, 56px) + 28px) 28px 48px; }
+}
+/* Hide tab-nav — framer is a standalone page */
+.tab-nav { display: none !important; }
+
 .framer-hero{
   background:linear-gradient(135deg,#0F0F0F,#1C1410);
   border-radius:var(--r-xl);
