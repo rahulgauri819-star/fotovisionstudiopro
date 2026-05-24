@@ -15,6 +15,7 @@
 <!-- Firebase compat (non-module) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 <style>
 .framer-hero{
   background:linear-gradient(135deg,#0F0F0F,#1C1410);
@@ -230,9 +231,10 @@ function framerCard(o, showActions) {
   const isReady = o.status==='Ready';
   const isOD    = o.delivery && o.delivery.slice(0,10) < todayStr() && o.status!=='Delivered';
   const cardStyle = isOD ? 'background:#ffcdd2;border-left:5px solid #c62828;border-top:1px solid #ef9a9a;' : '';
-  // FIX 27: Multi-key photo lookup
+  // FIREBASE STORAGE: Use photoURLs from Firestore first
   const photoStore = JSON.parse(localStorage.getItem('fv_order_photos')||'{}');
-  const photos = photoStore[o.id] || photoStore[o.billNo] || photoStore[o.localId]
+  const photos = (o.photoURLs?.length ? o.photoURLs : null)
+    || photoStore[o.id] || photoStore[o.billNo] || photoStore[o.localId]
     || o.photos || o._photos || [];
 
   return `<div class="job-card${o.status==='Delivered'?' delivered':''}" style="${cardStyle}">
