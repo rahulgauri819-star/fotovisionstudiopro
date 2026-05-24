@@ -2178,10 +2178,11 @@ window.uploadPhotosToStorage = async function(orderId) {
 
       const filename = `orders/${orderId}/photo_${i}_${Date.now()}.jpg`;
       const storageRef = storage.ref(filename);
-      const snapshot = await storageRef.put(blob);
+      console.log(`📤 Uploading photo ${i+1} to:`, filename);
+      const snapshot = await storageRef.put(blob, {contentType: 'image/jpeg'});
       const downloadURL = await snapshot.ref.getDownloadURL();
       urls.push(downloadURL);
-      console.log(`✅ Photo ${i+1} uploaded:`, downloadURL);
+      console.log(`✅ Photo ${i+1} uploaded successfully:`, downloadURL);
     } catch(err) {
       console.error(`❌ Photo ${i+1} upload failed:`, err);
       urls.push(preview); // fallback to base64 if upload fails

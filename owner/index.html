@@ -900,13 +900,24 @@ async function initDB() {
     db = getFirestore(app);
     window.db = db;
     window.firebaseApp = app; // FIX: expose for Storage upload
-    // Ensure storage bucket is configured for compat SDK
+    // FIX: Pass explicit bucket URL for new firebasestorage.app format
     try {
-      const storage = firebase.storage();
+      const bucketURL = FIREBASE_CONFIG.storageBucket.startsWith('gs://')
+        ? FIREBASE_CONFIG.storageBucket
+        : `gs://${FIREBASE_CONFIG.storageBucket}`;
+      const storage = firebase.storage(app, bucketURL);
       window._storage = storage;
-      console.log('✅ Firebase Storage ready');
+      window._storageBucket = bucketURL;
+      console.log('✅ Firebase Storage ready:', bucketURL);
     } catch(e) {
       console.warn('Storage init error:', e);
+      try {
+        // Fallback without explicit bucket
+        window._storage = firebase.storage();
+        console.log('✅ Firebase Storage ready (default bucket)');
+      } catch(e2) {
+        console.error('Storage completely unavailable:', e2);
+      }
     }
     const q = query(collection(db, 'orders'), orderBy('created', 'desc'));
     unsubscribe = onSnapshot(q, snap => {
