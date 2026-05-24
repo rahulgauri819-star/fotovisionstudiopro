@@ -860,6 +860,7 @@ window.toggleMoreMenu=window.ownerToggleMore;
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 <script>
 // ── Firebase Setup (Compat SDK - no module needed) ────────────
 // Polyfill Firebase modular API names to compat equivalents
@@ -1041,8 +1042,10 @@ window._realOpenForm = window.openForm = function() {
   if(typeof renderFormContent==='function') renderFormContent();
   window._realShowPage('form');
 };
-// Show dashboard on load
-window.showPage('dashboard');
+// Show dashboard on load — but only if not already on another page
+if(!currentPage || currentPage === 'dashboard') {
+  window.showPage('dashboard');
+}
 
 function refreshCurrentPage() {
   if(currentPage==='dashboard') renderDash();
@@ -2039,8 +2042,8 @@ window.saveOrder = async function() {
     bookedBy: 'owner', billNo,
     hasPhotos: (window._orderPhotos||[]).length>0,
     photoCount: (window._orderPhotos||[]).length,
-    // FIX 38: Do NOT embed full base64 photos in Firestore — exceeds 1MB limit
-    // Photos saved separately to localStorage under both billNo and ref.id keys
+    // Photos: will be set to Firebase Storage URLs after upload
+    photoURLs: [], // filled after upload
     isComplimentary: window._isComplimentary||false,
     originalTotal: window._isComplimentary?(window._originalTotal||finalTotal):finalTotal,
   };
@@ -2053,12 +2056,15 @@ window.saveOrder = async function() {
       data.created = Date.now();
       orders = [data, ...orders];
     }
-    // FIX 38: Save photos under BOTH id and billNo keys
+    // PHOTOS: Save locally under all keys
     if((window._orderPhotos||[]).length>0) {
       const photoStore = JSON.parse(localStorage.getItem('fv_order_photos')||'{}');
-      photoStore[data.id] = window._orderPhotos;
-      if(data.billNo) photoStore[data.billNo] = window._orderPhotos;
+      const photoCopy = [...window._orderPhotos];
+      photoStore[data.id] = photoCopy;
+      if(billNo) photoStore[billNo] = photoCopy;
+      if(data.billNo) photoStore[data.billNo] = photoCopy;
       localStorage.setItem('fv_order_photos', JSON.stringify(photoStore));
+      data.photoURLs = photoCopy; // store as URLs in local mode too
     }
     saveLocal();
   } else {
@@ -2074,21 +2080,45 @@ window.saveOrder = async function() {
       }
     } else {
       data.created = serverTimestamp();
-      // FIX 38: Save photos BEFORE addDoc so they're ready
-      const photosToSave = [...(window._orderPhotos||[])];
-      window._orderPhotos = []; // reset early to prevent double-save
+      // FIREBASE STORAGE: Upload photos first, get URLs, then save order
+      const photoFiles = [...(window._orderPhotoFiles||[])];
+      const photoPreviews = [...(window._orderPhotos||[])];
+      // Reset early to prevent double-save
+      window._orderPhotos = [];
+      window._orderPhotoFiles = [];
+      window._orderPhotoURLs = [];
+
+      // Save order first to get the doc ID
       const ref = await addDoc(collection(db,'orders'), data);
-      // Save under BOTH Firebase doc ID and billNo
-      if(photosToSave.length>0) {
+      const orderId = ref.id;
+
+      if(photoFiles.length > 0) {
+        // Upload to Firebase Storage using the real doc ID
+        window._orderPhotos = photoPreviews;
+        window._orderPhotoFiles = photoFiles;
+        const uploadedURLs = await (window.uploadPhotosToStorage?.(orderId) || Promise.resolve(photoPreviews));
+        window._orderPhotos = [];
+        window._orderPhotoFiles = [];
+
+        // Update order with photo URLs
+        await updateDoc(doc(db,'orders',orderId), {
+          photoURLs: uploadedURLs,
+          hasPhotos: true,
+          photoCount: uploadedURLs.length,
+        });
+
+        // Also save locally as backup
         const photoStore = JSON.parse(localStorage.getItem('fv_order_photos')||'{}');
-        photoStore[ref.id] = photosToSave;
-        if(billNo) photoStore[billNo] = photosToSave;
+        photoStore[orderId] = uploadedURLs;
+        if(billNo) photoStore[billNo] = uploadedURLs;
         localStorage.setItem('fv_order_photos', JSON.stringify(photoStore));
       }
     }
   }
 
-  if(!window._orderPhotos?.length) window._orderPhotos = []; // ensure reset
+  window._orderPhotos = [];
+  window._orderPhotoFiles = [];
+  window._orderPhotoURLs = [];
 
   const isF = cart.some(i=>(i.svcs||[]).some(s=>FRAMING_SVCS.includes(s)));
   toast(isF ? '✅ Saved! 🖼️ Framer notified' : window.editId?'✅ Order updated!':'✅ Order created!', 'success');
@@ -2874,7 +2904,10 @@ window.changeLoginPassword = window.saveLoginPassword; // backward compat
 window.viewPhotoArr = function(idx, orderId) {
   const photoStore = JSON.parse(localStorage.getItem('fv_order_photos')||'{}');
   const o = orders.find(x=>x.id===orderId);
-  const photos = photoStore[orderId] || o?.photos || [];
+  // FIREBASE STORAGE: Prioritize photoURLs from Firestore
+  const photos = (o?.photoURLs?.length ? o.photoURLs : null)
+    || photoStore[orderId] || photoStore[o?.billNo] || photoStore[o?.localId]
+    || o?.photos || o?._photos || [];
   if(!photos.length) return;
   const modal = document.createElement('div');
   modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:99999;display:flex;align-items:center;justify-content:center;';
@@ -4885,9 +4918,11 @@ window.ownerPrintLabels = function(id) {
 // ── Order Detail Bottom Sheet ─────────────────────────────────
 window.openOrderSheet = function(id) {
   const o=orders.find(x=>x.id===id);if(!o)return;
-  // FIX 19: Try multiple keys — id, billNo, local id formats
+  // FIREBASE STORAGE: Prioritize photoURLs from Firestore (cross-device)
+  // then fall back to localStorage, then embedded photos
   const photoStore = JSON.parse(localStorage.getItem('fv_order_photos')||'{}');
-  const photos = photoStore[id] || photoStore[o.billNo] || photoStore[o.localId]
+  const photos = (o.photoURLs?.length ? o.photoURLs : null)
+    || photoStore[id] || photoStore[o.billNo] || photoStore[o.localId]
     || o.photos || o._photos || [];
   const bal=(+o.total||0)-(+o.advance||0);
   const payIcon=o.payMode==='UPI'?'📱':o.payMode==='Cash+UPI'?'💵📱':'💵';
@@ -4910,6 +4945,10 @@ window.openOrderSheet = function(id) {
       <div style="display:flex;flex-wrap:wrap;gap:8px;">
         ${photos.map((src,i)=>`<img src="${src}" onclick="viewPhotoArr(${i},'${id}')" style="width:80px;height:80px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid var(--paper3);">`).join('')}
       </div>
+    </div>`:o.hasPhotos?`
+    <div style="margin-bottom:12px;background:#fff3e0;border-radius:10px;padding:12px;border:1px solid #f0a500;">
+      <div style="font-weight:700;font-size:13px;color:#e65100;">📸 ${o.photoCount||1} Reference Photo${(o.photoCount||1)!==1?'s':''} attached</div>
+      <div style="font-size:11px;color:var(--ink3);margin-top:4px;">Photos are stored on the device that took the order. Open this order on that device to view them.</div>
     </div>`:''}
     ${o.isComplimentary?`<div style="background:#fff3e0;border-radius:8px;padding:10px;margin-bottom:12px;font-size:13px;color:#e65100;font-weight:700;">🎁 COMPLIMENTARY ORDER (Value: Rs.${o.originalTotal||0})</div>`:''}
     <div style="background:var(--paper);border-radius:10px;padding:12px;margin-bottom:16px;">
@@ -5515,10 +5554,16 @@ initDB().then(async () => {
   await loadVendors();
   await loadCreditCompanies();
   await loadProductionOrders();
-  showPage('dashboard');
+  // FIX BLEED: Only show dashboard if user hasn't navigated away yet
+  if(!currentPage || currentPage === 'dashboard') {
+    showPage('dashboard');
+  } else {
+    // User is on another page - just refresh current page data silently
+    refreshCurrentPage();
+  }
 }).catch(err=>{
   console.error('initDB error:',err);
-  showPage('dashboard');
+  if(!currentPage || currentPage === 'dashboard') showPage('dashboard');
 });
 
 </script>
