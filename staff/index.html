@@ -638,6 +638,7 @@ function staffOrderCard(o){
       ${o.total?`<span class="tag gold">Total Rs.${o.total}</span>`:''}
       ${bal>0?`<span class="tag" style="background:#ffeaea;color:#e53935;">Bal Rs.${bal}</span>`:''}
     </div>
+    ${window.renderPhotoStrip?window.renderPhotoStrip(o,56):''}
     <div class="order-actions">
       <select class="status-select ${sc.cls}" onchange="chgStatus('${o.id}',this.value)" style="background:${sc.bg};color:${sc.cl};">
         ${['Pending','In Progress','Ready','Delivered'].map(s=>`<option${s===o.status?' selected':''}>${s}</option>`).join('')}
@@ -979,6 +980,34 @@ async function staffLoadExpenses() {
 }
 
 // ── Order Detail Bottom Sheet ─────────────────────────────────
+
+// Photo helpers for staff
+window.getOrderPhotos = function(o) {
+  if(!o) return [];
+  const photoStore = JSON.parse(localStorage.getItem('fv_order_photos')||'{}');
+  return (o.photoURLs?.length ? o.photoURLs : null)
+    || photoStore[o.id] || photoStore[o.billNo] || photoStore[o.localId]
+    || o.photos || o._photos || [];
+};
+
+window.openPhotoModal = function(src) {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;display:flex;align-items:center;justify-content:center;';
+  modal.onclick = () => modal.remove();
+  modal.innerHTML = `<img src="${src}" style="max-width:95vw;max-height:90vh;object-fit:contain;border-radius:8px;">
+    <button onclick="this.parentElement.remove()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:100%;width:40px;height:40px;font-size:22px;cursor:pointer;">✕</button>`;
+  document.body.appendChild(modal);
+};
+
+window.renderPhotoStrip = function(o, size) {
+  const photos = window.getOrderPhotos(o);
+  if(!photos.length) return '';
+  const px = size || 64;
+  return `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
+    ${photos.map(src=>`<img src="${src}" onclick="event.stopPropagation();openPhotoModal('${src}')"
+      style="width:${px}px;height:${px}px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid var(--paper3);">`).join('')}
+  </div>`;
+};
 window.openOrderSheet = function(id) {
   const o = orders.find(x=>x.id===id); if(!o) return;
   // FIREBASE STORAGE: Use photoURLs from Firestore first (cross-device)

@@ -245,6 +245,8 @@ function framerCard(o, showActions) {
   const photos = (o.photoURLs?.length ? o.photoURLs : null)
     || photoStore[o.id] || photoStore[o.billNo] || photoStore[o.localId]
     || o.photos || o._photos || [];
+  // Make URLs absolute for cross-device loading
+  const resolvedPhotos = photos.map(p => p.startsWith('http') ? p : p);
 
   return `<div class="job-card${o.status==='Delivered'?' delivered':''}" style="${cardStyle}">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;">
@@ -265,7 +267,7 @@ function framerCard(o, showActions) {
     ${photos.length?`<div style="margin-bottom:12px;">
       <div style="font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:6px;">📸 Reference Photos (${photos.length})</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;">
-        ${photos.map((src,i)=>`<img src="${src}" onclick="framerViewPhoto(${i},'${o.id}')" style="width:70px;height:70px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid var(--paper3);">`).join('')}
+        ${photos.map((src,i)=>`<img src="${src}" onclick="event.stopPropagation();framerViewPhoto(${i},'${o.id}')" style="width:70px;height:70px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid var(--paper3);">`).join('')}
       </div>
     </div>`:''}
     ${o.notes?`<div style="font-size:12px;color:var(--ink3);background:var(--paper);padding:8px 12px;border-radius:8px;margin-bottom:10px;">📝 ${o.notes}</div>`:''}
@@ -277,15 +279,23 @@ function framerCard(o, showActions) {
 }
 
 window.framerViewPhoto = function(idx, orderId) {
+  // FIX 40: Use photoURLs from Firestore first for cross-device access
   const photoStore=JSON.parse(localStorage.getItem('fv_order_photos')||'{}');
-  const o2=orders?.find(x=>x.id===orderId);
-  const photos=photoStore[orderId]||photoStore[o2?.billNo]||o2?.photos||[];
-  if(!photos.length)return;
+  const o2=(framerOrders||orders||[]).find(x=>x.id===orderId);
+  const photos=(o2?.photoURLs?.length?o2.photoURLs:null)
+    ||photoStore[orderId]||photoStore[o2?.billNo]||o2?.photos||o2?._photos||[];
+  if(!photos.length){console.warn('No photos found for',orderId);return;}
+  const src = photos[+idx];
+  if(!src){return;}
+  openPhotoModal(src);
+};
+
+window.openPhotoModal = function(src) {
   const modal=document.createElement('div');
-  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:99999;display:flex;align-items:center;justify-content:center;';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;display:flex;align-items:center;justify-content:center;cursor:pointer;';
   modal.onclick=()=>modal.remove();
-  modal.innerHTML=`<img src="${photos[+idx]}" style="max-width:95vw;max-height:95vh;object-fit:contain;border-radius:8px;">
-    <button onclick="this.parentElement.remove()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:100%;width:36px;height:36px;font-size:20px;cursor:pointer;">✕</button>`;
+  modal.innerHTML=`<img src="${src}" style="max-width:95vw;max-height:90vh;object-fit:contain;border-radius:8px;" onclick="event.stopPropagation()">
+    <button onclick="this.parentElement.remove()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.25);color:#fff;border:none;border-radius:100%;width:40px;height:40px;font-size:22px;cursor:pointer;line-height:1;">✕</button>`;
   document.body.appendChild(modal);
 };
 

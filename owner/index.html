@@ -1062,10 +1062,10 @@ window._realOpenForm = window.openForm = function() {
   if(typeof renderFormContent==='function') renderFormContent();
   window._realShowPage('form');
 };
-// Show dashboard on load — but only if not already on another page
-if(!currentPage || currentPage === 'dashboard') {
-  window.showPage('dashboard');
-}
+// Show dashboard on load — only before Firebase initializes
+// Firebase initDB will call showPage('dashboard') once ready
+// This ensures something shows while Firebase loads
+window.showPage('dashboard');
 
 function refreshCurrentPage() {
   if(currentPage==='dashboard') renderDash();
@@ -1497,6 +1497,7 @@ window.renderBookings = function() {
           <div class="order-meta">⏰ ${formatDatetime(o.delivery)} · 👤 ${o.staff||'—'}</div>
           <div class="order-meta">${svcs}</div>
           ${o.notes?`<div class="order-meta">📝 ${o.notes}</div>`:''}
+          ${window.renderPhotoStrip?window.renderPhotoStrip(o,52):''}
         </div>
         <div style="text-align:right;flex-shrink:0;">
           <div style="font-weight:700;color:var(--gold-dk);">Rs.${o.total}</div>
@@ -4936,6 +4937,36 @@ window.ownerPrintLabels = function(id) {
 };
 
 // ── Order Detail Bottom Sheet ─────────────────────────────────
+
+// ══════════════════════════════════════════════════════
+// PHOTO HELPER — get photos for any order
+// ══════════════════════════════════════════════════════
+window.getOrderPhotos = function(o) {
+  if(!o) return [];
+  const photoStore = JSON.parse(localStorage.getItem('fv_order_photos')||'{}');
+  return (o.photoURLs?.length ? o.photoURLs : null)
+    || photoStore[o.id] || photoStore[o.billNo] || photoStore[o.localId]
+    || o.photos || o._photos || [];
+};
+
+window.openPhotoModal = function(src) {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;display:flex;align-items:center;justify-content:center;';
+  modal.onclick = () => modal.remove();
+  modal.innerHTML = `<img src="${src}" style="max-width:95vw;max-height:90vh;object-fit:contain;border-radius:8px;">
+    <button onclick="this.parentElement.remove()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:100%;width:40px;height:40px;font-size:22px;cursor:pointer;">✕</button>`;
+  document.body.appendChild(modal);
+};
+
+window.renderPhotoStrip = function(o, size) {
+  const photos = window.getOrderPhotos(o);
+  if(!photos.length) return '';
+  const px = size || 64;
+  return `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
+    ${photos.map(src=>`<img src="${src}" onclick="event.stopPropagation();openPhotoModal('${src}')"
+      style="width:${px}px;height:${px}px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid var(--paper3);">`).join('')}
+  </div>`;
+};
 window.openOrderSheet = function(id) {
   const o=orders.find(x=>x.id===id);if(!o)return;
   // FIREBASE STORAGE: Prioritize photoURLs from Firestore (cross-device)
@@ -5574,16 +5605,20 @@ initDB().then(async () => {
   await loadVendors();
   await loadCreditCompanies();
   await loadProductionOrders();
-  // FIX BLEED: Only show dashboard if user hasn't navigated away yet
-  if(!currentPage || currentPage === 'dashboard') {
+  // FIX 41: Only show dashboard on first load, not on every Firebase sync
+  if(!window._appInitialized) {
+    window._appInitialized = true;
     showPage('dashboard');
   } else {
-    // User is on another page - just refresh current page data silently
+    // Already initialized — just refresh current page data silently
     refreshCurrentPage();
   }
 }).catch(err=>{
   console.error('initDB error:',err);
-  if(!currentPage || currentPage === 'dashboard') showPage('dashboard');
+  if(!window._appInitialized) {
+    window._appInitialized = true;
+    showPage('dashboard');
+  }
 });
 
 </script>
