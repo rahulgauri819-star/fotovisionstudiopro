@@ -86,6 +86,7 @@
 <div id="pg-dashboard" class="hidden">
   <div class="page-header">
     <div class="page-title">Good <span id="greeting-time"></span>, Harish 👑</div>
+    <div style="font-size:10px;color:#aaa;position:fixed;top:4px;left:4px;z-index:99999;">v25</div>
     <div class="page-sub" id="dashdate"></div>
   </div>
   <!-- Day closed banner -->
@@ -1026,16 +1027,13 @@ let currentPage = 'dashboard';
 window.showPage = window._realShowPage = function(p) {
   try {
     currentPage = p;
-    // DEFINITIVE FIX: Explicit display control on every page div
-    const allPages = document.querySelectorAll('[id^="pg-"]');
-    allPages.forEach(el => {
+    // Pages are position:fixed - just toggle hidden class
+    document.querySelectorAll('[id^="pg-"]').forEach(el => {
       el.classList.add('hidden');
-      el.style.cssText = 'display:none !important;'; // force hide
     });
     const target = document.getElementById('pg-'+p);
     if(target) {
       target.classList.remove('hidden');
-      target.style.cssText = 'display:block;'; // force show
     }
     document.querySelectorAll('.hdr-nav-btn, .tab-btn').forEach(b => b.classList.remove('act'));
     document.getElementById('nav-'+p)?.classList.add('act');
