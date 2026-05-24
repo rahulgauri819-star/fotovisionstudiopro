@@ -391,7 +391,7 @@
 
       <!-- Add buttons -->
       <div style="display:flex;gap:8px;">
-        <button onclick="addFrameToList()" class="btn-gold" style="flex:1;padding:12px;font-size:14px;font-weight:700;">➕ Add to List</button>
+        <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;flex:1;padding:12px;font-size:14px;font-weight:700;" onclick="addFrameToList()">➕ Add to List</button>
         <button onclick="duplicateLastFrame()" class="btn-outline" style="padding:12px 16px;font-size:13px;">📋 Duplicate Last</button>
       </div>
     </div>
@@ -416,7 +416,7 @@
 
   <!-- Report Type Selector -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
-    <button onclick="setReportType('daily')" id="rt-daily" class="btn-gold" style="padding:12px;border-radius:12px;font-size:13px;font-weight:700;">📅 Daily</button>
+    <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;padding:12px;border-radius:12px;font-size:13px;font-weight:700;" onclick="setReportType('daily')" id="rt-daily">📅 Daily</button>
     <button onclick="setReportType('monthly')" id="rt-monthly" class="btn-outline" style="padding:12px;border-radius:12px;font-size:13px;font-weight:700;">📅 Monthly</button>
     <button onclick="setReportType('yearly')" id="rt-yearly" class="btn-outline" style="padding:12px;border-radius:12px;font-size:13px;font-weight:700;">📅 Yearly</button>
     <button onclick="setReportType('fy')" id="rt-fy" class="btn-outline" style="padding:12px;border-radius:12px;font-size:13px;font-weight:700;">📅 Financial Year</button>
@@ -470,7 +470,7 @@
         <div class="form-group"><label class="form-label">Selling Price</label><input class="form-input" id="rs-sell" type="number" placeholder="0"></div>
         <div class="form-group"><label class="form-label">Cost Price</label><input class="form-input" id="rs-cost" type="number" placeholder="0"></div>
       </div>
-      <button onclick="addReadymadeItem()" class="btn-gold" style="padding:10px 24px;">➕ Add Item</button>
+      <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;padding:10px 24px;" onclick="addReadymadeItem()">➕ Add Item</button>
     </div>
   </div>
   <div id="readymade-list"></div>
@@ -517,7 +517,7 @@
           <button onclick="addTypeFromStock()" class="btn-outline" style="font-size:12px;padding:6px 12px;">+ Add</button>
         </div>
       </div>
-      <button onclick="addMouldingStock()" class="btn-gold" style="padding:10px 24px;">➕ Add Stock</button>
+      <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;padding:10px 24px;" onclick="addMouldingStock()">➕ Add Stock</button>
     </div>
   </div>
   <div id="moulding-stock-list"></div>
@@ -537,7 +537,7 @@
       <div id="staff-names-list" style="margin-bottom:16px;"></div>
       <div style="display:flex;gap:8px;">
         <input class="form-input" id="new-staff-name" placeholder="Add new name..." style="max-width:240px;" onkeydown="if(event.key==='Enter')addStaffName()">
-        <button onclick="addStaffName()" class="btn-gold" style="padding:10px 20px;">+ Add</button>
+        <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;padding:10px 20px;" onclick="addStaffName()">+ Add</button>
       </div>
     </div>
   </div>
@@ -554,7 +554,7 @@
       <div id="lpw-role-label" style="font-size:14px;font-weight:700;margin-bottom:10px;">👑 Owner Password</div>
       <div style="display:flex;gap:8px;align-items:center;">
         <input type="password" id="lpw-new" class="form-input" placeholder="Enter new password (min 3 chars)" style="flex:1;">
-        <button onclick="saveLoginPassword()" class="btn-gold" style="padding:10px 20px;white-space:nowrap;">💾 Save</button>
+        <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;padding:10px 20px;white-space:nowrap;" onclick="saveLoginPassword()">💾 Save</button>
       </div>
       <div id="lpw-msg" style="font-size:12px;color:#388e3c;margin-top:8px;display:none;"></div>
     </div>
@@ -566,7 +566,7 @@
       <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;">Used for: Discount, Complimentary, Production Orders</div>
       <div style="display:flex;gap:8px;align-items:center;">
         <input type="password" id="new-owner-pwd" class="form-input" placeholder="New password" style="max-width:200px;">
-        <button onclick="changeOwnerPassword()" class="btn-gold" style="padding:10px 20px;">Change</button>
+        <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;padding:10px 20px;" onclick="changeOwnerPassword()">Change</button>
       </div>
     </div>
   </div>
@@ -578,7 +578,7 @@
       <div id="credit-companies-list" style="margin-bottom:16px;"></div>
       <div style="display:flex;gap:8px;">
         <input class="form-input" id="new-credit-company" placeholder="e.g. GAVS, TCS..." style="max-width:240px;" onkeydown="if(event.key==='Enter')addCreditCompany()">
-        <button onclick="addCreditCompany()" class="btn-gold" style="padding:10px 20px;">+ Add</button>
+        <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;padding:10px 20px;" onclick="addCreditCompany()">+ Add</button>
       </div>
     </div>
   </div>
@@ -590,7 +590,7 @@
       <div id="vendor-list" style="margin-bottom:16px;"></div>
       <div style="display:flex;gap:8px;margin-bottom:8px;">
         <input class="form-input" id="new-vendor-name" placeholder="Add new vendor..." style="max-width:240px;" onkeydown="if(event.key==='Enter')addVendor()">
-        <button onclick="addVendor()" class="btn-gold" style="padding:10px 20px;">+ Add Vendor</button>
+        <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;padding:10px 20px;" onclick="addVendor()">+ Add Vendor</button>
       </div>
     </div>
   </div>
@@ -605,7 +605,7 @@
   </div>
   <!-- Retally tabs -->
   <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-    <button id="rt-tab-readymade" onclick="switchRTTab('readymade')" class="btn-gold" style="padding:8px 16px;font-size:13px;">📦 Readymade Stock</button>
+    <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;padding:8px 16px;font-size:13px;" id="rt-tab-readymade" onclick="switchRTTab('readymade')">📦 Readymade Stock</button>
     <button id="rt-tab-moulding" onclick="switchRTTab('moulding')" class="btn-outline" style="padding:8px 16px;font-size:13px;">📐 Moulding Stock</button>
     <button id="rt-tab-history" onclick="switchRTTab('history')" class="btn-outline" style="padding:8px 16px;font-size:13px;">📋 Retally History</button>
   </div>
@@ -684,7 +684,7 @@
           <input class="form-input" id="exp-others-name" placeholder="Enter name..." style="max-width:200px;">
         </div>
       </div>
-      <button onclick="addExpense()" class="btn btn-primary btn-lg" style="width:100%;margin-top:4px;letter-spacing:0.3px;">+ Add Expense</button>
+      <button onclick="addExpense()" style="width:100%;margin-top:8px;padding:14px 24px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;letter-spacing:0.3px;cursor:pointer;box-shadow:0 3px 12px rgba(201,151,58,.4);transition:transform .18s,box-shadow .18s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 20px rgba(201,151,58,.5)'" onmouseout="this.style.transform='';this.style.boxShadow='0 3px 12px rgba(201,151,58,.4)'">+ Add Expense</button>
     </div>
   </div>
   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
@@ -1611,7 +1611,7 @@ function showBalancePopupWithCallback(o, onSuccess) {
       <div id="bal-split-info" style="font-size:12px;color:var(--ink3);"></div>
       <div id="bal-split-warn" class="warn-box hidden">⚠️ Must equal Rs.${bal}</div>
     </div>
-    <button id="bal-confirm-btn" onclick="confirmBalPaymentCb('${o.id}',${bal})" class="btn-gold" style="width:100%;padding:12px;font-size:15px;font-weight:700;">✅ Confirm Payment & Deliver</button>
+    <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;width:100%;padding:12px;font-size:15px;font-weight:700;" id="bal-confirm-btn" onclick="confirmBalPaymentCb('${o.id}',${bal})">✅ Confirm Payment & Deliver</button>
   </div>`;
   document.body.appendChild(overlay);
   window._balCallback = onSuccess;
@@ -1783,7 +1783,7 @@ function ownerFramerCard(o) {
       </div>
       ${formatFramerOrderDetail(o)}
       ${o.status!=='Delivered'?`<div style="display:flex;gap:8px;margin-top:10px;">
-        ${o.status!=='Ready'?`<button onclick="markFramerReady('${o.id}')" class="btn-gold" style="flex:1;padding:10px;font-size:13px;">✅ Mark Ready</button>`:''}
+        ${o.status!=='Ready'?`<button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;flex:1;padding:10px;font-size:13px;" onclick="markFramerReady('${o.id}')">✅ Mark Ready</button>`:''}
         ${o.status==='Ready'?`<button onclick="undoFramerReady('${o.id}')" class="btn-outline" style="flex:1;padding:10px;font-size:13px;color:#e53935;border-color:#e53935;">↩️ Undo</button>`:''}
       </div>`:''}
     </div>
@@ -1866,7 +1866,7 @@ function showBalancePopup(o) {
         <div id="bal-split-info" style="font-size:12px;color:var(--ink3);"></div>
         <div id="bal-split-warn" class="warn-box hidden">⚠️ Must equal Rs.${bal}</div>
       </div>
-      <button id="bal-confirm-btn" onclick="confirmBalPayment('${o.id}',${bal})" class="btn-gold" style="width:100%;padding:12px;font-size:15px;font-weight:700;">✅ Confirm Payment & Deliver</button>
+      <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;width:100%;padding:12px;font-size:15px;font-weight:700;" id="bal-confirm-btn" onclick="confirmBalPayment('${o.id}',${bal})">✅ Confirm Payment & Deliver</button>
     </div>`;
   document.body.appendChild(overlay);
 }
@@ -2192,7 +2192,7 @@ window.renderMouldingsManager = function() {
         <input id="mc-${size.replace('.','_')}" class="form-input" placeholder="Code (e.g. M6)" style="max-width:100px;">
         <input id="mn-${size.replace('.','_')}" class="form-input" placeholder="Name/Color" style="flex:1;min-width:120px;">
         <input id="mp-${size.replace('.','_')}" class="form-input" type="number" min="1" placeholder="Rs./ft" style="max-width:80px;">
-        <button onclick="ownerAddMoulding('${size}')" class="btn-gold" style="padding:8px 14px;font-size:13px;">➕ Add</button>
+        <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;padding:8px 14px;font-size:13px;" onclick="ownerAddMoulding('${size}')">➕ Add</button>
       </div>
     </div>`;
   }).join('');
@@ -2238,7 +2238,7 @@ window.renderSettings = function() {
     <div style="font-size:13px;color:var(--ink3);margin-bottom:12px;">Used for: Discount, Complimentary, Production Orders</div>
     <div style="display:flex;gap:8px;align-items:center;">
       <input type="password" id="new-owner-pwd" class="form-input" placeholder="New password" style="max-width:200px;">
-      <button onclick="changeOwnerPassword()" class="btn-gold" style="padding:10px 20px;">Change</button>
+      <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;padding:10px 20px;" onclick="changeOwnerPassword()">Change</button>
     </div>
     <div style="font-size:12px;color:var(--ink3);margin-top:8px;">Current password is set</div>`;
 };
@@ -2288,7 +2288,7 @@ window.renderEstimates = function() {
           </div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button onclick="convertEstimateToOrder('${est.id}')" class="btn-gold" style="flex:1;padding:8px;font-size:12px;">✅ Convert to Order</button>
+          <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;flex:1;padding:8px;font-size:12px;" onclick="convertEstimateToOrder('${est.id}')">✅ Convert to Order</button>
           <button onclick="printEstimateById('${est.id}')" class="btn-outline" style="padding:8px 12px;font-size:12px;">🖨️</button>
           <button onclick="deleteEstimate('${est.id}')" style="padding:8px 12px;background:#e53935;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;">🗑️</button>
         </div>
@@ -2369,7 +2369,7 @@ function renderPurchaseForm() {
   const el = document.getElementById('purchase-form-area');
   if(!el) return;
   const t = todayStr();
-  const addBtn = `<button onclick="addToPurchaseList()" class="btn-gold" style="padding:10px 24px;margin-right:8px;">➕ Add to List</button>`;
+  const addBtn = `<button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;padding:10px 24px;margin-right:8px;" onclick="addToPurchaseList()">➕ Add to List</button>`;
 
   if(currentPurchaseType==='moulding') {
     el.innerHTML = `<div class="card" style="margin-bottom:12px;"><div class="card-body">
@@ -2559,7 +2559,7 @@ function renderPendingPurchaseItems() {
     </div>`;
   if(barEl) {
     barEl.style.display='block';
-    barEl.innerHTML=`<button onclick="saveAllPurchases()" class="btn-gold" style="width:100%;padding:14px;font-size:15px;font-weight:700;">💾 Save All Purchases (Rs.${total.toLocaleString('en-IN')})</button>`;
+    barEl.innerHTML=`<button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;width:100%;padding:14px;font-size:15px;font-weight:700;" onclick="saveAllPurchases()">💾 Save All Purchases (Rs.${total.toLocaleString('en-IN')})</button>`;
   }
 }
 
@@ -3102,7 +3102,7 @@ function renderCreditCompanyLedger(company) {
           </div>
         </div>
         <div class="form-group" style="margin-bottom:10px;"><label class="form-label">Notes</label><input class="form-input" id="settle-notes" placeholder="Cheque no., ref..."></div>
-        <button onclick="recordSettlement('${company}')" class="btn-gold" style="padding:10px 24px;">✅ Record Settlement</button>
+        <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;padding:10px 24px;" onclick="recordSettlement('${company}')">✅ Record Settlement</button>
       </div>
     </div></div>
     <div class="card" style="margin-bottom:14px;"><div class="card-header"><div class="card-title">📋 Orders (${creditOrders.length})</div></div>
@@ -3453,7 +3453,7 @@ window.setReportType = function(type) {
   // Update button styles
   ['daily','monthly','yearly','fy','service','expense','pl','staff'].forEach(t => {
     const btn = document.getElementById('rt-'+t);
-    if(btn) { btn.className = t===type ? 'btn-gold' : 'btn-outline'; btn.style.cssText='padding:12px;border-radius:12px;font-size:13px;font-weight:700;'; }
+    if(btn) { btn.className=''; btn.style.cssText= t===type ? `background:${'linear-gradient(135deg,#b8831a,#C9973A)'}};color:#fff;border:none;border-radius:12px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(201,151,58,.3);` : `background:#fff;color:#b8831a;border:2px solid #b8831a;border-radius:12px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;`; }
   });
   renderReportDateSelector();
 };
@@ -3465,29 +3465,29 @@ function renderReportDateSelector() {
   if(currentReportType==='daily') {
     el.innerHTML = `<label class="form-label">Select Date</label>
       <input type="date" class="form-input" id="rpt-date" value="${todayStr()}" style="max-width:220px;">
-      <button onclick="generateReport()" class="btn-gold" style="padding:10px 20px;margin-top:10px;">Generate Report</button>`;
+      <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;padding:10px 20px;margin-top:10px;" onclick="generateReport()">Generate Report</button>`;
   } else if(currentReportType==='monthly') {
     const months = [];
     for(let i=0;i<24;i++) { const d=new Date(now.getFullYear(),now.getMonth()-i,1); months.push({val:d.toISOString().slice(0,7),label:d.toLocaleDateString('en-IN',{month:'long',year:'numeric'})}); }
     el.innerHTML = `<label class="form-label">Select Month</label>
       <select class="form-input" id="rpt-month" style="max-width:220px;">${months.map(m=>`<option value="${m.val}">${m.label}</option>`).join('')}</select>
-      <button onclick="generateReport()" class="btn-gold" style="padding:10px 20px;margin-top:10px;">Generate Report</button>`;
+      <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;padding:10px 20px;margin-top:10px;" onclick="generateReport()">Generate Report</button>`;
   } else if(currentReportType==='yearly') {
     const years = Array.from({length:5},(_,i)=>now.getFullYear()-i);
     el.innerHTML = `<label class="form-label">Select Year</label>
       <select class="form-input" id="rpt-year" style="max-width:140px;">${years.map(y=>`<option>${y}</option>`).join('')}</select>
-      <button onclick="generateReport()" class="btn-gold" style="padding:10px 20px;margin-top:10px;">Generate Report</button>`;
+      <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;padding:10px 20px;margin-top:10px;" onclick="generateReport()">Generate Report</button>`;
   } else if(currentReportType==='fy') {
     const fys = Array.from({length:5},(_,i)=>{const y=now.getFullYear()-i;return{val:`${y-1}-${y}`,label:`FY ${y-1}-${String(y).slice(-2)}`};});
     el.innerHTML = `<label class="form-label">Select Financial Year (Apr–Mar)</label>
       <select class="form-input" id="rpt-fy" style="max-width:160px;">${fys.map(f=>`<option value="${f.val}">${f.label}</option>`).join('')}</select>
-      <button onclick="generateReport()" class="btn-gold" style="padding:10px 20px;margin-top:10px;">Generate Report</button>`;
+      <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;padding:10px 20px;margin-top:10px;" onclick="generateReport()">Generate Report</button>`;
   } else {
     const months = [];
     for(let i=0;i<24;i++) { const d=new Date(now.getFullYear(),now.getMonth()-i,1); months.push({val:d.toISOString().slice(0,7),label:d.toLocaleDateString('en-IN',{month:'long',year:'numeric'})}); }
     el.innerHTML = `<label class="form-label">Select Period</label>
       <select class="form-input" id="rpt-month" style="max-width:220px;">${months.map(m=>`<option value="${m.val}">${m.label}</option>`).join('')}</select>
-      <button onclick="generateReport()" class="btn-gold" style="padding:10px 20px;margin-top:10px;">Generate Report</button>`;
+      <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;padding:10px 20px;margin-top:10px;" onclick="generateReport()">Generate Report</button>`;
   }
 }
 
@@ -3501,7 +3501,7 @@ window.switchRTTab = function(tab) {
   _rtTab = tab;
   ['readymade','moulding','history'].forEach(t => {
     const btn = document.getElementById('rt-tab-'+t);
-    if(btn) { btn.className = t===tab ? 'btn-gold' : 'btn-outline'; btn.style.padding='8px 16px'; btn.style.fontSize='13px'; }
+    if(btn) { btn.style.cssText = t===tab ? 'background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(201,151,58,.3);' : 'background:#fff;color:#b8831a;border:2px solid #b8831a;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;'; }
   });
   renderReTally();
 };
@@ -3547,7 +3547,7 @@ function renderReTally() {
             </div>`).join('')}
         </div>
       </div>
-      <button onclick="saveReTally('readymade')" class="btn-gold" style="width:100%;padding:14px;font-size:15px;font-weight:700;">
+      <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;width:100%;padding:14px;font-size:15px;font-weight:700;" onclick="saveReTally('readymade')">
         ✅ Save Retally & Sync Stock
       </button>`;
 
@@ -3587,7 +3587,7 @@ function renderReTally() {
         📋 Enter physical piece count. App will adjust pieces to match your count.
       </div>
       <div class="card" style="margin-bottom:12px;"><div class="card-body" style="padding:0;">${rows}</div></div>
-      <button onclick="saveReTally('moulding')" class="btn-gold" style="width:100%;padding:14px;font-size:15px;font-weight:700;">
+      <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;width:100%;padding:14px;font-size:15px;font-weight:700;" onclick="saveReTally('moulding')">
         ✅ Save Retally & Sync Moulding Stock
       </button>`;
 
@@ -3707,7 +3707,7 @@ window.renderReports = function() {
         <div class="page-sub">Generate & download reports</div>
       </div>
       <div id="rpt-tab-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;overflow-x:auto;padding-bottom:4px;">
-        <button onclick="switchRptTab('sales')" id="rtb-sales" class="btn-gold" style="padding:8px 14px;font-size:12px;white-space:nowrap;">📊 Sales</button>
+        <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;padding:8px 14px;font-size:12px;white-space:nowrap;" onclick="switchRptTab('sales')" id="rtb-sales">📊 Sales</button>
         <button onclick="switchRptTab('pl')" id="rtb-pl" class="btn-outline" style="padding:8px 14px;font-size:12px;white-space:nowrap;">💰 P&L</button>
         <button onclick="switchRptTab('credit')" id="rtb-credit" class="btn-outline" style="padding:8px 14px;font-size:12px;white-space:nowrap;">🏢 Credit</button>
         <button onclick="switchRptTab('purchase')" id="rtb-purchase" class="btn-outline" style="padding:8px 14px;font-size:12px;white-space:nowrap;">🛒 Purchases</button>
@@ -3722,7 +3722,7 @@ window.renderReports = function() {
 window.switchRptTab = function(tab) {
   ['sales','pl','credit','purchase','stock','production'].forEach(t => {
     const btn = document.getElementById('rtb-'+t);
-    if(btn) { btn.className = t===tab ? 'btn-gold' : 'btn-outline'; btn.style.padding='8px 14px'; btn.style.fontSize='12px'; btn.style.whiteSpace='nowrap'; }
+    if(btn) { btn.style.cssText = t===tab ? 'background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 2px 8px rgba(201,151,58,.3);' : 'background:#fff;color:#b8831a;border:2px solid #b8831a;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;'; }
   });
   const body = document.getElementById('rpt-body');
   if(!body) return;
@@ -3746,7 +3746,7 @@ function rptDateFilter(prefix) {
       <option value="lastmonth">Last Month</option>
       <option value="year">This Year</option>
     </select>
-    <button onclick="refreshRpt('${prefix}')" class="btn-gold" style="padding:8px 16px;font-size:13px;">Generate</button>
+    <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;padding:8px 16px;font-size:13px;" onclick="refreshRpt('${prefix}')">Generate</button>
   </div>`;
 }
 
@@ -5152,8 +5152,7 @@ window.renderDayEnd = function() {
     </div>
 
     <!-- Submit -->
-    <button onclick="submitDayEnd(${totalSales},${totalExp},${cashSales},${upiSales},${cashExp},${upiExp},${netCash},${todayOrds.length})"
-      class="btn-gold" style="width:100%;padding:16px;font-size:16px;font-weight:700;border-radius:12px;">
+    <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;width:100%;padding:16px;font-size:16px;font-weight:700;border-radius:12px;" onclick="submitDayEnd(${totalSales},${totalExp},${cashSales},${upiSales},${cashExp},${upiExp},${netCash},${todayOrds.length})">
       ✅ Submit & Close Day
     </button>`;
 };
@@ -5563,7 +5562,7 @@ window.openCustModal = function(idx, q='') {
           <div style="font-size:11px;color:var(--ink3);">First Visit</div>
         </div>
       </div>
-      <button onclick="saveCustEdit('${c.phone||c.name}')" class="btn-gold" style="width:100%;margin-bottom:16px;">💾 Save Changes</button>
+      <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;width:100%;margin-bottom:16px;" onclick="saveCustEdit('${c.phone||c.name}')">💾 Save Changes</button>
       <div style="font-weight:700;font-size:14px;margin-bottom:10px;">Order History</div>
       ${c.orders.sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(o=>`
         <div style="padding:10px;background:var(--paper);border-radius:8px;margin-bottom:8px;">
