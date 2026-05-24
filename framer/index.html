@@ -19,7 +19,7 @@
 <style>
 /* Fix .main layout — gutted in style.css for owner dashboard fixed-page system */
 .main {
-  max-width: 800px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: calc(var(--hh, 56px) + 20px) 16px 40px;
   min-height: 100vh;
@@ -63,6 +63,30 @@
 .job-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(to bottom,var(--gold-dk),var(--gold));}
 .job-card.delivered::before{background:var(--ink3);}
 .job-card:hover{box-shadow:var(--sh-md);}
+
+/* ── RESPONSIVE 2-COL DESKTOP LAYOUT ── */
+@media (min-width: 900px) {
+  #framer-layout {
+    grid-template-columns: 1fr 300px !important;
+  }
+  #framer-right {
+    display: block !important;
+  }
+}
+@media (min-width: 1200px) {
+  #framer-layout {
+    grid-template-columns: 1fr 340px !important;
+  }
+}
+/* Make hero use full width on desktop */
+.framer-hero {
+  margin-bottom: 20px;
+}
+/* Bigger, more spacious job cards on desktop */
+@media (min-width: 900px) {
+  .job-card { padding: 24px 28px; }
+  .framer-panel { padding: 28px; }
+}
 </style>
 </head>
 <body>
@@ -77,7 +101,7 @@
   </div>
 </header>
 
-<div class="main" style="max-width:800px;">
+<div class="main">
 
   <!-- Hero -->
   <div class="framer-hero">
@@ -91,46 +115,70 @@
     </div>
   </div>
 
-  <!-- Tabs -->
-  <div style="display:flex;gap:0;margin-bottom:16px;background:var(--paper);border-radius:12px;padding:4px;">
-    <button id="tab-active" onclick="framerTab('active')" style="flex:1;padding:8px 4px;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;background:var(--gold-dk);color:#fff;">
-      🔨 Active <span id="active-badge" style="background:rgba(255,255,255,.3);border-radius:100px;padding:1px 5px;font-size:10px;margin-left:2px;"></span>
-    </button>
-    <button id="tab-ready" onclick="framerTab('ready')" style="flex:1;padding:8px 4px;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:var(--ink2);">
-      ✅ Ready <span id="ready-badge" style="background:rgba(0,0,0,.1);border-radius:100px;padding:1px 5px;font-size:10px;margin-left:2px;"></span>
-    </button>
-    <button id="tab-production" onclick="framerTab('production')" style="flex:1;padding:8px 4px;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:var(--ink2);">
-      🏭 Prod
-    </button>
-    <button id="tab-done" onclick="framerTab('done')" style="flex:1;padding:8px 4px;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:var(--ink2);">
-      📦 Done
-    </button>
-  </div>
+  <!-- Desktop 2-col layout -->
+  <div id="framer-layout" style="display:grid;grid-template-columns:1fr;gap:20px;">
 
-  <!-- Active Jobs -->
-  <div id="panel-active">
-    <div class="framer-panel" id="active-panel">
-      <div class="framer-panel-title">🔔 Active Job Alerts</div>
-      <div id="framer-notifs"><div style="font-size:13px;color:#9C8060;">Loading...</div></div>
-    </div>
-    <div id="framer-orders"><div class="loader"></div></div>
-  </div>
+    <!-- LEFT: Tabs + Job Panels -->
+    <div id="framer-left">
+      <!-- Tabs -->
+      <div style="display:flex;gap:0;margin-bottom:16px;background:var(--paper);border-radius:12px;padding:4px;">
+        <button id="tab-active" onclick="framerTab('active')" style="flex:1;padding:10px 4px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:var(--gold-dk);color:#fff;">
+          🔨 Active <span id="active-badge" style="background:rgba(255,255,255,.3);border-radius:100px;padding:1px 6px;font-size:11px;margin-left:3px;"></span>
+        </button>
+        <button id="tab-ready" onclick="framerTab('ready')" style="flex:1;padding:10px 4px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:var(--ink2);">
+          ✅ Ready <span id="ready-badge" style="background:rgba(0,0,0,.1);border-radius:100px;padding:1px 6px;font-size:11px;margin-left:3px;"></span>
+        </button>
+        <button id="tab-production" onclick="framerTab('production')" style="flex:1;padding:10px 4px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:var(--ink2);">
+          🏭 Prod
+        </button>
+        <button id="tab-done" onclick="framerTab('done')" style="flex:1;padding:10px 4px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:var(--ink2);">
+          📦 Done
+        </button>
+      </div>
 
-  <!-- Ready -->
-  <div id="panel-ready" style="display:none;">
-    <div id="framer-ready-list"><div class="loader"></div></div>
-  </div>
+      <!-- Active Jobs -->
+      <div id="panel-active">
+        <div class="framer-panel" id="active-panel">
+          <div class="framer-panel-title">🔔 Active Job Alerts</div>
+          <div id="framer-notifs"><div style="font-size:13px;color:#9C8060;">Loading...</div></div>
+        </div>
+        <div id="framer-orders"><div class="loader"></div></div>
+      </div>
 
-  <!-- Production Orders -->
-  <div id="panel-production" style="display:none;">
-    <div id="framer-production-list"><div class="loader"></div></div>
-  </div>
+      <!-- Ready -->
+      <div id="panel-ready" style="display:none;">
+        <div id="framer-ready-list"><div class="loader"></div></div>
+      </div>
 
-  <!-- Completed -->
-  <div id="panel-done" style="display:none;">
-    <div id="framer-done"><div class="loader"></div></div>
-  </div>
+      <!-- Production Orders -->
+      <div id="panel-production" style="display:none;">
+        <div id="framer-production-list"><div class="loader"></div></div>
+      </div>
 
+      <!-- Completed -->
+      <div id="panel-done" style="display:none;">
+        <div id="framer-done"><div class="loader"></div></div>
+      </div>
+    </div><!-- /framer-left -->
+
+    <!-- RIGHT: Quick Info Panel (desktop only) -->
+    <div id="framer-right" style="display:none;">
+      <div class="framer-panel" style="margin-bottom:16px;position:sticky;top:calc(var(--hh,56px) + 16px);">
+        <div class="framer-panel-title" style="font-size:16px;margin-bottom:12px;">📋 Quick Summary</div>
+        <div id="framer-summary-content" style="font-size:13px;color:rgba(255,255,255,.7);line-height:1.8;">
+          <div style="margin-bottom:8px;">⏳ <b style="color:#E8C06A;">Today's Jobs</b> → <span id="qs-today">—</span></div>
+          <div style="margin-bottom:8px;">📦 <b style="color:#E8C06A;">Total Active</b> → <span id="qs-active">—</span></div>
+          <div style="margin-bottom:8px;">✅ <b style="color:#E8C06A;">Ready to Deliver</b> → <span id="qs-ready">—</span></div>
+          <div style="margin-bottom:8px;">⚠️ <b style="color:#e53935;">Overdue</b> → <span id="qs-overdue">—</span></div>
+        </div>
+        <div style="border-top:1px solid rgba(255,255,255,.1);margin-top:16px;padding-top:16px;">
+          <div class="framer-panel-title" style="font-size:14px;margin-bottom:10px;">🕐 Last Updated</div>
+          <div id="framer-last-update" style="font-size:12px;color:rgba(255,255,255,.4);">Live</div>
+        </div>
+      </div>
+    </div><!-- /framer-right -->
+
+  </div><!-- /framer-layout -->
 </div>
 
 <script src="../shared.js?v=1779655140"></script>
@@ -180,6 +228,7 @@ function framerFallback() {
   framerUseLocal = true;
   framerOrders = JSON.parse(localStorage.getItem('fv_orders')||'[]');
   framerRender();
+  syncFramerSummary();
 }
 
 function orderNeedsFramer(o) {
@@ -428,6 +477,24 @@ window.doLogout = doLogout;
 if(!requireRole('framer')) { window.location.href='../index.html'; }
 framerOrders = JSON.parse(localStorage.getItem('fv_orders')||'[]');
 framerRender();
+function syncFramerSummary() {
+  try {
+    const today = new Date().toISOString().slice(0,10);
+    const active = framerOrders.filter(o => orderNeedsFramer(o) && o.status !== 'Delivered' && o.status !== 'Ready');
+    const ready  = framerOrders.filter(o => orderNeedsFramer(o) && o.status === 'Ready');
+    const overdue = framerOrders.filter(o => orderNeedsFramer(o) && o.status !== 'Delivered' && o.delivery && o.delivery < today);
+    const todayJobs = framerOrders.filter(o => orderNeedsFramer(o) && (o.date||'').startsWith(today));
+    const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+    set('qs-today', todayJobs.length);
+    set('qs-active', active.length);
+    set('qs-ready', ready.length);
+    set('qs-overdue', overdue.length);
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+    set('framer-last-update', '🟢 Live · ' + timeStr);
+  } catch(e) { console.error('syncFramerSummary error:', e); }
+}
+
 framerInitDB();
 </script>
 </body>
