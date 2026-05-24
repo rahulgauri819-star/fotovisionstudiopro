@@ -156,8 +156,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
 
 /* ── MAIN LAYOUT ── */
 .main {
-  /* Main is now just a wrapper - pages are position:fixed */
-  display: none;
+  /* Main is just a structural wrapper - pages handle their own display */
 }
 
 /* NUCLEAR PAGE ISOLATION: Each page is a full-screen fixed layer */
