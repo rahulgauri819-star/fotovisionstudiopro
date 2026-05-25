@@ -1958,6 +1958,19 @@ function updateBillingSummary(cartTotal, discPct) {
 
 window.onDiscountChange = function(pct) {
   if(pct > 0) {
+    // Send WhatsApp approval request to owner
+    if (typeof window.waApprovalRequest === 'function') {
+      const cname = document.getElementById('f-name')?.value||'Customer';
+      const total = window.cart?.reduce((s,i)=>s+(+i.price||0),0)||0;
+      const discAmt = Math.round(total*pct/100);
+      window.waApprovalRequest('discount', [
+        cname,
+        String(pct) + '%',
+        String(discAmt),
+        String(total),
+        document.getElementById('f-staff')?.value||'Staff',
+      ]).catch(()=>{});
+    }
     // Require owner password for discount
     showOwnerPasswordModal(
       `Apply ${pct}% discount?`,
@@ -1996,11 +2009,23 @@ window.initDeliveryPicker = function() {
 };
 
 window.selectDeliveryDate = function(btn, d) {
+  // Reset ALL buttons and their inner divs to original colors
   document.querySelectorAll('#delivery-date-scroller button').forEach(b=>{
-    b.style.background='#fff'; b.style.borderColor='var(--paper3)'; b.style.color='var(--ink2)';
+    b.style.background='#fff';
+    b.style.borderColor='var(--paper3)';
+    b.style.color='var(--ink2)';
+    // Restore inner div colors to their original state
+    const divs = b.querySelectorAll('div');
+    if(divs[0]) divs[0].style.color='var(--ink3)';   // day name
+    if(divs[1]) divs[1].style.color='var(--gold-dk)'; // date number
+    if(divs[2]) divs[2].style.color='var(--ink3)';    // month
+    if(divs[3]) divs[3].style.color='#fff';           // TODAY badge (keeps white on gold bg)
   });
-  btn.style.background='var(--gold-dk)'; btn.style.borderColor='var(--gold-dk)'; btn.style.color='#fff';
-  btn.querySelectorAll('div').forEach(el=>{ if(el.style.color) el.style.color='#fff'; });
+  // Highlight selected button - turn everything white
+  btn.style.background='var(--gold-dk)';
+  btn.style.borderColor='var(--gold-dk)';
+  btn.style.color='#fff';
+  btn.querySelectorAll('div').forEach(el=>{ el.style.color='#fff'; });
   window._selectedDeliveryDate = d;
   updateDeliveryDisplay();
 };
@@ -2285,6 +2310,13 @@ window.saveComplimentary = function() {
   const name=document.getElementById('f-name')?.value.trim();
   if(!name){toast('⚠️ Enter customer name','error');return;}
   const originalTotal=window.cart.reduce((s,i)=>s+(+i.price||0),0);
+  // Send WhatsApp approval request
+  if (typeof window.waApprovalRequest === 'function') {
+    window.waApprovalRequest('complimentary', [
+      name, String(originalTotal),
+      document.getElementById('f-staff')?.value||'Staff',
+    ]).catch(()=>{});
+  }
   showOwnerPasswordModal(
     `Mark this order as Complimentary?\nOriginal value: Rs.${originalTotal}`,
     async()=>{

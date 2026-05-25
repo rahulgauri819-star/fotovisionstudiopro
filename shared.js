@@ -55,9 +55,10 @@ const SVC_ICONS = {
 const FRAMING_SVCS = ['Framing','Sunboard','MDF Board'];
 
 // ── Date Helpers ──────────────────────────────────────────────
-function todayStr() { return new Date().toISOString().slice(0,10); }
-function yesterdayStr() { const d=new Date(); d.setDate(d.getDate()-1); return d.toISOString().slice(0,10); }
-function thisMonthStr() { return new Date().toISOString().slice(0,7); }
+function istNow() { return new Date(Date.now() + (5.5*60*60*1000)); }
+function todayStr() { return istNow().toISOString().slice(0,10); }
+function yesterdayStr() { const d=istNow(); d.setDate(d.getDate()-1); return d.toISOString().slice(0,10); }
+function thisMonthStr() { return istNow().toISOString().slice(0,7); }
 function formatDate(d) { if(!d) return ''; const dt=new Date(d+'T00:00:00'); return dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}); }
 
 function normDate(d) {
@@ -115,6 +116,24 @@ function markDayClosed(dateStr, report) {
   localStorage.setItem('fv_day_closed', JSON.stringify(closed));
 }
 function formatDatetime(dt) { return dt ? dt.replace('T',' ').slice(0,16) : ''; }
+function formatDelivery(dt) {
+  if (!dt) return '';
+  try {
+    const str = dt.replace('T', ' ');
+    const datePart = str.slice(0, 10);
+    const timePart = str.slice(11, 16);
+    const d = new Date(datePart + 'T00:00:00+05:30');
+    const dayName = d.toLocaleDateString('en-IN', { weekday: 'long' });
+    const dateFormatted = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    if (timePart) {
+      const [h, m] = timePart.split(':').map(Number);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const h12 = h % 12 || 12;
+      return `${dayName}, ${dateFormatted} · ${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+    }
+    return `${dayName}, ${dateFormatted}`;
+  } catch(e) { return formatDatetime(dt); }
+}
 
 // ── Number Format ─────────────────────────────────────────────
 function inr(n) { return '₹' + (+(n)||0).toLocaleString('en-IN'); }
@@ -638,3 +657,131 @@ function renderServiceTree(item, compact=false, hidePrice=false) {
     ${!hidePrice?`<div style="font-weight:700;color:var(--gold-dk);margin-top:6px;font-size:13px;">Rs.${price}</div>`:''}
   </div>`;
 }
+
+// ══════════════════════════════════════════════════════════════
+// WHATSAPP NOTIFICATIONS via AiSensy
+// ══════════════════════════════════════════════════════════════
+const AISENSY_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMTIxNjhlNmY2NDYzMmY5MmZiY2M4ZSIsIm5hbWUiOiJGb3RvIFZpc2lvbiBTdHVkaW8gUHJvIiwiaWF0IjoxNzQ0ZTZmNjQ2MzJmOTJmYmNjOGUiLCJhbGciOiJIUzI1NiJ9.eyJwcm9qZWN0SWQiOiI2YTEyMTY4ZTZmNjQ2MzJmOTJmYmNjOGUifQ.4x4xQUTDXMLfDsDXVef21aNVlW1Jlj6fDg_t3QiwXtY';
+const OWNER_WHATSAPP = '919871977718'; // owner number with country code
+
+async function sendWhatsApp(phone, templateName, params) {
+  try {
+    // Normalize phone: remove +, spaces, dashes; add 91 if needed
+    let num = String(phone||'').replace(/[^0-9]/g,'');
+    if(num.length === 10) num = '91' + num;
+    if(!num || num.length < 10) return; // skip if no valid phone
+
+    const body = {
+      apiKey: AISENSY_API_KEY,
+      campaignName: templateName,
+      destination: num,
+      userName: 'Foto Vision Studio Pro',
+      templateParams: params || [],
+      media: {},
+      buttons: [],
+      carouselCards: [],
+      location: {}
+    };
+
+    await fetch('https://backend.aisensy.com/campaign/t1/api/v2', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+  } catch(e) {
+    console.warn('WhatsApp send failed:', e);
+  }
+}
+
+// ── Notification helpers ──────────────────────────────────────
+
+// Called when a NEW ORDER is created
+window.waNEwOrder = async function(order) {
+  const svcs = [...new Set((order.cartItems||[]).flatMap(i=>i.svcs||[i.svc]))].join(', ') || 'Services';
+  const isInstant = order.orderType === 'Instant';
+
+  // Notify OWNER
+  await sendWhatsApp(OWNER_WHATSAPP, 'fv_new_order_owner', [
+    order.name,                                // customer name
+    order.billNo || order.id || '',            // bill no
+    String(order.total || 0),                  // total
+    svcs,                                       // services
+    order.staff || '',                          // staff
+    isInstant ? 'Instant' : 'Booking'          // order type
+  ]);
+
+  // Notify CUSTOMER (only if phone exists)
+  if (order.phone) {
+    const tpl = isInstant ? 'fv_order_placed_instant_customer' : 'fv_order_placed_booking_customer';
+    const params = isInstant
+      ? [order.name, order.billNo || '', String(order.total || 0), svcs]
+      : [order.name, order.billNo || '', String(order.total || 0), svcs,
+         order.delivery ? formatDelivery(order.delivery) : ''];
+    await sendWhatsApp(order.phone, tpl, params);
+  }
+};
+
+// Called when order status changes
+window.waStatusChange = async function(order, newStatus) {
+  if (newStatus === 'Ready' && order.phone) {
+    // Notify CUSTOMER their order is ready
+    await sendWhatsApp(order.phone, 'fv_order_ready_customer', [
+      order.name,
+      order.billNo || order.id || '',
+      String((+order.total||0) - (+order.advance||0)), // balance due
+    ]);
+  }
+  if (newStatus === 'Delivered') {
+    // Notify OWNER of delivery
+    await sendWhatsApp(OWNER_WHATSAPP, 'fv_order_delivered_owner', [
+      order.name,
+      order.billNo || order.id || '',
+      String(order.total || 0),
+      order.staff || '',
+    ]);
+  }
+};
+
+// Called on Day End
+window.waDayEnd = async function(report) {
+  await sendWhatsApp(OWNER_WHATSAPP, 'fv_day_end_owner', [
+    formatDate(report.date),
+    String(report.ordersCount || 0),
+    String(report.totalSales || 0),
+    String(report.totalExpenses || 0),
+    String(report.netCashExpected || 0),
+    String(report.cashCounted || 0),
+    report.cashDifference >= 0
+      ? `+${report.cashDifference}` : String(report.cashDifference),
+  ]);
+};
+
+// Called on new purchase
+window.waNewPurchase = async function(purchase) {
+  if ((+purchase.amount || 0) < 500) return; // only notify for purchases > 500
+  await sendWhatsApp(OWNER_WHATSAPP, 'fv_new_purchase_owner', [
+    purchase.vendor || purchase.desc || 'Purchase',
+    String(purchase.amount || 0),
+    purchase.paidBy || 'Cash',
+    purchase.addedBy || '',
+    formatDate(purchase.date || todayStr()),
+  ]);
+};
+
+// Called for approval requests (discount, cancel, delete, complimentary, reopen, production, large purchase)
+window.waApprovalRequest = async function(type, details) {
+  const templateMap = {
+    discount:      'fv_discount_request_owner',
+    cancel:        'fv_cancel_request_owner',
+    delete:        'fv_delete_order_owner',
+    complimentary: 'fv_complimentary_request_owner',
+    reopen:        'fv_reopen_day_owner',
+    production:    'fv_production_request_owner',
+    largePurchase: 'fv_large_purchase_owner',
+  };
+  const tpl = templateMap[type];
+  if (!tpl) return;
+  await sendWhatsApp(OWNER_WHATSAPP, tpl, details || []);
+};
+// ══════════════════════════════════════════════════════════════
+

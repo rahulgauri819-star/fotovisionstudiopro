@@ -21,7 +21,15 @@
 @media (min-width: 600px) {
   .main { padding: calc(var(--hh, 56px) + 24px) 24px 48px; }
 }
-.tab-nav { display: none !important; }
+
+/* Staff needs bottom tab nav */
+.tab-nav { display: flex !important; }
+.tab-nav-inner { display: flex !important; }
+</style>
+<style>
+.main { padding:0!important;margin:0!important; }
+.tab-nav,#tab-nav,.tab-nav-inner,#tab-nav-inner { display:flex!important;visibility:visible!important;opacity:1!important; }
+[id^="pg-"] { bottom: var(--tn,64px)!important; }
 </style>
 </head>
 <body>
@@ -622,10 +630,10 @@ function renderDash(){
         <span class="${sc.cls}" style="padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;white-space:nowrap;">${o.status}</span>
       </div>`;}).join('')
     :'<div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px;">No orders yet — tap + to begin</div>';
-  const today=new Date().toISOString().slice(0,10);
+  const today=todayStr();
   const due=orders.filter(o=>o.delivery&&o.delivery.startsWith(today)&&o.status!=='Delivered');
   document.getElementById('due-today').innerHTML=due.length
-    ?due.map(o=>`<div style="padding:8px 0;border-bottom:1px solid var(--paper2);"><div style="font-size:13px;font-weight:600;">${o.name}</div><div style="font-size:11px;color:var(--red);margin-top:2px;">⏰ ${formatDatetime(o.delivery)}</div></div>`).join('')
+    ?due.map(o=>`<div onclick="openSheet('${o.id}')" style="padding:10px 0;border-bottom:1px solid var(--paper2);cursor:pointer;display:flex;align-items:center;justify-content:space-between;"><div><div style="font-size:13px;font-weight:600;">${o.name}</div><div style="font-size:11px;color:var(--red);margin-top:2px;">⏰ ${formatDelivery(o.delivery)}</div></div><span style="color:var(--ink3);">→</span></div>`).join('')
     :'<div style="font-size:12px;color:var(--ink3);padding:8px 0;">None due today 🎉</div>';
 }
 
@@ -640,7 +648,7 @@ function staffOrderCard(o){
       <div style="flex:1;min-width:0;">
         <div class="order-name">${o.name} ${isOverdue(o)?'<span style="background:#c62828;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;">⚠️ OVERDUE</span>':''}</div>
         <div class="order-id">${o.billNo||('#'+o.id.slice(0,8))}</div>
-        <div class="order-meta">📞 ${o.phone||'—'} · 📅 ${o.date||''}${o.orderType?` · ${o.orderType==='Instant'?'⚡':'📅'} ${o.orderType}`:''}${o.payMode?` · ${payIcon} ${o.payMode}`:''}${o.delivery?`<br>⏰ ${formatDatetime(o.delivery)}`:''}</div>
+        <div class="order-meta">📞 ${o.phone||'—'} · 📅 ${o.date||''}${o.orderType?` · ${o.orderType==='Instant'?'⚡':'📅'} ${o.orderType}`:''}${o.payMode?` · ${payIcon} ${o.payMode}`:''}${o.delivery?`<br>⏰ ${formatDelivery(o.delivery)}`:''}</div>
       </div>
     </div>
     <div class="order-tags">
@@ -713,7 +721,7 @@ window.renderBookings = function(){
       return`<div class="order-card fade-in" onclick="openOrderSheet('${o.id}')" style="cursor:pointer;${isDone?'opacity:.6;':''}${isOverdue(o)?'background:#ffcdd2;border-left:5px solid #c62828;border-top:1px solid #ef9a9a;':''}">
         <div class="order-card-head"><div style="flex:1;">
           <div class="order-name">${o.name} <span style="font-size:11px;color:var(--ink3);">#${o.id}</span></div>
-          <div class="order-meta">⏰ ${formatDatetime(o.delivery)} · 👤 ${o.staff}</div>
+          <div class="order-meta">⏰ ${formatDelivery(o.delivery)} · 👤 ${o.staff}</div>
           <div class="order-meta">${[...new Set((o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]))].join(', ')}</div>
         </div>
         <div style="text-align:right;"><div style="font-weight:700;color:var(--gold-dk);">Rs.${o.total}</div>${bal>0?`<div style="font-size:11px;color:#e53935;">Bal Rs.${bal}</div>`:''}<div style="font-size:11px;margin-top:4px;">${STATUS_CFG[o.status]?.icon||''} ${o.status}</div></div>
@@ -727,10 +735,10 @@ function renderFramer(){
   const fo=orders.filter(o=>orderNeedsFramer(o));
   const active=fo.filter(o=>o.status!=='Delivered');
   document.getElementById('framer-notifs').innerHTML=active.length
-    ?active.map(o=>`<div class="job-notif"><div class="job-dot"></div><div><div class="job-text"><b>${o.name}</b> · ${o.id} · <b>${o.status}</b></div><div class="job-time">📅 ${o.date} · 👤 ${o.staff}${o.delivery?' · ⏰ '+formatDatetime(o.delivery):''}</div></div></div>`).join('')
+    ?active.map(o=>`<div class="job-notif"><div class="job-dot"></div><div><div class="job-text"><b>${o.name}</b> · ${o.id} · <b>${o.status}</b></div><div class="job-time">📅 ${o.date} · 👤 ${o.staff}${o.delivery?' · ⏰ '+formatDelivery(o.delivery):''}</div></div></div>`).join('')
     :'<div style="font-size:13px;color:#9C8060;padding:6px 0;">No active framing jobs 🎉</div>';
   document.getElementById('framer-orders').innerHTML=fo.length
-    ?fo.map(o=>{const sc=STATUS_CFG[o.status]||STATUS_CFG['Pending'];return`<div class="card" style="margin-bottom:10px;"><div class="card-body"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-size:15px;font-weight:600;">${o.name}</div><span class="${sc.cls}" style="padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;">${o.status}</span></div>${o.delivery?`<div style="font-size:12px;color:var(--red);font-weight:600;margin-bottom:6px;">⏰ ${formatDatetime(o.delivery)}</div>`:''}<div style="font-size:12px;color:var(--ink2);line-height:1.8;">${(o.cartItems||[]).map(i=>`<div><b>${(i.svcs||[i.svc]).join('+')}</b>: ${i.label||''}</div>`).join('')}</div></div></div>`;}).join('')
+    ?fo.map(o=>{const sc=STATUS_CFG[o.status]||STATUS_CFG['Pending'];return`<div class="card" style="margin-bottom:10px;"><div class="card-body"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-size:15px;font-weight:600;">${o.name}</div><span class="${sc.cls}" style="padding:3px 10px;border-radius:100px;font-size:10px;font-weight:700;">${o.status}</span></div>${o.delivery?`<div style="font-size:12px;color:var(--red);font-weight:600;margin-bottom:6px;">⏰ ${formatDelivery(o.delivery)}</div>`:''}<div style="font-size:12px;color:var(--ink2);line-height:1.8;">${(o.cartItems||[]).map(i=>`<div><b>${(i.svcs||[i.svc]).join('+')}</b>: ${i.label||''}</div>`).join('')}</div></div></div>`;}).join('')
     :'<div class="empty-state"><div class="empty-icon">🖼️</div><div class="empty-title">No framing orders</div></div>';
 }
 
@@ -742,6 +750,10 @@ async function chgStatus(id,val){
   }
   if(useLocal){orders=orders.map(x=>x.id===id?{...x,status:val}:x);saveLocal();refreshCurrentPage();}
   else await updateDoc(doc(db,'orders',id),{status:val});
+  // WhatsApp notification
+  if(typeof window.waStatusChange==='function'){
+    try{await window.waStatusChange(o,val);}catch(e){}
+  }
 }
 
 function showBalancePopup(o){
@@ -818,7 +830,7 @@ function buildReceiptHTML(o){
   <div class="receipt-row"><span><b>Customer:</b> ${o.name}</span><span>${o.phone||''}</span></div>
   <div class="receipt-row"><span><b>Staff:</b> ${o.staff}</span><span><b>${o.orderType||'Instant'}</b></span></div>
   <div class="receipt-row"><span><b>Payment:</b> ${payIcon} ${o.payMode||'Cash'}</span></div>
-  ${o.delivery?`<div class="receipt-row"><span><b>Due:</b> ${formatDatetime(o.delivery)}</span></div>`:''}
+  ${o.delivery?`<div class="receipt-row"><span><b>Due:</b> ${formatDelivery(o.delivery)}</span></div>`:''}
   <div class="receipt-div"></div>
   ${rows}
   <div class="receipt-div"></div>
@@ -1032,7 +1044,7 @@ window.openOrderSheet = function(id) {
   document.getElementById('ods-content').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
       <div style="background:var(--paper);border-radius:8px;padding:10px;"><div style="font-size:10px;color:var(--ink3);">📅 Date</div><div style="font-weight:600;font-size:13px;">${formatDate(o.date)}</div></div>
-      ${o.delivery?`<div style="background:#fff3e0;border-radius:8px;padding:10px;"><div style="font-size:10px;color:#e65100;">⏰ Delivery</div><div style="font-weight:700;font-size:13px;color:#e65100;">${formatDatetime(o.delivery)}</div></div>`:''}
+      ${o.delivery?`<div style="background:#fff3e0;border-radius:8px;padding:10px;"><div style="font-size:10px;color:#e65100;">⏰ Delivery</div><div style="font-weight:700;font-size:13px;color:#e65100;">${formatDelivery(o.delivery)}</div></div>`:''}
       <div style="background:var(--paper);border-radius:8px;padding:10px;"><div style="font-size:10px;color:var(--ink3);">👤 Staff</div><div style="font-weight:600;font-size:13px;">${o.staff||'—'}</div></div>
       <div style="background:var(--paper);border-radius:8px;padding:10px;"><div style="font-size:10px;color:var(--ink3);">📦 Status</div><div style="font-weight:600;font-size:13px;">${STATUS_CFG[o.status]?.icon||''} ${o.status}</div></div>
       <div style="background:var(--paper);border-radius:8px;padding:10px;"><div style="font-size:10px;color:var(--ink3);">💳 Payment</div><div style="font-weight:600;font-size:13px;">${payIcon} ${o.payMode||'Cash'}</div></div>
@@ -1967,6 +1979,34 @@ window.renderStaffDayEnd = function() {
 };
 
 // buildNav removed - tab nav is hardcoded in HTML
+window.staffSubmitDayEnd = async function(sales,exp,cashS,upiS,cashE,upiE,netCash,ordCount) {
+  const cashCount = +(document.getElementById('staff-cash-count')?.value)||0;
+  const remarks = document.getElementById('staff-dayend-remarks')?.value||'';
+  const diff = cashCount - netCash;
+  const report = {
+    date: todayStr(), closedBy: 'Staff',
+    totalSales: sales, totalExpenses: exp,
+    cashSales: cashS, upiSales: upiS,
+    cashExpenses: cashE, upiExpenses: upiE,
+    netCashExpected: netCash, cashCounted: cashCount,
+    cashDifference: diff, remarks, ordersCount: ordCount,
+    closedAt: new Date().toISOString()
+  };
+  if(!useLocal) {
+    try { await window.db.collection('dayReports').add(report); } catch(e) {}
+  }
+  // Mark day closed
+  const closed = JSON.parse(localStorage.getItem('fv_day_closed')||'{}');
+  closed[todayStr()] = { closedAt: report.closedAt, closedBy: 'Staff' };
+  localStorage.setItem('fv_day_closed', JSON.stringify(closed));
+  // WhatsApp day end to owner
+  if (typeof window.waDayEnd === 'function') {
+    try { await window.waDayEnd(report); } catch(e) {}
+  }
+  toast('✅ Day End submitted!','success');
+  showPage('dashboard');
+};
+
 initDB().then(async()=>{
   await loadMouldings();
   await staffLoadExpenses();

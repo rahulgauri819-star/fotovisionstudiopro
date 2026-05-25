@@ -232,6 +232,8 @@ function framerFallback() {
 }
 
 function orderNeedsFramer(o) {
+  // Instant orders are auto-delivered — never send to framer queue
+  if (o.orderType === 'Instant') return false;
   return (o.cartItems||[]).some(item => {
     const svcs = item.svcs||[item.svc]||[];
     if (svcs.includes('Framing')) return true;
@@ -323,7 +325,7 @@ function framerCard(o, showActions) {
         ${o.status==='Ready'?'✅':o.status==='Delivered'?'📦':'🔨'} ${o.status}
       </span>
     </div>
-    ${o.delivery?`<div style="background:#fff3e0;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px;font-weight:700;color:#e65100;">⏰ Delivery: ${formatDatetime(o.delivery)}</div>`:''}
+    ${o.delivery?`<div style="background:#fff3e0;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px;font-weight:700;color:#e65100;">⏰ Delivery: ${formatDelivery(o.delivery)}</div>`:''}
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:${photos.length?'8':'12'}px;">
       ${(o.cartItems||[]).map(item=>typeof renderServiceTree==='function'?renderServiceTree(item,true,true):`<div style="background:var(--paper);border-radius:8px;padding:10px;border-left:3px solid var(--gold-dk);"><div style="font-weight:700;font-size:13px;color:var(--gold-dk);">${(item.svcs||[item.svc]).join(' + ')}</div><div style="font-size:11px;">• ${item.label||'—'}</div></div>`).join('')}
     </div>
@@ -391,7 +393,7 @@ function framerRender() {
               <div class="job-dot" style="${isOD?'background:#c62828;':''}"></div>
               <div>
                 <div class="job-text"><b>${o.name}</b> · <b>${o.status}</b>${isOD?' ⚠️ OVERDUE':''}</div>
-                <div class="job-time">👤 ${o.staff||''}${o.delivery?' · ⏰ '+formatDatetime(o.delivery):''}</div>
+                <div class="job-time">👤 ${o.staff||''}${o.delivery?' · ⏰ '+formatDelivery(o.delivery):''}</div>
               </div>
             </div>`;
           }).join('')
@@ -449,9 +451,19 @@ window.framerOpenDetail = function(id) {
       <div style="font-weight:700;font-size:16px;">${o.name} · ${o.billNo||o.id.slice(0,8)}</div>
       <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;">✕</button>
     </div>
-    ${o.delivery?`<div style="background:#fff3e0;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:13px;font-weight:700;color:#e65100;">⏰ Due: ${formatDatetime(o.delivery)}</div>`:''}
+    ${o.delivery?`<div style="background:#fff3e0;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:13px;font-weight:700;color:#e65100;">⏰ Due: ${formatDelivery(o.delivery)}</div>`:''}
     ${(o.cartItems||[]).map(item=>typeof renderServiceTree==='function'?renderServiceTree(item,false,true):'').join('')}
     ${o.notes?`<div style="background:#fff3cd;border-radius:8px;padding:10px;margin-top:8px;font-size:13px;">📝 ${o.notes}</div>`:''}
+    ${(()=>{
+      const photos=[...(o.refPhotos||[]),(o.refPhoto?[o.refPhoto]:[])].flat().filter(Boolean);
+      if(!photos.length) return '';
+      return `<div style="margin-top:14px;">
+        <div style="font-size:12px;font-weight:700;color:#666;margin-bottom:8px;">📸 Reference Photos (${photos.length})</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          ${photos.map((src,i)=>`<img src="${src}" onclick="framerViewPhoto(${i},'${o.id}')" style="width:80px;height:80px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid #ddd;">`).join('')}
+        </div>
+      </div>`;
+    })()}
     ${o.status!=='Ready'?`<button onclick="framerMarkReady('${o.id}');this.closest('[style*=fixed]').remove();" style="width:100%;margin-top:16px;background:#388e3c;color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;">✅ Mark Ready</button>`:'<div style="text-align:center;color:#388e3c;font-weight:700;margin-top:12px;">✅ Already Ready</div>'}
   </div>`;
   document.body.appendChild(modal);
