@@ -669,7 +669,10 @@ async function sendWhatsApp(phone, templateName, params) {
     // Normalize phone: remove +, spaces, dashes; add 91 if needed
     let num = String(phone||'').replace(/[^0-9]/g,'');
     if(num.length === 10) num = '91' + num;
-    if(!num || num.length < 10) return; // skip if no valid phone
+    if(!num || num.length < 10) {
+      console.warn('[WA] Skipped - invalid phone:', phone);
+      return;
+    }
 
     const body = {
       apiKey: AISENSY_API_KEY,
@@ -683,13 +686,21 @@ async function sendWhatsApp(phone, templateName, params) {
       location: {}
     };
 
-    await fetch('https://backend.aisensy.com/campaign/t1/api/v2', {
+    console.log('[WA] Sending:', templateName, '→', num, 'params:', params);
+
+    const res = await fetch('https://backend.aisensy.com/campaign/t1/api/v2', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
+    const result = await res.json().catch(()=>({}));
+    console.log('[WA] Response:', res.status, result);
+
+    if (!res.ok) {
+      console.error('[WA] Failed:', res.status, result);
+    }
   } catch(e) {
-    console.warn('WhatsApp send failed:', e);
+    console.warn('[WA] WhatsApp send failed:', e);
   }
 }
 
