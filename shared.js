@@ -664,41 +664,25 @@ function renderServiceTree(item, compact=false, hidePrice=false) {
 const AISENSY_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMTIxNjhlNmY2NDYzMmY5MmZiY2M4ZSIsIm5hbWUiOiJGb3RvIFZpc2lvbiBTdHVkaW8gUHJvIiwiaWF0IjoxNzQ0ZTZmNjQ2MzJmOTJmYmNjOGUiLCJhbGciOiJIUzI1NiJ9.eyJwcm9qZWN0SWQiOiI2YTEyMTY4ZTZmNjQ2MzJmOTJmYmNjOGUifQ.4x4xQUTDXMLfDsDXVef21aNVlW1Jlj6fDg_t3QiwXtY';
 const OWNER_WHATSAPP = '919871977718'; // owner number with country code
 
+// Firebase proxy URL — routes through server to bypass AiSensy host allowlist
+const WA_PROXY_URL = 'https://us-central1-foto-vision-studio-pro.cloudfunctions.net/sendWhatsAppMessage';
+
 async function sendWhatsApp(phone, templateName, params) {
   try {
-    // Normalize phone: remove +, spaces, dashes; add 91 if needed
     let num = String(phone||'').replace(/[^0-9]/g,'');
     if(num.length === 10) num = '91' + num;
     if(!num || num.length < 10) {
       console.warn('[WA] Skipped - invalid phone:', phone);
       return;
     }
-
-    const body = {
-      apiKey: AISENSY_API_KEY,
-      campaignName: templateName,
-      destination: num,
-      userName: 'Foto Vision Studio Pro',
-      templateParams: params || [],
-      media: {},
-      buttons: [],
-      carouselCards: [],
-      location: {}
-    };
-
-    console.log('[WA] Sending:', templateName, '→', num, 'params:', params);
-
-    const res = await fetch('https://backend.aisensy.com/campaign/t1/api/v2', {
+    console.log('[WA] Sending via Firebase proxy:', templateName, '→', num);
+    const res = await fetch(WA_PROXY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      body: JSON.stringify({ phone: num, templateName, params: params || [] })
     });
     const result = await res.json().catch(()=>({}));
     console.log('[WA] Response:', res.status, result);
-
-    if (!res.ok) {
-      console.error('[WA] Failed:', res.status, result);
-    }
   } catch(e) {
     console.warn('[WA] WhatsApp send failed:', e);
   }
