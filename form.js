@@ -751,6 +751,72 @@ function initFormJS(existing, role) {
     if(pm) pm.checked=true;
     renderCart();
   }
+
+  // ── Returning customer auto-fill ─────────────────────────
+  // Attach ONCE — skip if already attached (e.g. form re-renders)
+  const phoneEl = document.getElementById('f-phone');
+  if (phoneEl && !phoneEl._autoFillAttached) {
+    phoneEl._autoFillAttached = true;
+    phoneEl.addEventListener('input', function() {
+      const num = this.value.replace(/[^0-9]/g,'');
+      // Only search when we have a complete 10-digit number
+      if (num.length !== 10) {
+        // Clear hint if number is being re-typed
+        const hint = document.getElementById('returning-customer-hint');
+        if (hint) hint.remove();
+        return;
+      }
+
+      // Search orders for this phone number
+      const allOrders = window.orders || [];
+      const matches = allOrders.filter(o => {
+        const oNum = String(o.phone||'').replace(/[^0-9]/g,'').slice(-10);
+        return oNum === num;
+      });
+
+      if (!matches.length) {
+        const hint = document.getElementById('returning-customer-hint');
+        if (hint) hint.remove();
+        return;
+      }
+
+      // Sort by date descending — most recent first
+      matches.sort((a,b) => new Date(b.createdAt||b.date||0) - new Date(a.createdAt||a.date||0));
+      const latest = matches[0];
+
+      // Silently auto-fill name and address if fields are empty
+      const nameEl = document.getElementById('f-name');
+      const addrEl = document.getElementById('f-address');
+      if (nameEl && !nameEl.value.trim()) nameEl.value = latest.name || '';
+      if (addrEl && !addrEl.value.trim()) addrEl.value = latest.address || '';
+
+      // Show past orders hint below phone field
+      let hint = document.getElementById('returning-customer-hint');
+      if (!hint) {
+        hint = document.createElement('div');
+        hint.id = 'returning-customer-hint';
+        hint.style.cssText = 'margin-top:6px;padding:8px 12px;background:#fdf8ee;border:1px solid #e8c96a;border-radius:8px;font-size:12px;color:#7a5c00;';
+        phoneEl.parentNode.insertBefore(hint, phoneEl.nextSibling);
+      }
+
+      // Build past orders list (max 5 recent)
+      const recent = matches.slice(0, 5);
+      const orderLines = recent.map(o => {
+        const svc = (o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]).filter(Boolean).join(', ') || 'Order';
+        const dateStr = o.date ? o.date.slice(5) : '';
+        const status = o.status || '';
+        return `<div style="padding:2px 0;border-bottom:1px solid #f0e0a0;last-child:border-none">
+          📋 <b>${o.billNo||''}</b> · ${dateStr} · ${svc} · Rs.${o.total||0}
+          <span style="float:right;color:${status==='Delivered'?'#2a7a2a':status==='Pending'?'#c07000':'#555'}">${status}</span>
+        </div>`;
+      }).join('');
+
+      hint.innerHTML = `
+        <div style="font-weight:700;margin-bottom:4px;">🔄 Returning Customer — ${matches.length} past order${matches.length>1?'s':''}</div>
+        ${orderLines}
+      `;
+    });
+  }
 }
 
 // ── Service panel toggle ──────────────────────────────────────
