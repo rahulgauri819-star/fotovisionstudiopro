@@ -757,64 +757,92 @@ function initFormJS(existing, role) {
   const phoneEl = document.getElementById('f-phone');
   if (phoneEl && !phoneEl._autoFillAttached) {
     phoneEl._autoFillAttached = true;
-    phoneEl.addEventListener('input', function() {
-      const num = this.value.replace(/[^0-9]/g,'');
-      // Only search when we have a complete 10-digit number
-      if (num.length !== 10) {
-        // Clear hint if number is being re-typed
-        const hint = document.getElementById('returning-customer-hint');
-        if (hint) hint.remove();
-        return;
-      }
+  phoneEl.addEventListener('input', function() {
+      const raw = this.value.replace(/[^0-9]/g,'');
+      const dropdown = document.getElementById('phone-suggest-dropdown');
+      if (dropdown) dropdown.remove();
+      const hint = document.getElementById('returning-customer-hint');
+      if (hint) hint.remove();
 
-      // Search orders for this phone number
+      if (raw.length < 3) return;
+
       const allOrders = window.orders || [];
-      const matches = allOrders.filter(o => {
-        const oNum = String(o.phone||'').replace(/[^0-9]/g,'').slice(-10);
-        return oNum === num;
+      // Build customer map keyed by phone (unique)
+      const custMap = {};
+      allOrders.forEach(o => {
+        const ph = String(o.phone||'').replace(/[^0-9]/g,'').slice(-10);
+        if (!ph || ph.length < 10) return;
+        if (!ph.includes(raw)) return; // filter by typed digits
+        if (!custMap[ph]) {
+          custMap[ph] = { phone:ph, name:o.name||'', address:o.address||'', orders:[], totalSpend:0 };
+        }
+        custMap[ph].orders.push(o);
+        custMap[ph].totalSpend += (+o.total||0);
+        // Keep most recent name
+        if (o.date > (custMap[ph].lastDate||'')) {
+          custMap[ph].lastDate = o.date;
+          custMap[ph].name = o.name || custMap[ph].name;
+          custMap[ph].address = o.address || custMap[ph].address;
+        }
       });
 
+      const matches = Object.values(custMap).slice(0, 6);
       if (!matches.length) {
-        const hint = document.getElementById('returning-customer-hint');
-        if (hint) hint.remove();
+        // If exactly 10 digits but no match — clear
         return;
       }
 
-      // Sort by date descending — most recent first
-      matches.sort((a,b) => new Date(b.createdAt||b.date||0) - new Date(a.createdAt||a.date||0));
-      const latest = matches[0];
-
-      // Silently auto-fill name and address if fields are empty
-      const nameEl = document.getElementById('f-name');
-      const addrEl = document.getElementById('f-address');
-      if (nameEl && !nameEl.value.trim()) nameEl.value = latest.name || '';
-      if (addrEl && !addrEl.value.trim()) addrEl.value = latest.address || '';
-
-      // Show past orders hint below phone field
-      let hint = document.getElementById('returning-customer-hint');
-      if (!hint) {
-        hint = document.createElement('div');
-        hint.id = 'returning-customer-hint';
-        hint.style.cssText = 'margin-top:6px;padding:8px 12px;background:#fdf8ee;border:1px solid #e8c96a;border-radius:8px;font-size:12px;color:#7a5c00;';
-        phoneEl.parentNode.insertBefore(hint, phoneEl.nextSibling);
+      // If exact 10-digit match — auto-fill silently
+      if (raw.length === 10 && custMap[raw]) {
+        const cust = custMap[raw];
+        const nameEl = document.getElementById('f-name');
+        const addrEl = document.getElementById('f-address');
+        if (nameEl && !nameEl.value.trim()) nameEl.value = cust.name;
+        if (addrEl && !addrEl.value.trim()) addrEl.value = cust.address;
+        // Show returning customer badge
+        let badge = document.getElementById('returning-customer-hint');
+        if (!badge) {
+          badge = document.createElement('div');
+          badge.id = 'returning-customer-hint';
+          badge.style.cssText = 'margin-top:5px;padding:7px 11px;background:#fdf8ee;border:1px solid #e8c96a;border-radius:8px;font-size:12px;color:#7a5c00;';
+          phoneEl.parentNode.insertBefore(badge, phoneEl.nextSibling);
+        }
+        const recent = cust.orders.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).slice(0,3);
+        badge.innerHTML = `<b>🔄 Returning Customer</b> · ${cust.orders.length} orders · Rs.${cust.totalSpend.toLocaleString('en-IN')} total<br>
+          ${recent.map(o=>`<span style="font-size:11px;color:#9a6e1e;">${o.billNo||''} · ${o.date||''} · Rs.${o.total||0} · ${o.status||''}</span>`).join('<br>')}`;
+        return;
       }
 
-      // Build past orders list (max 5 recent)
-      const recent = matches.slice(0, 5);
-      const orderLines = recent.map(o => {
-        const svc = (o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]).filter(Boolean).join(', ') || 'Order';
-        const dateStr = o.date ? o.date.slice(5) : '';
-        const status = o.status || '';
-        return `<div style="padding:2px 0;border-bottom:1px solid #f0e0a0;last-child:border-none">
-          📋 <b>${o.billNo||''}</b> · ${dateStr} · ${svc} · Rs.${o.total||0}
-          <span style="float:right;color:${status==='Delivered'?'#2a7a2a':status==='Pending'?'#c07000':'#555'}">${status}</span>
-        </div>`;
-      }).join('');
-
-      hint.innerHTML = `
-        <div style="font-weight:700;margin-bottom:4px;">🔄 Returning Customer — ${matches.length} past order${matches.length>1?'s':''}</div>
-        ${orderLines}
-      `;
+      // Show dropdown suggestions
+      const dd = document.createElement('div');
+      dd.id = 'phone-suggest-dropdown';
+      dd.style.cssText = 'position:absolute;z-index:9999;background:#fff;border:1px solid #e8c96a;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.12);width:100%;max-height:200px;overflow-y:auto;margin-top:2px;';
+      matches.forEach(cust => {
+        const row = document.createElement('div');
+        row.style.cssText = 'padding:10px 14px;cursor:pointer;border-bottom:1px solid #f5f0e8;display:flex;justify-content:space-between;align-items:center;';
+        row.innerHTML = `<div><div style="font-size:13px;font-weight:700;color:#1a1a1a;">${cust.name||'Unknown'}</div><div style="font-size:11px;color:#888;">${cust.phone} · ${cust.orders.length} orders</div></div><div style="font-size:11px;font-weight:600;color:#9a6e1e;">Rs.${cust.totalSpend.toLocaleString('en-IN')}</div>`;
+        row.onmousedown = row.ontouchstart = (e) => {
+          e.preventDefault();
+          phoneEl.value = cust.phone;
+          const nameEl = document.getElementById('f-name');
+          const addrEl = document.getElementById('f-address');
+          if (nameEl) nameEl.value = cust.name;
+          if (addrEl) addrEl.value = cust.address;
+          const ddEl = document.getElementById('phone-suggest-dropdown');
+          if (ddEl) ddEl.remove();
+          phoneEl.dispatchEvent(new Event('input'));
+        };
+        dd.appendChild(row);
+      });
+      // Position relative to phone input
+      const wrap = phoneEl.parentNode;
+      wrap.style.position = 'relative';
+      wrap.appendChild(dd);
+      // Close on blur
+      phoneEl.addEventListener('blur', () => setTimeout(()=>{
+        const d = document.getElementById('phone-suggest-dropdown');
+        if (d) d.remove();
+      }, 200), {once:true});
     });
   }
 }
@@ -1234,7 +1262,7 @@ window.onPrintQualityChange = function() {
   let opts = '<option value="">— Select Size —</option>';
   const smallSizes = ['2x3','3x4','3.5x5','4x6','5x7','6x8','6x9','8x10','8x12'];
   const largeSizes = ['10x12','12x15','12x18','13x19','16x20','16x24','20x24','20x30'];
-  const xlSizes    = ['24x36','36x54','44x66'];
+  const xlSizes    = ['24x36','30x40','36x54','44x66'];
 
   const smallAllowed  = smallSizes.filter(s => isSizeAllowedForQuality(s, qual));
   const largeAllowed  = largeSizes.filter(s => isSizeAllowedForQuality(s, qual));

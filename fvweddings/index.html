@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>FV Weddings — Order Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--gold:#C9973A;--gold-dk:#8a6520;--gold-bg:#FFF8ED;--paper:#f9f8f5;--ink:#1a1a1a;--ink2:#555;--ink3:#888;--green:#2e7d32;--red:#c62828;}
+body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;overscroll-behavior:none;}
+.hdr{background:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ede8df;position:sticky;top:0;z-index:100;}
+.hdr-left{display:flex;align-items:center;gap:10px;}
+.hdr-logo{width:34px;height:34px;background:linear-gradient(135deg,var(--gold-dk),var(--gold));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.hdr-name{font-size:15px;font-weight:800;}
+.hdr-sub{font-size:9px;color:var(--gold);font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 20px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:inherit;width:100%;}
+.btn-gold{background:linear-gradient(135deg,var(--gold-dk),var(--gold));color:#fff;}
+.btn-outline{background:transparent;border:1.5px solid var(--gold);color:var(--gold);}
+.btn-red{background:#c62828;color:#fff;}
+.btn-sm{padding:8px 16px;font-size:12px;width:auto;}
+.card{background:#fff;border-radius:14px;border:1px solid #ede8df;padding:16px;margin-bottom:12px;}
+.form-label{font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:5px;display:block;text-transform:uppercase;letter-spacing:.5px;}
+.form-input{width:100%;padding:11px 13px;border:1.5px solid #ede8df;border-radius:10px;font-size:14px;font-family:inherit;color:var(--ink);outline:none;}
+.form-input:focus{border-color:var(--gold);}
+select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23888' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+.template-card{background:var(--gold-bg);border:1.5px solid #e8c96a;border-radius:12px;padding:13px 15px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:12px;}
+.template-card:hover{background:#fff3d0;}
+.tpl-icon{font-size:24px;}
+.tpl-name{font-size:13px;font-weight:700;}
+.tpl-desc{font-size:11px;color:var(--ink3);}
+.badge-credit{background:#e3f2fd;color:#1565c0;font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;border:1px solid #90caf9;}
+.tab-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ede8df;display:flex;justify-content:space-around;padding:8px 0 12px;z-index:100;}
+.tab-btn{display:flex;flex-direction:column;align-items:center;gap:3px;border:none;background:none;cursor:pointer;font-family:inherit;padding:4px 12px;}
+.tab-btn span:first-child{font-size:20px;}
+.tab-btn .tab-lbl{font-size:9px;font-weight:600;color:var(--ink3);}
+.tab-btn.active .tab-lbl{color:var(--gold);font-weight:700;}
+.page{display:none;padding:16px;padding-bottom:80px;}
+.page.active{display:block;}
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:9px 18px;border-radius:20px;font-size:12px;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;white-space:nowrap;}
+#toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<!-- Header -->
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-logo">💒</div>
+    <div><div class="hdr-name">FV Weddings</div><div class="hdr-sub">Order Portal</div></div>
+  </div>
+  <span class="badge-credit">💳 Credit Account</span>
+</div>
+
+<div id="toast"></div>
+
+<!-- ── PAGE: Orders ── -->
+<div id="pg-orders" class="page active">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <div style="font-size:17px;font-weight:800;">My Orders</div>
+    <button class="btn btn-gold btn-sm" onclick="showPage('new-order')">+ New Order</button>
+  </div>
+  <!-- Outstanding balance card -->
+  <div class="card" style="background:linear-gradient(135deg,#1a1410,#3a2810);border:none;margin-bottom:16px;">
+    <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Outstanding Balance</div>
+    <div style="font-size:26px;font-weight:800;color:var(--gold);" id="fvw-balance">Rs.0</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:4px;" id="fvw-balance-sub">0 unpaid orders</div>
+  </div>
+  <div id="fvw-orders-list"></div>
+</div>
+
+<!-- ── PAGE: New Order ── -->
+<div id="pg-new-order" class="page">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+    <button onclick="showPage('orders')" style="border:none;background:var(--gold-bg);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:13px;font-weight:600;">← Back</button>
+    <div style="font-size:17px;font-weight:800;">New Order</div>
+  </div>
+
+  <!-- Saved Templates -->
+  <div style="margin-bottom:16px;">
+    <div style="font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:8px;">⚡ Quick Templates</div>
+    <div id="fvw-templates-list"></div>
+    <div style="font-size:11px;color:var(--ink3);text-align:center;padding:4px;" id="fvw-no-tpl" style="display:none;">No templates yet — save an order as a template below</div>
+  </div>
+
+  <!-- Order form (reuse main form) -->
+  <div class="card">
+    <div class="form-label" style="margin-bottom:10px;">Customer Name</div>
+    <input class="form-input" id="fvw-cust-name" placeholder="e.g. Sharma Family" style="margin-bottom:12px;">
+
+    <div class="form-label" style="margin-bottom:6px;">Services</div>
+    <select class="form-input" id="fvw-service" style="margin-bottom:12px;">
+      <option value="">-- Select Service --</option>
+      <option value="HDR Printing">HDR Printing</option>
+      <option value="NP Printing">NP Printing</option>
+      <option value="Framing">Framing</option>
+      <option value="HDR Printing + Framing">HDR Printing + Framing</option>
+      <option value="Vinyl">Vinyl Print</option>
+      <option value="Canvas">Canvas Print</option>
+      <option value="Photo Editing">Photo Editing</option>
+    </select>
+
+    <div class="form-label" style="margin-bottom:6px;">Size</div>
+    <select class="form-input" id="fvw-size" style="margin-bottom:12px;">
+      <option value="">-- Select Size --</option>
+      <option>4×6"</option><option>5×7"</option><option>6×8"</option>
+      <option>8×10"</option><option>8×12"</option><option>10×12"</option>
+      <option>12×15"</option><option>12×18"</option><option>13×19"</option>
+      <option>16×20"</option><option>16×24"</option><option>20×24"</option>
+      <option>20×30"</option><option>24×36"</option><option>30×40"</option>
+      <option>36×54"</option><option>44×66"</option>
+    </select>
+
+    <div style="display:flex;gap:10px;margin-bottom:12px;">
+      <div style="flex:1;">
+        <div class="form-label" style="margin-bottom:6px;">Quantity</div>
+        <input class="form-input" id="fvw-qty" type="number" min="1" value="1" placeholder="1">
+      </div>
+      <div style="flex:1;">
+        <div class="form-label" style="margin-bottom:6px;">Amount (Rs.)</div>
+        <input class="form-input" id="fvw-amount" type="number" placeholder="0">
+      </div>
+    </div>
+
+    <div class="form-label" style="margin-bottom:6px;">Notes (optional)</div>
+    <textarea class="form-input" id="fvw-notes" rows="2" placeholder="e.g. Black moulding, white mount..." style="margin-bottom:14px;resize:none;"></textarea>
+
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-gold" onclick="fvwSubmitOrder()">✅ Place Order (Credit)</button>
+    </div>
+    <div style="margin-top:8px;">
+      <button class="btn btn-outline btn-sm" onclick="fvwSaveAsTemplate()">💾 Save as Template</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── PAGE: Templates ── -->
+<div id="pg-templates" class="page">
+  <div style="font-size:17px;font-weight:800;margin-bottom:14px;">Saved Templates</div>
+  <div id="fvw-tpl-page-list"></div>
+  <button class="btn btn-gold" onclick="showPage('new-order')">+ Create & Save New Template</button>
+</div>
+
+<!-- Tab Bar -->
+<div class="tab-bar">
+  <button class="tab-btn active" id="tab-orders" onclick="showPage('orders')">
+    <span>📋</span><span class="tab-lbl">Orders</span>
+  </button>
+  <button class="tab-btn" id="tab-new-order" onclick="showPage('new-order')">
+    <span style="width:44px;height:44px;background:linear-gradient(135deg,var(--gold-dk),var(--gold));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;margin-top:-16px;box-shadow:0 4px 16px rgba(201,151,58,.4);">+</span>
+    <span class="tab-lbl">New</span>
+  </button>
+  <button class="tab-btn" id="tab-templates" onclick="showPage('templates')">
+    <span>⚡</span><span class="tab-lbl">Templates</span>
+  </button>
+</div>
+
+<script>
+// Firebase
+let db = null;
+async function initDB() {
+  try {
+    const {initializeApp, getApps} = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js');
+    const {getFirestore, collection, addDoc, getDocs, query, where, orderBy, serverTimestamp, deleteDoc, doc, setDoc} = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+    const cfg = {apiKey:'AIzaSyAerxTK5t5tYqDJ-AZg5_BMZJEk3pRD0uI',authDomain:'foto-vision-studio-pro.firebaseapp.com',projectId:'foto-vision-studio-pro',storageBucket:'foto-vision-studio-pro.firebasestorage.app',messagingSenderId:'1055550886532',appId:'1:1055550886532:web:d6c13af3493fddb14428d1'};
+    const ex = getApps().find(a=>a.name==='fvwed');
+    const app = ex || initializeApp(cfg,'fvwed');
+    const fs = getFirestore(app);
+    db = {
+      addOrder: async d => { const r = await addDoc(collection(fs,'orders'),{...d,createdAt:serverTimestamp()}); return r.id; },
+      getOrders: async () => { const q = query(collection(fs,'orders'),where('staff','==','FV Weddings'),orderBy('createdAt','desc')); const s = await getDocs(q); return s.docs.map(d=>({id:d.id,...d.data()})); },
+      saveTemplate: async d => { await setDoc(doc(fs,'fvwTemplates',d.id||Date.now().toString()),d); },
+      getTemplates: async () => { const s = await getDocs(collection(fs,'fvwTemplates')); return s.docs.map(d=>({id:d.id,...d.data()})); },
+      deleteTemplate: async id => { await deleteDoc(doc(fs,'fvwTemplates',id)); },
+    };
+    loadOrders(); loadTemplates();
+  } catch(e) { console.warn('DB error:', e); useLocalFallback(); }
+}
+
+let orders = JSON.parse(localStorage.getItem('fvw_orders')||'[]');
+let templates = JSON.parse(localStorage.getItem('fvw_templates')||'[]');
+
+function useLocalFallback() {
+  loadOrders(); loadTemplates();
+}
+
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(pg=>pg.classList.remove('active'));
+  document.getElementById('pg-'+p).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  const tabEl = document.getElementById('tab-'+p);
+  if (tabEl) tabEl.classList.add('active');
+  if (p==='orders') loadOrders();
+  if (p==='templates') renderTplPage();
+}
+
+async function loadOrders() {
+  if (db) { try { orders = await db.getOrders(); } catch(e) {} }
+  renderOrders();
+  updateBalance();
+}
+
+function renderOrders() {
+  const el = document.getElementById('fvw-orders-list');
+  if (!orders.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--ink3);">No orders yet — tap + New Order to start</div>'; return; }
+  el.innerHTML = orders.slice(0,20).map(o => `
+    <div class="card" style="cursor:default;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+        <div>
+          <div style="font-size:14px;font-weight:700;">${o.name||'—'}</div>
+          <div style="font-size:11px;color:var(--ink3);">${o.billNo||o.id?.slice(-6)||''} · ${o.date||''}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:15px;font-weight:800;color:var(--gold);">Rs.${(o.total||0).toLocaleString('en-IN')}</div>
+          <span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;${o.status==='Delivered'?'background:#e8f5e9;color:#2e7d32':'background:#fff3e0;color:#e65c00'}">${o.status||'Pending'}</span>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--ink3);">${o.notes||o.cartItems?.[0]?.label||''}</div>
+    </div>`).join('');
+}
+
+function updateBalance() {
+  const unpaid = orders.filter(o => o.status !== 'Delivered');
+  const total = unpaid.reduce((s,o)=>s+(+o.total||0),0);
+  document.getElementById('fvw-balance').textContent = 'Rs.' + total.toLocaleString('en-IN');
+  document.getElementById('fvw-balance-sub').textContent = `${unpaid.length} unpaid order${unpaid.length!==1?'s':''}`;
+}
+
+async function loadTemplates() {
+  if (db) { try { templates = await db.getTemplates(); } catch(e) {} }
+  localStorage.setItem('fvw_templates', JSON.stringify(templates));
+  renderTemplatesStrip();
+  renderTplPage();
+}
+
+function renderTemplatesStrip() {
+  const el = document.getElementById('fvw-templates-list');
+  const noTpl = document.getElementById('fvw-no-tpl');
+  if (!templates.length) { el.innerHTML=''; if(noTpl) noTpl.style.display='block'; return; }
+  if(noTpl) noTpl.style.display='none';
+  el.innerHTML = templates.map((t,i) => `
+    <div class="template-card" onclick="loadTemplate(${i})">
+      <span class="tpl-icon">⚡</span>
+      <div style="flex:1;">
+        <div class="tpl-name">${t.name}</div>
+        <div class="tpl-desc">${t.service} · ${t.size} · Qty ${t.qty} · Rs.${t.amount}</div>
+      </div>
+      <span style="font-size:11px;color:var(--gold);font-weight:700;">Tap to load</span>
+    </div>`).join('');
+}
+
+function renderTplPage() {
+  const el = document.getElementById('fvw-tpl-page-list');
+  if (!templates.length) { el.innerHTML='<div style="text-align:center;padding:20px;color:var(--ink3);">No templates saved yet</div>'; return; }
+  el.innerHTML = templates.map((t,i) => `
+    <div class="card" style="display:flex;align-items:center;gap:12px;">
+      <span style="font-size:22px;">⚡</span>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:700;">${t.name}</div>
+        <div style="font-size:11px;color:var(--ink3);">${t.service} · ${t.size} · Qty ${t.qty} · Rs.${t.amount}</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button onclick="loadTemplate(${i});showPage('new-order')" class="btn btn-gold btn-sm" style="padding:6px 12px;">Use</button>
+        <button onclick="deleteTpl(${i})" class="btn btn-red btn-sm" style="padding:6px 10px;">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+function loadTemplate(i) {
+  const t = templates[i];
+  document.getElementById('fvw-service').value = t.service || '';
+  document.getElementById('fvw-size').value = t.size || '';
+  document.getElementById('fvw-qty').value = t.qty || 1;
+  document.getElementById('fvw-amount').value = t.amount || '';
+  document.getElementById('fvw-notes').value = t.notes || '';
+  showPage('new-order');
+  toast('⚡ Template loaded!');
+}
+
+async function fvwSaveAsTemplate() {
+  const service = document.getElementById('fvw-service').value;
+  const size = document.getElementById('fvw-size').value;
+  const qty = document.getElementById('fvw-qty').value;
+  const amount = document.getElementById('fvw-amount').value;
+  const notes = document.getElementById('fvw-notes').value;
+  if (!service || !size) { toast('Select service and size first'); return; }
+  const name = prompt(`Template name? (e.g. "12×36 Black Moulding")`) || `${service} ${size}`;
+  const tpl = { id: Date.now().toString(), name, service, size, qty, amount, notes };
+  templates.push(tpl);
+  localStorage.setItem('fvw_templates', JSON.stringify(templates));
+  if (db) { try { await db.saveTemplate(tpl); } catch(e) {} }
+  renderTemplatesStrip(); renderTplPage();
+  toast('💾 Template saved!');
+}
+
+async function deleteTpl(i) {
+  if (!confirm('Delete this template?')) return;
+  const tpl = templates[i];
+  templates.splice(i, 1);
+  localStorage.setItem('fvw_templates', JSON.stringify(templates));
+  if (db) { try { await db.deleteTemplate(tpl.id); } catch(e) {} }
+  renderTplPage(); renderTemplatesStrip();
+  toast('Deleted');
+}
+
+async function fvwSubmitOrder() {
+  const name = document.getElementById('fvw-cust-name').value.trim();
+  const service = document.getElementById('fvw-service').value;
+  const size = document.getElementById('fvw-size').value;
+  const qty = +document.getElementById('fvw-qty').value || 1;
+  const amount = +document.getElementById('fvw-amount').value || 0;
+  const notes = document.getElementById('fvw-notes').value.trim();
+  if (!name) { toast('Enter customer name'); return; }
+  if (!service) { toast('Select a service'); return; }
+  const d = new Date();
+  const billNo = `FV-${String(d.getFullYear()).slice(2)}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-FVW-${Math.floor(Math.random()*900+100)}`;
+  const order = {
+    billNo, name, phone:'', orderType:'Booking', status:'Pending',
+    source:'fvweddings', payMode:'FV Weddings Credit',
+    staff:'FV Weddings', date:d.toISOString().slice(0,10),
+    total:amount, advance:0,
+    cartItems:[{svcs:[service], svc:service, label:`${service} ${size} × ${qty}`, price:amount}],
+    notes: notes || `${service} · ${size} · Qty ${qty}`
+  };
+  try {
+    if (db) await db.addOrder(order);
+    else { orders.unshift(order); localStorage.setItem('fvw_orders', JSON.stringify(orders)); }
+    toast('✅ Order placed on credit!');
+    // Clear form
+    ['fvw-cust-name','fvw-amount','fvw-notes'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('fvw-qty').value='1';
+    showPage('orders');
+  } catch(e) { toast('Error — please try again'); }
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+// Check auth
+window.addEventListener('DOMContentLoaded', () => {
+  const role = localStorage.getItem('fv_current_role');
+  if (role !== 'fvwed') { window.location.href='../index.html'; return; }
+  initDB();
+});
+</script>
+</body>
+</html>

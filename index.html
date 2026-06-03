@@ -159,13 +159,19 @@ body{background:#0F0F0F;color:#fff;min-height:100vh;display:flex;flex-direction:
         <div class="role-desc">Full access · Sales · Analytics</div>
         <span class="role-arrow">›</span>
       </div>
+      <div class="role-card" onclick="selectRole('fvwed')" id="rc-fvwed">
+        <span class="role-icon">💒</span>
+        <div class="role-name">FV Weddings</div>
+        <div class="role-desc">Credit orders · Templates</div>
+        <span class="role-arrow">›</span>
+      </div>
       <div class="role-card" onclick="selectRole('staff')" id="rc-staff">
         <span class="role-icon">🧑‍💼</span>
         <div class="role-name">Staff</div>
         <div class="role-desc">Orders · Bookings · Billing</div>
         <span class="role-arrow">›</span>
       </div>
-      <div class="role-card" onclick="selectRole('framer')" id="rc-framer">
+      <div class="role-card" onclick="selectRole('framer')" id="rc-framer"><!-- fvwed card added below -->
         <span class="role-icon">🖼️</span>
         <div class="role-name">Framer</div>
         <div class="role-desc">Framing · Finishing jobs</div>
@@ -192,9 +198,10 @@ body{background:#0F0F0F;color:#fff;min-height:100vh;display:flex;flex-direction:
 
 <script>
 const ROLE_CONFIG = {
-  owner:  { name:'Owner',  icon:'👑',  defaultPass:'owner123',  page:'owner/index.html',  hint:'Contact owner for password' },
-  staff:  { name:'Staff',  icon:'🧑‍💼', defaultPass:'staff123',  page:'staff/index.html',  hint:'Contact owner for password'  },
-  framer: { name:'Framer', icon:'🖼️', defaultPass:'framer123', page:'framer/index.html', hint:'Contact owner for password' },
+  owner:   { name:'Owner',       icon:'👑',  defaultPass:'owner123',    page:'owner/index.html',    hint:'Contact owner for password' },
+  staff:   { name:'Staff',       icon:'🧑‍💼', defaultPass:'staff123',    page:'staff/index.html',    hint:'Contact owner for password'  },
+  framer:  { name:'Framer',      icon:'🖼️', defaultPass:'framer123',   page:'framer/index.html',   hint:'Contact owner for password' },
+  fvwed:   { name:'FV Weddings', icon:'💒',  defaultPass:'fvwed123',    page:'fvweddings/index.html', hint:'Contact owner for password' },
 };
 
 function getRolePassword(role) {
@@ -228,6 +235,7 @@ function doLogin() {
   if (!selectedRole) return;
   const pass = document.getElementById('login-pass').value;
   const cfg  = ROLE_CONFIG[selectedRole];
+  localStorage.setItem('fv_current_role', selectedRole);
   if (pass !== getRolePassword(selectedRole)) {
     const err = document.getElementById('login-err');
     err.style.display = 'block';

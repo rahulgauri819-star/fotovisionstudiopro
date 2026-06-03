@@ -470,13 +470,64 @@ window.framerOpenDetail = function(id) {
 };
 
 window.framerMarkReady = async function(id) {
-  if(framerUseLocal){framerOrders=framerOrders.map(o=>o.id===id?{...o,status:'Ready'}:o);localStorage.setItem('fv_orders',JSON.stringify(framerOrders));}
+  const o = framerOrders.find(x=>x.id===id);
+  if(framerUseLocal){framerOrders=framerOrders.map(x=>x.id===id?{...x,status:'Ready'}:x);localStorage.setItem('fv_orders',JSON.stringify(framerOrders));}
   else { try{await framerDb.collection('orders').doc(id).update({status:'Ready'});}catch(e){toast('Error','error');return;} }
+  // Auto-deduct moulding stock
+  if (o) framerDeductMouldingStock(o);
   toast('✅ Order marked Ready!','success');
-  framerRender(); // re-render current tab — card auto-moves since Ready filters are different
-  // Switch to Ready tab to show it
+  framerRender();
   framerTab('ready');
 };
+
+// Auto-deduct moulding stock when order is marked ready
+function framerDeductMouldingStock(order) {
+  try {
+    const items = order.cartItems || [];
+    const hasFraming = items.some(i => (i.svcs||[i.svc]).includes('Framing'));
+    if (!hasFraming) return;
+    // Get framing details
+    const frameSize = order.printSize || order.frameSize || '';
+    const mouldingName = order.moulding || order.mouldingType || '';
+    const mouldingSize = parseFloat(order.mouldingSize || 1.5);
+    if (!mouldingName) return;
+    // Calculate footage needed: perimeter of frame / 12 inches per foot
+    // Need: 2*(L+B) inches total, plus ~20% waste for corners
+    const sizeMap = {'4x6':{w:4,h:6},'5x7':{w:5,h:7},'6x8':{w:6,h:8},'8x10':{w:8,h:10},'8x12':{w:8,h:12},'10x12':{w:10,h:12},'12x15':{w:12,h:15},'12x18':{w:12,h:18},'16x20':{w:16,h:20},'16x24':{w:16,h:24},'20x24':{w:20,h:24},'20x30':{w:20,h:30},'24x36':{w:24,h:36},'30x40':{w:30,h:40}};
+    const dims = sizeMap[frameSize];
+    if (!dims) return;
+    const mountSize = parseFloat(order.mountSize || 0);
+    const L = dims.w + (mountSize * 2);
+    const B = dims.h + (mountSize * 2);
+    const perimInches = (L + B) * 2 * 1.2; // +20% corner waste
+    const feetNeeded = perimInches / 12;
+    // Update moulding stock in localStorage + Firebase
+    const stockKey = 'fv_moulding_footage';
+    const stock = JSON.parse(localStorage.getItem(stockKey)||'{}');
+    if (stock[mouldingName] !== undefined) {
+      stock[mouldingName] = Math.max(0, (stock[mouldingName] || 0) - feetNeeded);
+      localStorage.setItem(stockKey, JSON.stringify(stock));
+      // Log deduction
+      const log = JSON.parse(localStorage.getItem('fv_moulding_log')||'[]');
+      log.unshift({
+        type:'deduct', moulding:mouldingName, feet:feetNeeded.toFixed(1),
+        orderId:order.billNo||order.id, date:new Date().toISOString().slice(0,10),
+        note:'Auto-deducted on Ready'
+      });
+      localStorage.setItem('fv_moulding_log', JSON.stringify(log.slice(0,200)));
+      // Also update Firebase
+      if (framerDb) {
+        framerDb.collection('mouldingFootage').doc(mouldingName.replace(/\s+/g,'_')).get()
+          .then(d => {
+            const cur = d.exists ? (d.data().feet||0) : 0;
+            return framerDb.collection('mouldingFootage').doc(mouldingName.replace(/\s+/g,'_')).set({
+              name:mouldingName, feet:Math.max(0,cur-feetNeeded), updatedAt:new Date().toISOString()
+            });
+          }).catch(()=>{});
+      }
+    }
+  } catch(e) { console.warn('Moulding stock deduct error:', e); }
+}
 
 window.framerUndoReady = async function(id) {
   if(!confirm('⚠️ Move order back to In Progress?')) return;

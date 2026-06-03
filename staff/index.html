@@ -25,6 +25,9 @@
 /* Staff needs bottom tab nav */
 .tab-nav { display: flex !important; }
 .tab-nav-inner { display: flex !important; }
+
+@keyframes slideDown{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes urgentPulse{from{box-shadow:0 8px 32px rgba(220,38,38,.35)}to{box-shadow:0 8px 48px rgba(220,38,38,.7)}}
 </style>
 <style>
 .main { padding:0!important;margin:0!important; }
@@ -2020,6 +2023,69 @@ initDB().then(async()=>{
 <script>
 // FIX 8: cancelForm was outside </html> — moved inside
 window.cancelForm=()=>{window.cart=[];window.editId=null;showPage('orders');};
+
+// Bell notifications for staff
+(function() {
+  let audioUnlocked = false;
+  document.addEventListener('click', function() {
+    if (audioUnlocked) return; audioUnlocked = true;
+    try {
+      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      window._playBell = function(urgent) {
+        const osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = urgent ? 880 : 1100;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.6, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+        osc.start(); osc.stop(ctx.currentTime + 0.5);
+        if (urgent) setTimeout(()=>{const o2=ctx.createOscillator(),g2=ctx.createGain();o2.connect(g2);g2.connect(ctx.destination);o2.frequency.value=880;o2.type='sine';g2.gain.setValueAtTime(0.6,ctx.currentTime);g2.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);o2.start();o2.stop(ctx.currentTime+0.5);},550);
+      };
+    } catch(e) {}
+  }, {once:true});
+
+  const notifiedReady = new Set(JSON.parse(sessionStorage.getItem('_s_notified_ready')||'[]'));
+  const notifiedUrgent = {};
+
+  setTimeout(() => {
+    let prevStatuses = {};
+    (window.orders||[]).forEach(o => prevStatuses[o.id] = o.status);
+    setInterval(() => {
+      // Ready notifications
+      (window.orders||[]).forEach(o => {
+        if (o.status === 'Ready' && prevStatuses[o.id] !== 'Ready' && !notifiedReady.has(o.id)) {
+          notifiedReady.add(o.id);
+          sessionStorage.setItem('_s_notified_ready', JSON.stringify([...notifiedReady]));
+          window._playBell && window._playBell(false);
+          const svc = (o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]).filter(Boolean).join(', ')||'Order';
+          const p = document.createElement('div');
+          p.id = 'bell-ready-popup';
+          p.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:99999;width:90%;max-width:420px;background:#fff;border:2px solid #2e7d32;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.2);padding:18px;animation:slideDown .3s ease;';
+          p.innerHTML = `<div style="display:flex;align-items:center;gap:10px;"><span style="font-size:26px;">🔔</span><div><b style="color:#2e7d32;font-size:15px;">Order Ready!</b><div style="font-size:12px;color:#555;">${o.name} · ${o.billNo||''}</div></div><button onclick="this.parentElement.parentElement.remove()" style="margin-left:auto;border:none;background:none;font-size:20px;cursor:pointer;">×</button></div><div style="margin-top:8px;font-size:12px;background:#f0fdf4;padding:8px;border-radius:6px;">${svc} · Rs.${o.total||0}</div>`;
+          document.body.appendChild(p);
+          setTimeout(()=>{const el=document.getElementById('bell-ready-popup');if(el)el.remove();}, 12000);
+        }
+        prevStatuses[o.id] = o.status;
+        // Urgent delivery check
+        if (o.status === 'Ready' || o.status === 'Delivered' || !o.delivery) return;
+        const msUntil = new Date(o.delivery).getTime() - Date.now();
+        if (msUntil > 0 && msUntil <= 7200000) {
+          const last = notifiedUrgent[o.id] || 0;
+          if (Date.now() - last > 900000) {
+            notifiedUrgent[o.id] = Date.now();
+            window._playBell && window._playBell(true);
+            const delStr = new Date(o.delivery).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+            const pu = document.createElement('div');
+            pu.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:99999;width:90%;max-width:420px;background:#fff;border:3px solid #dc2626;border-radius:16px;box-shadow:0 8px 32px rgba(220,38,38,.4);padding:18px;animation:urgentPulse 1s ease infinite alternate;';
+            pu.innerHTML = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="font-size:26px;">🚨</span><b style="color:#dc2626;font-size:15px;">PLEASE HURRY!</b><button onclick="this.parentElement.parentElement.remove()" style="margin-left:auto;border:none;background:none;font-size:20px;cursor:pointer;">×</button></div><div style="background:#fef2f2;border:2px solid #dc2626;border-radius:8px;padding:10px;color:#dc2626;font-size:13px;font-weight:700;">🚨 ${o.name} · ${o.billNo||''}<br><span style="font-size:11px;color:#7f1d1d;font-weight:400;">Due ${delStr} — NOT ready yet!</span></div>`;
+            document.body.appendChild(pu);
+          }
+        }
+      });
+    }, 5000);
+  }, 4000);
+})();
+
 </script>
 </body>
 </html>

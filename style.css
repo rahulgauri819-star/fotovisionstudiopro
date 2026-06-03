@@ -148,7 +148,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
   border-radius: 50%; border: none; cursor: pointer;
   font-size: 26px; font-weight: 300; color: #fff;
   display: flex; align-items: center; justify-content: center;
-  margin-top: -14px;
+  margin-top: -22px;
   box-shadow: 0 4px 20px rgba(201,151,58,.5);
   transition: transform .18s;
 }
