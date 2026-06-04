@@ -725,6 +725,22 @@ function getBPanelHTML(svc) {
 // FIX 1: Global groupAsel so getFrameLB() can access it without crashing
 let groupAsel = [];
 
+function updatePaymentSection() {
+  const otype = document.querySelector('input[name="otype"]:checked')?.value || 'Instant';
+  const instantNote = document.getElementById('instant-pay-note');
+  const bookingBox = document.getElementById('booking-advance-box');
+  if (instantNote) instantNote.classList.toggle('hidden', otype !== 'Instant');
+  if (bookingBox) bookingBox.classList.toggle('hidden', otype !== 'Booking');
+}
+
+function updateCreditPaymentOptions() {
+  // Adds credit company payment buttons to the form
+  const container = document.getElementById('credit-pay-options');
+  if (!container) return;
+  const companies = (window.CREDIT_COMPANIES || ['FV Weddings']);
+  // Stub — credit payment UI handled by owner/staff separately
+}
+
 function initFormJS(existing, role) {
   updatePaymentSection();
   updateCartPanel();
