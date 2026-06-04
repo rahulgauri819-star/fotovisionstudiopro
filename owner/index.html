@@ -5296,12 +5296,12 @@ function renderVendorList() {
     <div style="margin-bottom:14px;padding:12px;background:var(--paper);border-radius:10px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <div style="font-weight:700;font-size:14px;">🏪 ${vendor}</div>
-        <button onclick="deleteVendor('${vendor}')" style="background:#e53935;color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px;">🗑️ Delete</button>
+        <button onclick="deleteVendor(this.dataset.vendor)" data-vendor="${vendor.replace(/"/g,'&quot;').replace(/'/g,'&#39;')}" style="background:#e53935;color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px;">🗑️ Delete</button>
       </div>
       ${types.map((t,i)=>`
         <div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px;">
           <span style="flex:1;">📐 ${t}</span>
-          <button onclick="deleteVendorType('${vendor}',${i})" style="background:none;border:none;color:#e53935;cursor:pointer;font-size:12px;">✕</button>
+          <button onclick="deleteVendorType(this.dataset.vendor,+this.dataset.idx)" data-vendor="${vendor.replace(/"/g,'&quot;').replace(/'/g,'&#39;')}" data-idx="${i}" style="background:none;border:none;color:#e53935;cursor:pointer;font-size:12px;">✕</button>
         </div>`).join('')}
       <div style="display:flex;gap:6px;margin-top:8px;">
         <input class="form-input" id="vt-input-${vendor.replace(/\s/g,'_')}" placeholder="Add moulding type..." style="font-size:12px;padding:6px 10px;" onkeydown="if(event.key==='Enter')addVendorType('${vendor}')">
@@ -5602,7 +5602,7 @@ window.renderMouldingStock = function() {
             ${full>0?`<div style="font-size:13px;color:var(--ink2);margin-bottom:3px;">📏 ${full} Full Length${full>1?'s':''}</div>`:''}
             ${partial.map(p=>`<div style="font-size:13px;color:var(--ink2);margin-bottom:3px;">📏 1 Length — ${p}" remaining</div>`).join('')}
             ${usable.length===0?`<div style="font-size:12px;color:#e53935;">No usable stock</div>`:''}
-            <button onclick="addMouldingStockFor('${size}','${typeKey}')" class="btn-outline" style="font-size:12px;padding:5px 10px;margin-top:6px;">+ Add Stock</button>
+            <button onclick="addMouldingStockFor(this.dataset.size,this.dataset.type)" data-size="${size.replace(/"/g,'&quot;')}" data-type="${typeKey.replace(/"/g,'&quot;').replace(/'/g,'&#39;')}" class="btn-outline" style="font-size:12px;padding:5px 10px;margin-top:6px;">+ Add Stock</button>
           </div>`;
         }).join('')}
       </div>
