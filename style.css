@@ -159,12 +159,14 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
   border-radius: 50%; border: none; cursor: pointer;
   font-size: 28px; font-weight: 300; color: #fff;
   display: flex; align-items: center; justify-content: center;
-  margin-top: -28px;
   box-shadow: 0 4px 20px rgba(201,151,58,.5);
   transition: transform .18s;
   position: relative;
   z-index: 600;
 }
+/* Standalone fixed FAB */
+#fab-new-order:hover { transform: translateX(-50%) scale(1.08); }
+#fab-new-order:active { transform: translateX(-50%) scale(0.95); }
 .tab-btn-fab:hover { transform: scale(1.08); }
 
 /* ── MAIN LAYOUT ── */

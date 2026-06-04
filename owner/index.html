@@ -48,12 +48,34 @@
   <div class="tab-nav-inner" id="tab-nav-inner">
     <button class="tab-btn" id="tnb-dashboard" onclick="showPage('dashboard')"><span class="tab-icon">📊</span><span>Dash</span></button>
     <button class="tab-btn" id="tnb-bookings" onclick="showPage('bookings')"><span class="tab-icon">📅</span><span>Book</span></button>
-    <button class="tab-btn-fab" onclick="openForm()">+</button>
+    <div style="flex:0 0 56px;width:56px;"></div><!-- FAB spacer -->
     <button class="tab-btn" id="tnb-orders" onclick="showPage('orders')"><span class="tab-icon">📋</span><span>Orders</span></button>
     <button class="tab-btn" id="tnb-expenses" onclick="showPage('expenses')"><span class="tab-icon">💸</span><span>Expense</span></button>
     <button class="tab-btn" id="tnb-more" onclick="ownerToggleMore()"><span class="tab-icon">☰</span><span>More</span></button>
   </div>
 </div>
+
+<!-- FAB: standalone fixed — not inside any container so it never gets clipped -->
+<button id="fab-new-order" onclick="openForm()" style="
+  position:fixed;
+  bottom:calc(var(--tn, 56px) - 2px);
+  left:50%;
+  transform:translateX(-50%);
+  width:58px; height:58px;
+  background:linear-gradient(135deg,var(--gold-dk,#8a6520),var(--gold,#C9973A));
+  border-radius:50%;
+  border:none;
+  cursor:pointer;
+  font-size:28px;
+  font-weight:300;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 4px 20px rgba(201,151,58,.55);
+  z-index:9999;
+  -webkit-tap-highlight-color:transparent;
+">+</button>
 
 <!-- Owner More Menu - slides up from bottom -->
 <div id="owner-more-menu" style="display:none;position:fixed;bottom:70px;left:0;right:0;background:#fff;border-top:1px solid #eee;border-radius:16px 16px 0 0;box-shadow:0 -4px 24px rgba(0,0,0,.12);z-index:9999;padding:16px;">
