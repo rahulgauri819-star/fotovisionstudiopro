@@ -2077,7 +2077,7 @@ window.staffAddMouldingStock = async function() {
   const qty=+(document.getElementById('sms-qty')?.value)||1;
   if(!size){toast('⚠️ Select size','error');return;}
   if(!mouldingStock[size])mouldingStock[size]={};
-  if(!mouldingStock[size][type])mouldingStock[size][type]=[];
+  const _raws=mouldingStock[size][type];mouldingStock[size][type]=Array.isArray(_raws)?_raws:(_raws&&typeof _raws==='object'?Object.values(_raws):[]);
   for(let i=0;i<qty;i++)mouldingStock[size][type].push(114);
   saveMouldingStock();
   if(!useLocal){try{await window.db.collection('mouldingStock').doc(size+'-'+type).set({pieces:mouldingStock[size][type],size,type});}catch(e){}}
@@ -2089,7 +2089,7 @@ window.staffAddMouldingStockFor = async function(size,type) {
   const n=prompt(`Add how many 9.5ft lengths to ${size} ${type}?`);
   if(!n||isNaN(+n))return;
   if(!mouldingStock[size])mouldingStock[size]={};
-  if(!mouldingStock[size][type])mouldingStock[size][type]=[];
+  const _rawss=mouldingStock[size][type];mouldingStock[size][type]=Array.isArray(_rawss)?_rawss:(_rawss&&typeof _rawss==='object'?Object.values(_rawss):[]);
   for(let i=0;i<+n;i++)mouldingStock[size][type].push(114);
   saveMouldingStock();
   toast(`✅ Added ${n} lengths`,'success');
@@ -2321,11 +2321,17 @@ function staffRenderPurchaseForm() {
 
   if(type === 'moulding') {
     const sizes = ['0.5','0.75','1','1.5','2','2.5','3','3.5','4','5'];
+    const vendorKeys = Object.keys(safeVendors);
+    // Check which mouldings already have a selling price set
     formHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-        <div class="form-group"><label class="form-label">Vendor</label>
-          <input class="form-input" id="pur-vendor" placeholder="Vendor name" list="pur-vendor-list">
-          <datalist id="pur-vendor-list">${Object.keys(safeVendors).map(v=>`<option value="${v}">`).join('')}</datalist>
+        <div class="form-group"><label class="form-label">Vendor Name</label>
+          <select class="form-input" id="pur-vendor" onchange="staffPurVendorChange()">
+            <option value="">— Select Vendor —</option>
+            ${vendorKeys.map(v=>`<option value="${v}">${v}</option>`).join('')}
+            <option value="__other__">+ Other / Type name</option>
+          </select>
+          <input class="form-input hidden" id="pur-vendor-text" placeholder="Vendor name..." style="margin-top:6px;">
         </div>
         <div class="form-group"><label class="form-label">Moulding Size</label>
           <select class="form-input" id="pur-msize">
@@ -2337,19 +2343,36 @@ function staffRenderPurchaseForm() {
         <div class="form-group"><label class="form-label">Type / Color</label>
           <input class="form-input" id="pur-name" placeholder="e.g. Dark Walnut">
         </div>
-        <div class="form-group"><label class="form-label">Qty (pieces)</label>
-          <input class="form-input" id="pur-qty" type="number" min="1" value="1" inputmode="numeric">
+        <div class="form-group"><label class="form-label">Code</label>
+          <input class="form-input" id="pur-code" placeholder="e.g. M2, G-883">
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
-        <div class="form-group"><label class="form-label">Length (ft)</label>
-          <input class="form-input" id="pur-length" type="number" placeholder="10" oninput="staffCalcPurTotal()">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group"><label class="form-label">Qty (lengths/pieces)</label>
+          <input class="form-input" id="pur-qty" type="number" min="1" value="1" inputmode="numeric" oninput="staffCalcPurTotal()">
         </div>
-        <div class="form-group"><label class="form-label">Rate/ft (Rs.)</label>
+        <div class="form-group"><label class="form-label">Length per piece (ft)</label>
+          <input class="form-input" id="pur-length" type="number" placeholder="9.5" step="0.5" oninput="staffCalcPurTotal()">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group"><label class="form-label">Cost/Length (Rs.)</label>
           <input class="form-input" id="pur-rate" type="number" placeholder="20" oninput="staffCalcPurTotal()">
         </div>
-        <div class="form-group"><label class="form-label">Total (Rs.)</label>
-          <input class="form-input" id="pur-total" type="number" placeholder="Auto">
+        <div class="form-group"><label class="form-label">Total Cost (Rs.)</label>
+          <input class="form-input" id="pur-total" type="number" placeholder="Auto" oninput="staffCalcPurTotal()">
+        </div>
+        <div class="form-group"><label class="form-label">Invoice No.</label>
+          <input class="form-input" id="pur-invoice" placeholder="INV-001">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="form-group"><label class="form-label">Date of Purchase</label>
+          <input class="form-input" id="pur-date" type="date" value="${(typeof todayStr==='function'?todayStr():new Date().toISOString().slice(0,10))}">
+        </div>
+        <div class="form-group" id="pur-sell-price-group">
+          <label class="form-label" style="color:#c62828;">⭐ Selling Price/ft (Rs.) <span style="font-size:11px;font-weight:400;">— new moulding only</span></label>
+          <input class="form-input" id="pur-sell-price" type="number" placeholder="Required if new moulding" style="border:2px solid #ef9a9a;">
         </div>
       </div>`;
   } else if(type === 'raw') {
@@ -2440,13 +2463,19 @@ function staffRenderPurchaseForm() {
     </button>`;
 }
 
+window.staffPurVendorChange = function() {
+  const sel = document.getElementById('pur-vendor');
+  const txt = document.getElementById('pur-vendor-text');
+  if(sel && txt) txt.classList.toggle('hidden', sel.value !== '__other__');
+};
+
 window.staffCalcPurTotal = function() {
   const qty = +(document.getElementById('pur-qty')?.value)||0;
   const rate = +(document.getElementById('pur-rate')?.value)||0;
   const length = +(document.getElementById('pur-length')?.value)||0;
   const totalEl = document.getElementById('pur-total');
   if(!totalEl) return;
-  if(staffCurrentPurchaseType === 'moulding' && length > 0) {
+  if(staffCurrentPurchaseType === 'moulding' && qty > 0 && length > 0 && rate > 0) {
     totalEl.value = Math.round(qty * length * rate);
   } else if(qty > 0 && rate > 0) {
     totalEl.value = Math.round(qty * rate);
@@ -2457,23 +2486,65 @@ window.staffAddToPurchaseList = function() {
   const name = document.getElementById('pur-name')?.value.trim() || '';
   const total = +(document.getElementById('pur-total')?.value)||0;
   const qty = +(document.getElementById('pur-qty')?.value)||1;
-  const vendor = document.getElementById('pur-vendor')?.value.trim() || '';
-  if(!name && staffCurrentPurchaseType !== 'freight') { toast('⚠️ Enter item name', 'error'); return; }
-  if(!total) { toast('⚠️ Enter total amount', 'error'); return; }
+  const vendorSel = document.getElementById('pur-vendor');
+  const vendor = vendorSel?.value === '__other__'
+    ? (document.getElementById('pur-vendor-text')?.value.trim() || '')
+    : (vendorSel?.value.trim() || document.getElementById('pur-vendor')?.value.trim() || '');
+
+  if(!name && staffCurrentPurchaseType !== 'freight') { toast('⚠️ Enter Type / Color name', 'error'); return; }
+  if(!total) { toast('⚠️ Enter total cost', 'error'); return; }
+
+  const isMoulding = staffCurrentPurchaseType === 'moulding';
+  const size = document.getElementById('pur-msize')?.value || '';
+  const code = document.getElementById('pur-code')?.value.trim() || '';
+  const sellPrice = +(document.getElementById('pur-sell-price')?.value)||0;
+
+  // If moulding and selling price not set, require it
+  if (isMoulding && sellPrice <= 0) {
+    toast('⭐ Enter the selling price/ft for this moulding', 'error');
+    document.getElementById('pur-sell-price')?.focus();
+    return;
+  }
 
   const item = {
     id: 'pi-' + Date.now(),
     type: staffCurrentPurchaseType || 'other',
     name: name || 'Freight',
-    qty, total, vendor,
+    qty, total, vendor, code,
     rate: +(document.getElementById('pur-rate')?.value)||0,
-    size: document.getElementById('pur-msize')?.value || '',
-    code: document.getElementById('pur-code')?.value || '',
+    length: +(document.getElementById('pur-length')?.value)||0,
+    size,
+    sellPrice: isMoulding ? sellPrice : 0,
+    invoice: document.getElementById('pur-invoice')?.value.trim() || '',
     subcategory: document.getElementById('pur-subcategory')?.value || '',
-    // FIX 39: Guard todayStr in case shared.js not fully loaded
-    date: (typeof todayStr === 'function') ? todayStr() : new Date().toISOString().slice(0,10),
+    date: document.getElementById('pur-date')?.value || (typeof todayStr === 'function' ? todayStr() : new Date().toISOString().slice(0,10)),
     addedBy: window._staffName || (typeof staffNames !== 'undefined' && staffNames[0]) || 'Staff',
   };
+
+  // If new moulding, register its selling price into mouldingsCache
+  if (isMoulding && size && name && sellPrice > 0) {
+    if (!window.mouldingsCache) window.mouldingsCache = {};
+    if (!window.mouldingsCache[size]) window.mouldingsCache[size] = [];
+    const exists = window.mouldingsCache[size].some(m => m.name.toLowerCase() === name.toLowerCase() && m.code === code);
+    if (!exists) {
+      window.mouldingsCache[size].push({ code, name, price: sellPrice });
+      // Persist to Firebase
+      if (window.db) {
+        try { window.db.collection('mouldings').add({ size, code, name, price: sellPrice, addedAt: new Date().toISOString() }); } catch(e){}
+      }
+      toast(`✅ Moulding "${code||name}" added at Rs.${sellPrice}/ft`, 'success');
+    }
+    // Also add to mouldingStock
+    if (!window.mouldingStock) window.mouldingStock = {};
+    if (!window.mouldingStock[size]) window.mouldingStock[size] = {};
+    const typeKey = (code ? code + ' · ' : '') + name;
+    if (!window.mouldingStock[size][typeKey]) window.mouldingStock[size][typeKey] = [];
+    const pieceLengthIn = Math.round((item.length || 9.5) * 12); // convert ft to inches
+    for (let i = 0; i < qty; i++) window.mouldingStock[size][typeKey].push(pieceLengthIn);
+    if (window.db) {
+      try { window.db.collection('mouldingStock').doc(size+'-'+typeKey).set({ pieces: window.mouldingStock[size][typeKey], size, type: typeKey }); } catch(e){}
+    }
+  }
 
   staffPendingPurchaseItems.push(item);
   staffRenderPurchaseForm();
@@ -2822,6 +2893,24 @@ initDB().then(async()=>{
   await staffLoadExpenses();
   await loadStaffNamesList();
   await loadStock();
+  // loadMouldingStock — load from Firebase or localStorage
+  if (typeof loadMouldingStock === 'undefined') {
+    window.loadMouldingStock = async function() {
+      try {
+        if (window.db) {
+          window.db.collection('mouldingStock').onSnapshot(snap => {
+            if (!window.mouldingStock) window.mouldingStock = {};
+            snap.docs.forEach(d => {
+              const data = d.data();
+              if (!window.mouldingStock[data.size]) window.mouldingStock[data.size] = {};
+              const raw = data.pieces;
+              window.mouldingStock[data.size][data.type] = Array.isArray(raw) ? raw : (raw && typeof raw === 'object' ? Object.values(raw) : []);
+            });
+          });
+        }
+      } catch(e) { console.warn('loadMouldingStock error:', e); }
+    };
+  }
   await loadMouldingStock();
   showPage('dashboard');
 });
@@ -2854,14 +2943,6 @@ function getFormHTML(existing, role) {
     <div class="form-group" style="margin-bottom:12px;">
       <label class="form-label">Address <span style="font-weight:400;color:var(--ink3);">(optional)</span></label>
       <textarea class="form-input" id="f-address" placeholder="Customer address (optional)" rows="2"></textarea>
-    </div>
-    <div class="form-grid-2">
-      <div class="form-group">
-        <label class="form-label">Order Taken By</label>
-        <select class="form-input" id="f-staff">
-          <option>Abhik</option><option>Vishal</option><option>Rajesh</option>
-        </select>
-      </div>
     </div>
   </div>
 
@@ -3060,10 +3141,30 @@ function getFormHTML(existing, role) {
   </div>
 </div>
 
+<!-- ORDER TAKEN BY — with secret code -->
+<div class="form-section" style="margin-bottom:12px;">
+  <div class="section-head" style="margin-bottom:10px;">✍️ Order Taken By</div>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;" id="staff-taker-pills">
+    <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:2px solid var(--paper3);border-radius:10px;cursor:pointer;font-weight:600;font-size:13px;">
+      <input type="radio" name="f-taker" value="Abhik" style="accent-color:var(--gold-dk);"> Abhik
+    </label>
+    <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:2px solid var(--paper3);border-radius:10px;cursor:pointer;font-weight:600;font-size:13px;">
+      <input type="radio" name="f-taker" value="Vishal" style="accent-color:var(--gold-dk);"> Vishal
+    </label>
+    <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:2px solid var(--paper3);border-radius:10px;cursor:pointer;font-weight:600;font-size:13px;">
+      <input type="radio" name="f-taker" value="Rajesh" style="accent-color:var(--gold-dk);"> Rajesh
+    </label>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <input class="form-input" id="f-taker-code" type="password" placeholder="Enter your secret code" inputmode="numeric" maxlength="4" style="max-width:180px;">
+    <span id="f-taker-status" style="font-size:13px;"></span>
+  </div>
+</div>
+
 <!-- ACTIONS (bottom of form) -->
 <div style="display:flex;gap:12px;padding-bottom:20px;">
   <button class="btn btn-secondary btn-lg" style="flex:1;" onclick="requestCancelOrder()">✕ Cancel</button>
-  <button class="btn btn-primary btn-lg" style="flex:2;" onclick="saveOrder()">📅 Book Order</button>
+  <button class="btn btn-primary btn-lg" style="flex:2;" onclick="staffVerifyAndBook()">📅 Book Order</button>
   <button class="btn btn-outline btn-lg" style="flex:1;border:2px solid var(--gold-dk);color:var(--gold-dk);background:#fff;" onclick="saveEstimate()">💰 Estimate</button>
 </div>
 
@@ -3091,7 +3192,7 @@ function getFormHTML(existing, role) {
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
-        <button class="btn btn-primary btn-lg" style="width:100%;margin-bottom:8px;" onclick="saveOrder()">📅 Book Order</button>
+        <button class="btn btn-primary btn-lg" style="width:100%;margin-bottom:8px;" onclick="staffVerifyAndBook()">📅 Book Order</button>
         <button class="btn btn-outline btn-lg" style="width:100%;border:2px solid var(--gold-dk);color:var(--gold-dk);background:#fff;" onclick="saveEstimate()">💰 Save Estimate</button>
         <button class="btn btn-secondary" style="width:100%;" onclick="requestCancelOrder()">✕ Cancel</button>
       </div>
@@ -5189,6 +5290,41 @@ function applyDiscount(pct) {
   }
   updateBillingSummary(cartTotal, pct);
 }
+
+// ── Staff Order Taken By — secret code verification ──────────
+const STAFF_CODES = { 'Rajesh': '1234', 'Abhik': '2121', 'Vishal': '3232' };
+
+window.staffVerifyAndBook = function() {
+  const taker = document.querySelector('input[name="f-taker"]:checked')?.value;
+  const code = document.getElementById('f-taker-code')?.value?.trim();
+  const statusEl = document.getElementById('f-taker-status');
+
+  if (!taker) {
+    if (statusEl) { statusEl.textContent = '⚠️ Select who is taking this order'; statusEl.style.color = '#c62828'; }
+    if (typeof toast === 'function') toast('⚠️ Select Order Taken By', 'error');
+    return;
+  }
+  if (!code) {
+    if (statusEl) { statusEl.textContent = '⚠️ Enter your secret code'; statusEl.style.color = '#c62828'; }
+    return;
+  }
+  if (STAFF_CODES[taker] !== code) {
+    if (statusEl) { statusEl.textContent = '❌ Wrong code! Try again.'; statusEl.style.color = '#c62828'; }
+    document.getElementById('f-taker-code').value = '';
+    return;
+  }
+  // Code correct — set the staff name and save
+  if (statusEl) { statusEl.textContent = '✅ Verified'; statusEl.style.color = '#2e7d32'; }
+  // Set f-staff value so saveOrder picks it up
+  let staffEl = document.getElementById('f-staff');
+  if (!staffEl) {
+    staffEl = document.createElement('input');
+    staffEl.type = 'hidden'; staffEl.id = 'f-staff';
+    document.body.appendChild(staffEl);
+  }
+  staffEl.value = taker;
+  saveOrder();
+};
 
 window.requestCancelOrder = function() {
   const role = typeof getCurrentRole==='function' ? getCurrentRole() : 'owner';
