@@ -488,44 +488,11 @@
 <div id="pg-moulding-stock" class="hidden">
   <div class="page-header">
     <div class="page-title">📐 Moulding Stock</div>
-    <div class="page-sub">Track moulding lengths per type and color</div>
+    <div class="page-sub">Current stock levels — updated automatically when purchases are recorded</div>
   </div>
-  <!-- Add Stock Form -->
-  <div class="card" style="margin-bottom:16px;">
-    <div class="card-header"><div class="card-title">➕ Add Moulding Stock</div></div>
-    <div class="card-body">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-        <div class="form-group">
-          <label class="form-label">Moulding Size</label>
-          <select class="form-input" id="ms-size">
-            <option>0.5"</option><option>0.75"</option><option selected>1"</option>
-            <option>1.25"</option><option>1.5"</option><option>1.75"</option>
-            <option>2"</option><option>2.5"</option><option>3"</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Qty (lengths)</label>
-          <input class="form-input" id="ms-qty" type="number" min="1" value="1" placeholder="1">
-        </div>
-      </div>
-      <!-- Vendor selection -->
-      <div class="form-group" style="margin-bottom:10px;">
-        <label class="form-label">Vendor</label>
-        <div id="ms-vendor-pills" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
-        <div id="ms-others-box" class="hidden">
-          <input class="form-input" id="ms-others-name" placeholder="Enter vendor name..." style="max-width:200px;">
-        </div>
-      </div>
-      <!-- Moulding Type (filtered by vendor) -->
-      <div class="form-group" style="margin-bottom:12px;">
-        <label class="form-label">Moulding Type/Color</label>
-        <select class="form-input" id="ms-type"></select>
-        <div style="display:flex;gap:6px;margin-top:6px;">
-          <input class="form-input" id="ms-new-type" placeholder="Or add new type..." style="font-size:12px;padding:6px 10px;">
-          <button onclick="addTypeFromStock()" class="btn-outline" style="font-size:12px;padding:6px 12px;">+ Add</button>
-        </div>
-      </div>
-      <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;padding:10px 24px;" onclick="addMouldingStock()">➕ Add Stock</button>
+  <div class="card" style="background:var(--gold-bg);border:1px solid #e8c96a;margin-bottom:16px;">
+    <div style="font-size:13px;color:var(--gold-dk);font-weight:600;">
+      ℹ️ Stock increases automatically when a Moulding Purchase is saved. Stock decreases when a framing order is completed.
     </div>
   </div>
   <div id="moulding-stock-list"></div>
@@ -3053,11 +3020,12 @@ window.renderMouldingsManager = function() {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
           <div>
             <label style="font-size:10px;font-weight:700;color:var(--ink3);display:block;margin-bottom:3px;">VENDOR</label>
-            <select class="form-input" id="mv-${k}" style="font-size:13px;padding:8px;">
+            <select class="form-input" id="mv-${k}" style="font-size:13px;padding:8px;" onchange="ownerVendorChange('${size}')">
               <option value="">— Select —</option>
               ${vendorOpts}
-              <option value="__other__">Other</option>
+              <option value="__other__">Other / Free text</option>
             </select>
+            <input id="mv-txt-${k}" class="form-input" placeholder="Vendor name..." style="font-size:13px;padding:8px;margin-top:6px;display:none;">
           </div>
           <div>
             <label style="font-size:10px;font-weight:700;color:var(--ink3);display:block;margin-bottom:3px;">CODE</label>
@@ -3083,8 +3051,9 @@ window.renderMouldingsManager = function() {
 window.ownerAddMoulding = async function(size) {
   const key = size.replace('.','_');
   const vendorSel = document.getElementById('mv-'+key);
+  const vendorTxt = document.getElementById('mv-txt-'+key);
   const vendor = vendorSel?.value === '__other__'
-    ? (prompt('Vendor name?') || '')
+    ? (vendorTxt?.value.trim() || '')
     : (vendorSel?.value || '');
   const code  = document.getElementById('mc-'+key)?.value.trim();
   const name  = document.getElementById('mn-'+key)?.value.trim();
@@ -3095,8 +3064,16 @@ window.ownerAddMoulding = async function(size) {
   window.mouldingsCache[size].push({ code:code||'', name, price, vendor });
   await saveMouldings(size);
   ['mv','mc','mn','mp'].forEach(pre => { const el=document.getElementById(pre+'-'+key); if(el) el.value=''; });
+  if(vendorTxt) vendorTxt.value='';
   renderMouldingsManager();
   toast('✅ Moulding added!');
+};
+
+window.ownerVendorChange = function(size) {
+  const key = size.replace('.','_');
+  const sel = document.getElementById('mv-'+key);
+  const txt = document.getElementById('mv-txt-'+key);
+  if(txt) txt.style.display = sel?.value==='__other__' ? 'block' : 'none';
 };
 
 window.ownerDeleteMoulding = async function(size, index) {
@@ -5645,7 +5622,7 @@ window.renderMouldingStock = function() {
     const typeKeys = Object.keys(typesStock);
     if(!typeKeys.length) return '';
     return `<div class="card" style="margin-bottom:12px;">
-      <div class="card-header"><div class="card-title">📐 ${size} Moulding</div></div>
+      <div class="card-header"><div class="card-title">📐 ${size.replace('"','')+'"'} Moulding</div></div>
       <div class="card-body">
         ${typeKeys.map(typeKey=>{
           const rawPieces=typesStock[typeKey];
@@ -5655,11 +5632,15 @@ window.renderMouldingStock = function() {
           const full=usable.filter(p=>p===FULL).length;
           const partial=usable.filter(p=>p<FULL);
           return `<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--paper3);">
-            <div style="font-weight:700;font-size:13px;margin-bottom:6px;">${typeKey}</div>
+            <div style="font-weight:700;font-size:13px;margin-bottom:6px;">${(() => {
+              // Clean up legacy key formats: "Others_—_default" → "Others — default"
+              // numeric keys → hidden
+              if(/^\d+$/.test(typeKey)) return '<span style="color:#aaa;font-size:11px;">Legacy entry</span>';
+              return typeKey.replace(/_—_/g,' — ').replace(/_/g,' ');
+            })()}</div>
             ${full>0?`<div style="font-size:13px;color:var(--ink2);margin-bottom:3px;">📏 ${full} Full Length${full>1?'s':''}</div>`:''}
             ${partial.map(p=>`<div style="font-size:13px;color:var(--ink2);margin-bottom:3px;">📏 1 Length — ${p}" remaining</div>`).join('')}
             ${usable.length===0?`<div style="font-size:12px;color:#e53935;">No usable stock</div>`:''}
-            <button onclick="addMouldingStockFor(this.dataset.size,this.dataset.type)" data-size="${size.replace(/"/g,'&quot;')}" data-type="${typeKey.replace(/"/g,'&quot;').replace(/'/g,'&#39;')}" class="btn-outline" style="font-size:12px;padding:5px 10px;margin-top:6px;">+ Add Stock</button>
           </div>`;
         }).join('')}
       </div>
@@ -5744,17 +5725,47 @@ window.addMouldingStock = async function() {
   renderMouldingStock();
 };
 
-window.addMouldingStockFor = async function(size, type) {
-  const n = prompt(`Add how many 9.5ft lengths to ${size}" ${type}?`);
-  if(!n||isNaN(+n)||+n<=0) return;
-  if(!mouldingStock[size]) mouldingStock[size]={};
-  // Ensure it's an array even if Firebase returned an object
-  const raw = mouldingStock[size][type];
-  mouldingStock[size][type] = Array.isArray(raw) ? raw : (raw && typeof raw === 'object' ? Object.values(raw) : []);
-  for(let i=0;i<+n;i++) mouldingStock[size][type].push(114);
+window._pendingOwnerStockSize = '';
+window._pendingOwnerStockType = '';
+
+window.addMouldingStockFor = function(size, type) {
+  window._pendingOwnerStockSize = size;
+  window._pendingOwnerStockType = type;
+  document.getElementById('_owner-stock-modal')?.remove();
+  const modal = document.createElement('div');
+  modal.id = '_owner-stock-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  const cleanType = type.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  modal.innerHTML = '<div style="background:#fff;border-radius:16px;padding:22px;width:100%;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,.25);">'
+    + '<div style="font-weight:800;font-size:16px;color:#1a1a1a;margin-bottom:4px;">➕ Add Stock</div>'
+    + '<div style="font-size:13px;color:#888;margin-bottom:16px;">' + size + '" — ' + cleanType + '</div>'
+    + '<label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">QTY (LENGTHS OF 9.5FT)</label>'
+    + '<input id="_osf-qty" type="number" min="1" value="1" style="width:100%;padding:11px 13px;border:1.5px solid #ede8df;border-radius:10px;font-size:16px;font-family:inherit;margin-bottom:16px;outline:none;">'
+    + '<div style="display:flex;gap:10px;">'
+    + '<button onclick="document.getElementById('_owner-stock-modal').remove()" style="flex:1;background:#f5f5f5;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;color:#333;">Cancel</button>'
+    + '<button onclick="ownerConfirmAddStock()" style="flex:2;background:linear-gradient(135deg,#8a6520,#C9973A);color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;">Add Stock</button>'
+    + '</div></div>';
+  document.body.appendChild(modal);
+  setTimeout(() => { const el = document.getElementById('_osf-qty'); if(el){el.focus();el.select();} }, 80);
+};
+
+window.ownerConfirmAddStock = async function() {
+  const n = +document.getElementById('_osf-qty')?.value || 0;
+  if (!n || n < 1) return;
+  const sz = window._pendingOwnerStockSize;
+  const tp = window._pendingOwnerStockType;
+  if (!sz || !tp) return;
+  if (!mouldingStock[sz]) mouldingStock[sz] = {};
+  const raw = mouldingStock[sz][tp];
+  mouldingStock[sz][tp] = Array.isArray(raw) ? raw : (raw && typeof raw === 'object' ? Object.values(raw) : []);
+  for (let i = 0; i < n; i++) mouldingStock[sz][tp].push(114);
   saveMouldingStock();
-  toast(`✅ Added ${n} lengths`,'success');
-  renderMouldingStock();
+  if (typeof useLocal !== 'undefined' && !useLocal && window.db) {
+    try { await window.db.collection('mouldingStock').doc(sz+'-'+tp).set({pieces:mouldingStock[sz][tp],size:sz,type:tp}); } catch(e) {}
+  }
+  document.getElementById('_owner-stock-modal')?.remove();
+  if (typeof toast === 'function') toast('✅ Added ' + n + ' length' + (n>1?'s':''), 'success');
+  if (typeof renderMouldingStock === 'function') renderMouldingStock();
 };
 
 // Best-fit moulding cut algorithm
@@ -9123,6 +9134,14 @@ window.requestCancelOrder = function() {
       playReadyChime();
     }
   }
+  // Unlock AudioContext on first user interaction (required by browsers)
+  let _unlocked = false;
+  function unlockAudio() {
+    if (_unlocked) return; _unlocked = true;
+    const ctx = _getBellCtx();
+    if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+  }
+
   document.addEventListener('click', unlockAudio, true);
   document.addEventListener('touchstart', unlockAudio, {capture: true, passive: true});
 
