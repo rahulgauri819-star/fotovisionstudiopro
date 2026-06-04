@@ -2042,9 +2042,10 @@ window.renderStaffMouldingStock = function() {
       <div class="card-header"><div class="card-title">📐 ${size} Moulding</div></div>
       <div class="card-body">
         ${typeKeys.map(typeKey=>{
-          const pieces=typesStock[typeKey]||[];
+          const rawPieces=typesStock[typeKey];
+          const pieces=Array.isArray(rawPieces)?rawPieces:(rawPieces&&typeof rawPieces==='object'?Object.values(rawPieces):[]);
           const FULL=114,WASTE=4;
-          const usable=pieces.filter(p=>p>WASTE);
+          const usable=pieces.filter(p=>typeof p==='number'&&p>WASTE);
           const full=usable.filter(p=>p===FULL).length;
           const partial=usable.filter(p=>p<FULL);
           return`<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--paper3);">
