@@ -7465,6 +7465,8 @@ function initFormJS(existing, role) {
     const closeDD = () => { setTimeout(() => { document.getElementById('phone-suggest-dropdown')?.remove(); }, 150); };
     phoneEl.addEventListener('blur', closeDD, {once: true});
   });
+  } // end if phoneEl
+} // end initFormJS
 
 window.onPrintQualityChange = function() {
   const qual = document.querySelector('input[name="pq"]:checked')?.value;
