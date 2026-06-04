@@ -2,55 +2,52 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" href="../logo.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FV Weddings">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>FV Weddings — Order Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-:root{--gold:#C9973A;--gold-dk:#8a6520;--gold-bg:#FFF8ED;--paper:#f9f8f5;--ink:#1a1a1a;--ink2:#555;--ink3:#888;--green:#2e7d32;--red:#c62828;}
+:root{--gold:#C9973A;--gold-dk:#8a6520;--gold-bg:#FFF8ED;--paper:#f9f8f5;--ink:#1a1a1a;--ink2:#555;--ink3:#888;--green:#2e7d32;--red:#c62828;--r-md:10px;--r-lg:14px;}
 body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;overscroll-behavior:none;}
 .hdr{background:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ede8df;position:sticky;top:0;z-index:100;}
-.hdr-left{display:flex;align-items:center;gap:10px;}
-.hdr-logo{width:34px;height:34px;background:linear-gradient(135deg,var(--gold-dk),var(--gold));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;}
-.hdr-name{font-size:15px;font-weight:800;}
-.hdr-sub{font-size:9px;color:var(--gold);font-weight:700;letter-spacing:1px;text-transform:uppercase;}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 20px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:inherit;width:100%;}
 .btn-gold{background:linear-gradient(135deg,var(--gold-dk),var(--gold));color:#fff;}
 .btn-outline{background:transparent;border:1.5px solid var(--gold);color:var(--gold);}
-.btn-red{background:#c62828;color:#fff;}
 .btn-sm{padding:8px 16px;font-size:12px;width:auto;}
 .card{background:#fff;border-radius:14px;border:1px solid #ede8df;padding:16px;margin-bottom:12px;}
 .form-label{font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:5px;display:block;text-transform:uppercase;letter-spacing:.5px;}
-.form-input{width:100%;padding:11px 13px;border:1.5px solid #ede8df;border-radius:10px;font-size:14px;font-family:inherit;color:var(--ink);outline:none;}
+.form-input{width:100%;padding:11px 13px;border:1.5px solid #ede8df;border-radius:10px;font-size:14px;font-family:inherit;color:var(--ink);outline:none;background:#fff;}
 .form-input:focus{border-color:var(--gold);}
 select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23888' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
-.template-card{background:var(--gold-bg);border:1.5px solid #e8c96a;border-radius:12px;padding:13px 15px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:12px;}
-.template-card:hover{background:#fff3d0;}
-.tpl-icon{font-size:24px;}
-.tpl-name{font-size:13px;font-weight:700;}
-.tpl-desc{font-size:11px;color:var(--ink3);}
-.badge-credit{background:#e3f2fd;color:#1565c0;font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;border:1px solid #90caf9;}
+.form-group{margin-bottom:12px;}
 .tab-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ede8df;display:flex;justify-content:space-around;padding:8px 0 12px;z-index:100;}
 .tab-btn{display:flex;flex-direction:column;align-items:center;gap:3px;border:none;background:none;cursor:pointer;font-family:inherit;padding:4px 12px;}
 .tab-btn span:first-child{font-size:20px;}
-.tab-btn .tab-lbl{font-size:9px;font-weight:600;color:var(--ink3);}
+.tab-lbl{font-size:9px;font-weight:600;color:var(--ink3);}
 .tab-btn.active .tab-lbl{color:var(--gold);font-weight:700;}
 .page{display:none;padding:16px;padding-bottom:80px;}
 .page.active{display:block;}
 #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:9px 18px;border-radius:20px;font-size:12px;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;white-space:nowrap;}
 #toast.show{opacity:1;}
+.badge-status{font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;}
+.check-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
+.pill-check{display:flex;align-items:center;gap:6px;padding:8px 14px;border:2px solid #ede8df;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;background:#fff;}
+.pill-check input{accent-color:var(--gold-dk);}
+.pill-check.active{border-color:var(--gold);background:var(--gold-bg);}
 </style>
 </head>
 <body>
-<!-- Header -->
 <div class="hdr">
-  <div class="hdr-left">
-    <div class="hdr-logo">💒</div>
-    <div><div class="hdr-name">FV Weddings</div><div class="hdr-sub">Order Portal</div></div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <img src="../logo.png" style="width:34px;height:34px;border-radius:9px;">
+    <div><div style="font-size:15px;font-weight:800;">FV Weddings</div><div style="font-size:9px;color:var(--gold);font-weight:700;letter-spacing:1px;text-transform:uppercase;">Order Portal</div></div>
   </div>
-  <span class="badge-credit">💳 Credit Account</span>
+  <span style="background:#e3f2fd;color:#1565c0;font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;border:1px solid #90caf9;">💳 Credit Account</span>
 </div>
-
 <div id="toast"></div>
 
 <!-- ── PAGE: Orders ── -->
@@ -59,7 +56,6 @@ select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csv
     <div style="font-size:17px;font-weight:800;">My Orders</div>
     <button class="btn btn-gold btn-sm" onclick="showPage('new-order')">+ New Order</button>
   </div>
-  <!-- Outstanding balance card -->
   <div class="card" style="background:linear-gradient(135deg,#1a1410,#3a2810);border:none;margin-bottom:16px;">
     <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Outstanding Balance</div>
     <div style="font-size:26px;font-weight:800;color:var(--gold);" id="fvw-balance">Rs.0</div>
@@ -74,70 +70,123 @@ select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csv
     <button onclick="showPage('orders')" style="border:none;background:var(--gold-bg);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:13px;font-weight:600;">← Back</button>
     <div style="font-size:17px;font-weight:800;">New Order</div>
   </div>
-
-  <!-- Saved Templates -->
-  <div style="margin-bottom:16px;">
-    <div style="font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:8px;">⚡ Quick Templates</div>
-    <div id="fvw-templates-list"></div>
-    <div style="font-size:11px;color:var(--ink3);text-align:center;padding:4px;" id="fvw-no-tpl" style="display:none;">No templates yet — save an order as a template below</div>
-  </div>
-
-  <!-- Order form (reuse main form) -->
   <div class="card">
-    <div class="form-label" style="margin-bottom:10px;">Customer Name</div>
-    <input class="form-input" id="fvw-cust-name" placeholder="e.g. Sharma Family" style="margin-bottom:12px;">
+    <div class="form-group">
+      <label class="form-label">Customer / Event Name</label>
+      <input class="form-input" id="fvw-cust-name" placeholder="e.g. Sharma Wedding">
+    </div>
 
-    <div class="form-label" style="margin-bottom:6px;">Services</div>
-    <select class="form-input" id="fvw-service" style="margin-bottom:12px;">
-      <option value="">-- Select Service --</option>
-      <option value="HDR Printing">HDR Printing</option>
-      <option value="NP Printing">NP Printing</option>
-      <option value="Framing">Framing</option>
-      <option value="HDR Printing + Framing">HDR Printing + Framing</option>
-      <option value="Vinyl">Vinyl Print</option>
-      <option value="Canvas">Canvas Print</option>
-      <option value="Photo Editing">Photo Editing</option>
-    </select>
-
-    <div class="form-label" style="margin-bottom:6px;">Size</div>
-    <select class="form-input" id="fvw-size" style="margin-bottom:12px;">
-      <option value="">-- Select Size --</option>
-      <option>4×6"</option><option>5×7"</option><option>6×8"</option>
-      <option>8×10"</option><option>8×12"</option><option>10×12"</option>
-      <option>12×15"</option><option>12×18"</option><option>13×19"</option>
-      <option>16×20"</option><option>16×24"</option><option>20×24"</option>
-      <option>20×30"</option><option>24×36"</option><option>30×40"</option>
-      <option>36×54"</option><option>44×66"</option>
-    </select>
-
-    <div style="display:flex;gap:10px;margin-bottom:12px;">
-      <div style="flex:1;">
-        <div class="form-label" style="margin-bottom:6px;">Quantity</div>
-        <input class="form-input" id="fvw-qty" type="number" min="1" value="1" placeholder="1">
+    <!-- Order Type -->
+    <div class="form-group">
+      <label class="form-label">Order Type</label>
+      <div class="check-row">
+        <label class="pill-check active" id="ot-instant-lbl">
+          <input type="radio" name="fvw-order-type" value="Instant" checked onchange="fvwOrderTypeChange()"> ⚡ Instant
+        </label>
+        <label class="pill-check" id="ot-booking-lbl">
+          <input type="radio" name="fvw-order-type" value="Booking" onchange="fvwOrderTypeChange()"> 📅 Booking
+        </label>
       </div>
-      <div style="flex:1;">
-        <div class="form-label" style="margin-bottom:6px;">Amount (Rs.)</div>
+    </div>
+
+    <!-- Delivery (shown for Booking) -->
+    <div class="form-group" id="fvw-delivery-group" style="display:none;">
+      <label class="form-label">Delivery Date & Time</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <input class="form-input" id="fvw-del-date" type="date">
+        <input class="form-input" id="fvw-del-time" type="time">
+      </div>
+    </div>
+
+    <!-- Services -->
+    <div class="form-group">
+      <label class="form-label">Service</label>
+      <select class="form-input" id="fvw-service" onchange="fvwServiceChange()">
+        <option value="">-- Select Service --</option>
+        <option value="HDR Printing">HDR Printing</option>
+        <option value="NP Printing">NP Printing</option>
+        <option value="Framing">Framing</option>
+        <option value="HDR Printing + Framing">HDR Printing + Framing</option>
+        <option value="Vinyl">Vinyl Print</option>
+        <option value="Canvas">Canvas Print</option>
+        <option value="Photo Editing">Photo Editing</option>
+      </select>
+    </div>
+
+    <!-- Print Size -->
+    <div class="form-group">
+      <label class="form-label">Print Size</label>
+      <select class="form-input" id="fvw-size">
+        <option value="">-- Select Size --</option>
+        <option>4×6"</option><option>5×7"</option><option>6×8"</option>
+        <option>8×10"</option><option>8×12"</option><option>10×12"</option>
+        <option>12×15"</option><option>12×18"</option><option>13×19"</option>
+        <option>16×20"</option><option>16×24"</option><option>20×24"</option>
+        <option>20×30"</option><option>24×36"</option><option>30×40"</option>
+      </select>
+    </div>
+
+    <!-- Framing section (shown when Framing selected) -->
+    <div id="fvw-framing-section" style="display:none;background:var(--gold-bg);border:1px solid #e8c96a;border-radius:12px;padding:14px;margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:700;color:var(--gold-dk);margin-bottom:10px;">🖼️ Framing Details</div>
+      <div class="form-group">
+        <label class="form-label">Moulding Size</label>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;" id="fvw-mould-sizes">
+          <label class="pill-check" style="font-size:12px;padding:6px 10px;"><input type="radio" name="fvw-ms" value="0.5"> 0.5"</label>
+          <label class="pill-check" style="font-size:12px;padding:6px 10px;"><input type="radio" name="fvw-ms" value="0.75"> 0.75"</label>
+          <label class="pill-check" style="font-size:12px;padding:6px 10px;"><input type="radio" name="fvw-ms" value="1"> 1"</label>
+          <label class="pill-check" style="font-size:12px;padding:6px 10px;"><input type="radio" name="fvw-ms" value="1.5"> 1.5"</label>
+          <label class="pill-check" style="font-size:12px;padding:6px 10px;"><input type="radio" name="fvw-ms" value="2"> 2"</label>
+          <label class="pill-check" style="font-size:12px;padding:6px 10px;"><input type="radio" name="fvw-ms" value="2.5"> 2.5"</label>
+          <label class="pill-check" style="font-size:12px;padding:6px 10px;"><input type="radio" name="fvw-ms" value="3"> 3"</label>
+          <label class="pill-check" style="font-size:12px;padding:6px 10px;"><input type="radio" name="fvw-ms" value="3.5"> 3.5"</label>
+          <label class="pill-check" style="font-size:12px;padding:6px 10px;"><input type="radio" name="fvw-ms" value="4"> 4"</label>
+          <label class="pill-check" style="font-size:12px;padding:6px 10px;"><input type="radio" name="fvw-ms" value="5"> 5"</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Moulding Type</label>
+        <select class="form-input" id="fvw-mould-type" onchange="fvwMouldTypeChange()">
+          <option value="">— Select size first —</option>
+        </select>
+      </div>
+      <div class="form-group" id="fvw-mount-group">
+        <label class="form-label">Mount</label>
+        <div class="check-row">
+          <label class="pill-check"><input type="radio" name="fvw-mount" value="No" checked> No Mount</label>
+          <label class="pill-check"><input type="radio" name="fvw-mount" value="Yes"> With Mount</label>
+        </div>
+      </div>
+      <div class="form-group hidden" id="fvw-mount-size-group">
+        <label class="form-label">Mount Size (inches)</label>
+        <input class="form-input" id="fvw-mount-size" type="number" value="1" min="0.5" step="0.5">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">Quantity</label>
+        <input class="form-input" id="fvw-qty" type="number" min="1" value="1">
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">Amount (Rs.)</label>
         <input class="form-input" id="fvw-amount" type="number" placeholder="0">
       </div>
     </div>
-
-    <div class="form-label" style="margin-bottom:6px;">Notes (optional)</div>
-    <textarea class="form-input" id="fvw-notes" rows="2" placeholder="e.g. Black moulding, white mount..." style="margin-bottom:14px;resize:none;"></textarea>
-
-    <div style="display:flex;gap:8px;">
-      <button class="btn btn-gold" onclick="fvwSubmitOrder()">✅ Place Order (Credit)</button>
+    <div class="form-group">
+      <label class="form-label">Notes (optional)</label>
+      <textarea class="form-input" id="fvw-notes" rows="2" placeholder="Special instructions..." style="resize:none;"></textarea>
     </div>
-    <div style="margin-top:8px;">
-      <button class="btn btn-outline btn-sm" onclick="fvwSaveAsTemplate()">💾 Save as Template</button>
-    </div>
+    <button class="btn btn-gold" onclick="fvwSubmitOrder()" style="margin-bottom:8px;">✅ Place Order (Credit)</button>
+    <button class="btn btn-outline btn-sm" onclick="fvwSaveAsTemplate()">💾 Save as Template</button>
   </div>
 </div>
 
 <!-- ── PAGE: Templates ── -->
 <div id="pg-templates" class="page">
-  <div style="font-size:17px;font-weight:800;margin-bottom:14px;">Saved Templates</div>
+  <div style="font-size:17px;font-weight:800;margin-bottom:14px;">⚡ Quick Templates</div>
   <div id="fvw-tpl-page-list"></div>
-  <button class="btn btn-gold" onclick="showPage('new-order')">+ Create & Save New Template</button>
+  <button class="btn btn-gold" onclick="showPage('new-order')" style="margin-top:8px;">+ New Order</button>
 </div>
 
 <!-- Tab Bar -->
@@ -155,12 +204,12 @@ select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csv
 </div>
 
 <script>
-// Firebase
-let db = null;
+// ── Firebase ──────────────────────────────────────────────
+let db = null, mouldingsCache = {};
 async function initDB() {
   try {
-    const {initializeApp, getApps} = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js');
-    const {getFirestore, collection, addDoc, getDocs, query, where, orderBy, serverTimestamp, deleteDoc, doc, setDoc} = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+    const {initializeApp,getApps} = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js');
+    const {getFirestore,collection,addDoc,getDocs,query,where,orderBy,serverTimestamp,deleteDoc,doc,setDoc,onSnapshot} = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
     const cfg = {apiKey:'AIzaSyAerxTK5t5tYqDJ-AZg5_BMZJEk3pRD0uI',authDomain:'foto-vision-studio-pro.firebaseapp.com',projectId:'foto-vision-studio-pro',storageBucket:'foto-vision-studio-pro.firebasestorage.app',messagingSenderId:'1055550886532',appId:'1:1055550886532:web:d6c13af3493fddb14428d1'};
     const ex = getApps().find(a=>a.name==='fvwed');
     const app = ex || initializeApp(cfg,'fvwed');
@@ -172,176 +221,292 @@ async function initDB() {
       getTemplates: async () => { const s = await getDocs(collection(fs,'fvwTemplates')); return s.docs.map(d=>({id:d.id,...d.data()})); },
       deleteTemplate: async id => { await deleteDoc(doc(fs,'fvwTemplates',id)); },
     };
+    // Load mouldings from Firebase
+    try {
+      const mSnap = await getDocs(collection(fs,'mouldings'));
+      mSnap.docs.forEach(d => {
+        const {size,code,name,price} = d.data();
+        if (!mouldingsCache[size]) mouldingsCache[size] = [];
+        mouldingsCache[size].push({code:code||'',name,price:+price||10});
+      });
+    } catch(e) {}
     loadOrders(); loadTemplates();
-  } catch(e) { console.warn('DB error:', e); useLocalFallback(); }
+  } catch(e) { console.warn('DB error:',e); loadOrders(); loadTemplates(); }
 }
 
 let orders = JSON.parse(localStorage.getItem('fvw_orders')||'[]');
 let templates = JSON.parse(localStorage.getItem('fvw_templates')||'[]');
 
-function useLocalFallback() {
-  loadOrders(); loadTemplates();
-}
-
 function showPage(p) {
   document.querySelectorAll('.page').forEach(pg=>pg.classList.remove('active'));
-  document.getElementById('pg-'+p).classList.add('active');
+  document.getElementById('pg-'+p)?.classList.add('active');
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  const tabEl = document.getElementById('tab-'+p);
-  if (tabEl) tabEl.classList.add('active');
-  if (p==='orders') loadOrders();
-  if (p==='templates') renderTplPage();
+  document.getElementById('tab-'+p)?.classList.add('active');
+  if(p==='orders') loadOrders();
+  if(p==='templates') renderTplPage();
+}
+
+// ── Moulding size radio → populate type dropdown ──
+document.querySelectorAll('input[name="fvw-ms"]').forEach(r => {
+  r.addEventListener('change', () => {
+    const size = r.value;
+    const sel = document.getElementById('fvw-mould-type');
+    const items = mouldingsCache[size] || [];
+    sel.innerHTML = items.length
+      ? '<option value="">— Select Type —</option>' + items.map((m,i)=>`<option value="${i}">${m.code?m.code+' · ':''} ${m.name} — Rs.${m.price}/ft</option>`).join('')
+      : '<option value="">No mouldings for this size</option>';
+    // Highlight active pill
+    document.querySelectorAll('#fvw-mould-sizes .pill-check').forEach(l=>l.classList.remove('active'));
+    r.closest('.pill-check')?.classList.add('active');
+  });
+});
+
+document.querySelectorAll('input[name="fvw-mount"]').forEach(r => {
+  r.addEventListener('change', () => {
+    document.getElementById('fvw-mount-size-group')?.classList.toggle('hidden', r.value !== 'Yes');
+  });
+});
+
+function fvwMouldTypeChange() {}
+
+function fvwOrderTypeChange() {
+  const type = document.querySelector('input[name="fvw-order-type"]:checked')?.value;
+  document.getElementById('fvw-delivery-group').style.display = type === 'Booking' ? 'block' : 'none';
+  document.querySelectorAll('input[name="fvw-order-type"]').forEach(r => {
+    const lbl = r.closest('.pill-check');
+    if(lbl) lbl.classList.toggle('active', r.checked);
+  });
+}
+
+function fvwServiceChange() {
+  const svc = document.getElementById('fvw-service').value;
+  const hasFraming = svc.includes('Framing');
+  document.getElementById('fvw-framing-section').style.display = hasFraming ? 'block' : 'none';
 }
 
 async function loadOrders() {
-  if (db) { try { orders = await db.getOrders(); } catch(e) {} }
+  if(db) { try { orders = await db.getOrders(); } catch(e){} }
   renderOrders();
   updateBalance();
 }
 
+function statusStyle(s) {
+  if(s==='Delivered') return 'background:#e8f5e9;color:#2e7d32';
+  if(s==='Ready') return 'background:#e3f2fd;color:#1565c0';
+  return 'background:#fff3e0;color:#e65100';
+}
+
 function renderOrders() {
   const el = document.getElementById('fvw-orders-list');
-  if (!orders.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--ink3);">No orders yet — tap + New Order to start</div>'; return; }
-  el.innerHTML = orders.slice(0,20).map(o => `
-    <div class="card" style="cursor:default;">
+  if(!orders.length) { el.innerHTML='<div style="text-align:center;padding:30px;color:var(--ink3);">No orders yet — tap + New Order</div>'; return; }
+  el.innerHTML = orders.slice(0,30).map(o=>`
+    <div class="card" style="cursor:pointer;" onclick="fvwOrderDetail('${o.id||o.billNo}')">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
         <div>
           <div style="font-size:14px;font-weight:700;">${o.name||'—'}</div>
-          <div style="font-size:11px;color:var(--ink3);">${o.billNo||o.id?.slice(-6)||''} · ${o.date||''}</div>
+          <div style="font-size:11px;color:var(--ink3);">${o.billNo||''} · ${o.date||''}</div>
+          ${o.delivery?`<div style="font-size:11px;color:var(--red);margin-top:2px;">⏰ ${o.delivery.replace('T',' ').slice(0,16)}</div>`:''}
         </div>
         <div style="text-align:right;">
           <div style="font-size:15px;font-weight:800;color:var(--gold);">Rs.${(o.total||0).toLocaleString('en-IN')}</div>
-          <span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;${o.status==='Delivered'?'background:#e8f5e9;color:#2e7d32':'background:#fff3e0;color:#e65c00'}">${o.status||'Pending'}</span>
+          <span class="badge-status" style="${statusStyle(o.status||'Pending')}">${o.status||'Pending'}</span>
         </div>
       </div>
       <div style="font-size:12px;color:var(--ink3);">${o.notes||o.cartItems?.[0]?.label||''}</div>
+      <div style="font-size:11px;color:var(--ink3);margin-top:4px;">→ tap to view details</div>
     </div>`).join('');
 }
 
+window.fvwOrderDetail = function(id) {
+  const o = orders.find(x=>x.id===id||x.billNo===id);
+  if(!o) return;
+  const modal = document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:flex-end;';
+  modal.innerHTML=`<div style="background:#fff;border-radius:16px 16px 0 0;padding:20px;width:100%;max-height:80vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-weight:800;font-size:16px;">${o.name}</div>
+      <button onclick="this.closest('[style*=fixed]').remove()" style="border:none;background:#f5f5f5;border-radius:8px;padding:6px 12px;cursor:pointer;">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+      <div style="background:var(--paper);border-radius:8px;padding:10px;">
+        <div style="font-size:10px;color:var(--ink3);font-weight:700;text-transform:uppercase;">Bill No</div>
+        <div style="font-weight:700;">${o.billNo||'—'}</div>
+      </div>
+      <div style="background:var(--paper);border-radius:8px;padding:10px;">
+        <div style="font-size:10px;color:var(--ink3);font-weight:700;text-transform:uppercase;">Status</div>
+        <span class="badge-status" style="${statusStyle(o.status||'Pending')}">${o.status||'Pending'}</span>
+      </div>
+      <div style="background:var(--paper);border-radius:8px;padding:10px;">
+        <div style="font-size:10px;color:var(--ink3);font-weight:700;text-transform:uppercase;">Total</div>
+        <div style="font-weight:800;color:var(--gold);">Rs.${(o.total||0).toLocaleString('en-IN')}</div>
+      </div>
+      <div style="background:var(--paper);border-radius:8px;padding:10px;">
+        <div style="font-size:10px;color:var(--ink3);font-weight:700;text-transform:uppercase;">Type</div>
+        <div style="font-weight:700;">${o.orderType||'Booking'}</div>
+      </div>
+    </div>
+    ${o.delivery?`<div style="background:#fff3e0;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:13px;font-weight:700;color:#e65100;">⏰ Delivery: ${o.delivery.replace('T',' ').slice(0,16)}</div>`:''}
+    <div style="background:var(--paper);border-radius:8px;padding:10px;margin-bottom:10px;">
+      <div style="font-size:10px;color:var(--ink3);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Services</div>
+      <div style="font-size:13px;">${o.notes||o.cartItems?.[0]?.label||o.cartItems?.[0]?.svc||'—'}</div>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+};
+
 function updateBalance() {
-  const unpaid = orders.filter(o => o.status !== 'Delivered');
+  const unpaid = orders.filter(o=>o.status!=='Delivered');
   const total = unpaid.reduce((s,o)=>s+(+o.total||0),0);
-  document.getElementById('fvw-balance').textContent = 'Rs.' + total.toLocaleString('en-IN');
-  document.getElementById('fvw-balance-sub').textContent = `${unpaid.length} unpaid order${unpaid.length!==1?'s':''}`;
+  document.getElementById('fvw-balance').textContent='Rs.'+total.toLocaleString('en-IN');
+  document.getElementById('fvw-balance-sub').textContent=`${unpaid.length} unpaid order${unpaid.length!==1?'s':''}`;
 }
 
 async function loadTemplates() {
-  if (db) { try { templates = await db.getTemplates(); } catch(e) {} }
-  localStorage.setItem('fvw_templates', JSON.stringify(templates));
-  renderTemplatesStrip();
+  if(db){try{templates=await db.getTemplates();}catch(e){}}
+  localStorage.setItem('fvw_templates',JSON.stringify(templates));
   renderTplPage();
-}
-
-function renderTemplatesStrip() {
-  const el = document.getElementById('fvw-templates-list');
-  const noTpl = document.getElementById('fvw-no-tpl');
-  if (!templates.length) { el.innerHTML=''; if(noTpl) noTpl.style.display='block'; return; }
-  if(noTpl) noTpl.style.display='none';
-  el.innerHTML = templates.map((t,i) => `
-    <div class="template-card" onclick="loadTemplate(${i})">
-      <span class="tpl-icon">⚡</span>
-      <div style="flex:1;">
-        <div class="tpl-name">${t.name}</div>
-        <div class="tpl-desc">${t.service} · ${t.size} · Qty ${t.qty} · Rs.${t.amount}</div>
-      </div>
-      <span style="font-size:11px;color:var(--gold);font-weight:700;">Tap to load</span>
-    </div>`).join('');
 }
 
 function renderTplPage() {
   const el = document.getElementById('fvw-tpl-page-list');
-  if (!templates.length) { el.innerHTML='<div style="text-align:center;padding:20px;color:var(--ink3);">No templates saved yet</div>'; return; }
-  el.innerHTML = templates.map((t,i) => `
+  if(!templates.length){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--ink3);">No templates yet</div>';return;}
+  el.innerHTML=templates.map((t,i)=>`
     <div class="card" style="display:flex;align-items:center;gap:12px;">
       <span style="font-size:22px;">⚡</span>
       <div style="flex:1;">
         <div style="font-size:13px;font-weight:700;">${t.name}</div>
-        <div style="font-size:11px;color:var(--ink3);">${t.service} · ${t.size} · Qty ${t.qty} · Rs.${t.amount}</div>
+        <div style="font-size:11px;color:var(--ink3);">${t.service||''} · ${t.size||''} · Rs.${t.amount||0}</div>
       </div>
       <div style="display:flex;gap:6px;">
         <button onclick="loadTemplate(${i});showPage('new-order')" class="btn btn-gold btn-sm" style="padding:6px 12px;">Use</button>
-        <button onclick="deleteTpl(${i})" class="btn btn-red btn-sm" style="padding:6px 10px;">🗑</button>
+        <button onclick="deleteTpl(${i})" style="background:#fce4ec;color:#c62828;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:13px;">🗑</button>
       </div>
     </div>`).join('');
 }
 
 function loadTemplate(i) {
-  const t = templates[i];
-  document.getElementById('fvw-service').value = t.service || '';
-  document.getElementById('fvw-size').value = t.size || '';
-  document.getElementById('fvw-qty').value = t.qty || 1;
-  document.getElementById('fvw-amount').value = t.amount || '';
-  document.getElementById('fvw-notes').value = t.notes || '';
-  showPage('new-order');
+  const t=templates[i];
+  if(t.service) document.getElementById('fvw-service').value=t.service;
+  if(t.size) document.getElementById('fvw-size').value=t.size;
+  document.getElementById('fvw-qty').value=t.qty||1;
+  document.getElementById('fvw-amount').value=t.amount||'';
+  document.getElementById('fvw-notes').value=t.notes||'';
+  fvwServiceChange();
   toast('⚡ Template loaded!');
 }
 
 async function fvwSaveAsTemplate() {
-  const service = document.getElementById('fvw-service').value;
-  const size = document.getElementById('fvw-size').value;
-  const qty = document.getElementById('fvw-qty').value;
-  const amount = document.getElementById('fvw-amount').value;
-  const notes = document.getElementById('fvw-notes').value;
-  if (!service || !size) { toast('Select service and size first'); return; }
-  const name = prompt(`Template name? (e.g. "12×36 Black Moulding")`) || `${service} ${size}`;
-  const tpl = { id: Date.now().toString(), name, service, size, qty, amount, notes };
-  templates.push(tpl);
-  localStorage.setItem('fvw_templates', JSON.stringify(templates));
-  if (db) { try { await db.saveTemplate(tpl); } catch(e) {} }
-  renderTemplatesStrip(); renderTplPage();
-  toast('💾 Template saved!');
+  const service=document.getElementById('fvw-service').value;
+  const size=document.getElementById('fvw-size').value;
+  const qty=document.getElementById('fvw-qty').value;
+  const amount=document.getElementById('fvw-amount').value;
+  const notes=document.getElementById('fvw-notes').value;
+  if(!service||!size){toast('Select service and size first');return;}
+  // Use input instead of prompt for iOS compatibility
+  const nameDiv = document.createElement('div');
+  nameDiv.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  nameDiv.innerHTML=`<div style="background:#fff;border-radius:16px;padding:20px;width:100%;max-width:340px;">
+    <div style="font-weight:700;font-size:15px;margin-bottom:12px;">💾 Save Template</div>
+    <input id="_tpl-name-inp" class="form-input" placeholder='e.g. "12×36 Black Moulding"' style="margin-bottom:12px;" value="${service} ${size}">
+    <div style="display:flex;gap:8px;">
+      <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;background:#f5f5f5;border:none;border-radius:8px;padding:10px;cursor:pointer;">Cancel</button>
+      <button id="_tpl-save-btn" class="btn btn-gold" style="flex:2;">Save</button>
+    </div>
+  </div>`;
+  document.body.appendChild(nameDiv);
+  document.getElementById('_tpl-name-inp')?.focus();
+  document.getElementById('_tpl-save-btn').onclick = async () => {
+    const name=document.getElementById('_tpl-name-inp')?.value.trim()||`${service} ${size}`;
+    const tpl={id:Date.now().toString(),name,service,size,qty,amount,notes};
+    templates.push(tpl);
+    localStorage.setItem('fvw_templates',JSON.stringify(templates));
+    if(db){try{await db.saveTemplate(tpl);}catch(e){}}
+    nameDiv.remove();
+    renderTplPage();
+    toast('💾 Template saved!');
+  };
 }
 
 async function deleteTpl(i) {
-  if (!confirm('Delete this template?')) return;
-  const tpl = templates[i];
-  templates.splice(i, 1);
-  localStorage.setItem('fvw_templates', JSON.stringify(templates));
-  if (db) { try { await db.deleteTemplate(tpl.id); } catch(e) {} }
-  renderTplPage(); renderTemplatesStrip();
+  const tpl=templates[i];
+  templates.splice(i,1);
+  localStorage.setItem('fvw_templates',JSON.stringify(templates));
+  if(db){try{await db.deleteTemplate(tpl.id);}catch(e){}}
+  renderTplPage();
   toast('Deleted');
 }
 
 async function fvwSubmitOrder() {
-  const name = document.getElementById('fvw-cust-name').value.trim();
-  const service = document.getElementById('fvw-service').value;
-  const size = document.getElementById('fvw-size').value;
-  const qty = +document.getElementById('fvw-qty').value || 1;
-  const amount = +document.getElementById('fvw-amount').value || 0;
-  const notes = document.getElementById('fvw-notes').value.trim();
-  if (!name) { toast('Enter customer name'); return; }
-  if (!service) { toast('Select a service'); return; }
-  const d = new Date();
-  const billNo = `FV-${String(d.getFullYear()).slice(2)}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-FVW-${Math.floor(Math.random()*900+100)}`;
-  const order = {
-    billNo, name, phone:'', orderType:'Booking', status:'Pending',
+  const name=document.getElementById('fvw-cust-name').value.trim();
+  const service=document.getElementById('fvw-service').value;
+  const size=document.getElementById('fvw-size').value;
+  const qty=+document.getElementById('fvw-qty').value||1;
+  const amount=+document.getElementById('fvw-amount').value||0;
+  const notes=document.getElementById('fvw-notes').value.trim();
+  const orderType=document.querySelector('input[name="fvw-order-type"]:checked')?.value||'Booking';
+  if(!name){toast('Enter customer name');return;}
+  if(!service){toast('Select a service');return;}
+
+  // Delivery datetime
+  let delivery='';
+  if(orderType==='Booking'){
+    const dd=document.getElementById('fvw-del-date')?.value;
+    const dt=document.getElementById('fvw-del-time')?.value;
+    if(dd) delivery=dt?`${dd}T${dt}`:dd;
+  }
+
+  // Framing details
+  let framingNote='';
+  if(service.includes('Framing')){
+    const ms=document.querySelector('input[name="fvw-ms"]:checked')?.value||'';
+    const mtSel=document.getElementById('fvw-mould-type');
+    const mtVal=mtSel?.value;
+    const mount=document.querySelector('input[name="fvw-mount"]:checked')?.value||'No';
+    const mountSz=document.getElementById('fvw-mount-size')?.value||'1';
+    if(ms) framingNote=`Moulding: ${ms}" ${mtVal||''} · Mount: ${mount==='Yes'?mountSz+'"':'No'}`;
+  }
+
+  // Bill number matching FV system format: FV-DDMMYY-XXX
+  const d=new Date();
+  const dd=String(d.getDate()).padStart(2,'0');
+  const mm=String(d.getMonth()+1).padStart(2,'0');
+  const yy=String(d.getFullYear()).slice(2);
+  const billNo=`FV-${dd}${mm}${yy}-FVW${Math.floor(Math.random()*900+100)}`;
+
+  const order={
+    billNo, name, phone:'', orderType, status:'Pending',
     source:'fvweddings', payMode:'FV Weddings Credit',
     staff:'FV Weddings', date:d.toISOString().slice(0,10),
-    total:amount, advance:0,
-    cartItems:[{svcs:[service], svc:service, label:`${service} ${size} × ${qty}`, price:amount}],
-    notes: notes || `${service} · ${size} · Qty ${qty}`
+    delivery, total:amount, advance:0,
+    cartItems:[{svcs:[service],svc:service,label:`${service}${size?' '+size:''} × ${qty}${framingNote?' · '+framingNote:''}`,price:amount}],
+    notes:(notes||framingNote||`${service}${size?' · '+size:''}${qty>1?' · Qty '+qty:''}`)
   };
+
   try {
-    if (db) await db.addOrder(order);
-    else { orders.unshift(order); localStorage.setItem('fvw_orders', JSON.stringify(orders)); }
+    if(db) await db.addOrder(order);
+    else { orders.unshift(order); localStorage.setItem('fvw_orders',JSON.stringify(orders)); }
     toast('✅ Order placed on credit!');
-    // Clear form
-    ['fvw-cust-name','fvw-amount','fvw-notes'].forEach(id=>document.getElementById(id).value='');
+    ['fvw-cust-name','fvw-amount','fvw-notes','fvw-del-date','fvw-del-time'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     document.getElementById('fvw-qty').value='1';
+    document.getElementById('fvw-service').value='';
+    fvwServiceChange();
     showPage('orders');
-  } catch(e) { toast('Error — please try again'); }
+  } catch(e){ toast('Error — please try again'); console.error(e); }
 }
 
 function toast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2500);
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
 }
 
-// Check auth
-window.addEventListener('DOMContentLoaded', () => {
-  const role = localStorage.getItem('fv_current_role');
-  if (role !== 'fvwed') { window.location.href='../index.html'; return; }
+window.addEventListener('DOMContentLoaded',()=>{
+  const role=localStorage.getItem('fv_current_role');
+  if(role!=='fvwed'){window.location.href='../index.html';return;}
+  // Set today as default delivery date
+  const today=new Date().toISOString().slice(0,10);
+  const ddEl=document.getElementById('fvw-del-date');
+  if(ddEl) ddEl.value=today;
   initDB();
 });
 </script>

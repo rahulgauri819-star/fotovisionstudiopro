@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" href="../logo.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <link rel="apple-touch-icon" href="../logo.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Foto Vision">
 <meta name="theme-color" content="#0F0F0F">
@@ -235,8 +236,9 @@ function orderNeedsFramer(o) {
   // Instant orders are auto-delivered — never send to framer queue
   if (o.orderType === 'Instant') return false;
   return (o.cartItems||[]).some(item => {
-    const svcs = item.svcs||[item.svc]||[];
+    const svcs = item.svcs || (item.svc ? [item.svc] : []);
     if (svcs.includes('Framing')) return true;
+    if (svcs.some(s => /Framing/i.test(s))) return true;
     if (svcs.includes('Printing') && /Sun Board|MDF|Stretcher/i.test(item.label||'')) return true;
     return false;
   });
@@ -271,7 +273,7 @@ function renderFramerProduction() {
         <div style="font-size:12px;color:var(--ink3);">Mount: ${p.mount==='Yes'?p.mountSize+'"':'No'} · Qty: ${p.qty} frames</div>
         ${p.notes?`<div style="font-size:12px;padding:6px 8px;background:#fff3e0;border-radius:6px;margin-top:4px;">📝 ${p.notes}</div>`:''}
       </div>
-      <span style="padding:4px 10px;border-radius:100px;font-size:11px;font-weight:700;background:${p.status==='Complete'?'#e8f5e9':p.status==='In Progress'?'#e3f2fd':'#fff3e0'};color:${p.status==='Complete'?'#2e7d32':p.status==='In Progress'?'#1565c0':'#e65100'};">${p.status}</span>
+      <span style="padding:4px 10px;border-radius:100px;font-size:11px;font-weight:700;background:${p.status==='Complete'?'#e8f5e9':p.status==='Pending'?'#fff3e0':'#fff3e0'};color:${p.status==='Complete'?'#2e7d32':p.status==='Pending'?'#e65100':'#e65100'};">${p.status}</span>
     </div>
     ${p.status!=='Complete'?`<div style="display:flex;gap:8px;">
       ${p.status==='Pending'?`<button onclick="framerStartPO('${p.id}')" style="flex:1;background:#1976d2;color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">🔨 Start</button>`:''}
@@ -284,7 +286,7 @@ function renderFramerProduction() {
 window.framerStartPO=function(id){
   const pos=JSON.parse(localStorage.getItem('fv_production_orders')||'[]');
   const idx=pos.findIndex(p=>p.id===id);if(idx<0)return;
-  pos[idx].status='In Progress';
+  pos[idx].status='Pending';
   localStorage.setItem('fv_production_orders',JSON.stringify(pos));
   renderFramerProduction();
 };
@@ -368,7 +370,7 @@ function framerRender() {
   try {
     const today = todayStr();
     const fo = framerOrders.filter(o=>orderNeedsFramer(o));
-    const activeJobs = fo.filter(o=>o.status==='Pending'||o.status==='In Progress').sort((a,b)=>(b.created||0)-(a.created||0));
+    const activeJobs = fo.filter(o=>o.status==='Pending').sort((a,b)=>(b.created||0)-(a.created||0));
     const readyJobs  = fo.filter(o=>o.status==='Ready').sort((a,b)=>(b.created||0)-(a.created||0));
     const doneJobs   = fo.filter(o=>o.status==='Delivered').sort((a,b)=>(b.created||0)-(a.created||0));
     const overdue    = activeJobs.filter(o=>o.delivery&&o.delivery.slice(0,10)<today);
@@ -385,7 +387,7 @@ function framerRender() {
     set('fs-overdue',overdue.length);
 
     if(framerCurrentTab==='active') {
-      // Alerts — only Pending + In Progress, clickable
+      // Alerts — only Pending, clickable
       document.getElementById('framer-notifs').innerHTML = activeJobs.length
         ? activeJobs.slice(0,6).map(o=>{
             const isOD=o.delivery&&o.delivery.slice(0,10)<today;
@@ -530,10 +532,10 @@ function framerDeductMouldingStock(order) {
 }
 
 window.framerUndoReady = async function(id) {
-  if(!confirm('⚠️ Move order back to In Progress?')) return;
-  if(framerUseLocal){framerOrders=framerOrders.map(o=>o.id===id?{...o,status:'In Progress'}:o);localStorage.setItem('fv_orders',JSON.stringify(framerOrders));framerRender();}
-  else { try{await framerDb.collection('orders').doc(id).update({status:'In Progress'});}catch(e){toast('Error','error');return;} }
-  toast('↩️ Moved back to In Progress');
+  if(!confirm('⚠️ Move order back to Pending?')) return;
+  if(framerUseLocal){framerOrders=framerOrders.map(o=>o.id===id?{...o,status:'Pending'}:o);localStorage.setItem('fv_orders',JSON.stringify(framerOrders));framerRender();}
+  else { try{await framerDb.collection('orders').doc(id).update({status:'Pending'});}catch(e){toast('Error','error');return;} }
+  toast('↩️ Moved back to Pending');
 };
 
 window.doLogout = doLogout;

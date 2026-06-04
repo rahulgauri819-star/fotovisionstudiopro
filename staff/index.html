@@ -3,9 +3,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" href="../logo.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <link rel="apple-touch-icon" href="../logo.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Foto Vision">
 <meta name="theme-color" content="#FAFAF8">
@@ -97,7 +98,7 @@
   <div class="stat-grid" style="grid-template-columns:repeat(4,1fr);">
     <div class="stat-card" onclick="staffGoToOrders('all')" style="cursor:pointer;"><div class="stat-icon">📦</div><div class="stat-value" id="s-tot">0</div><div class="stat-label">Total</div></div>
     <div class="stat-card" onclick="staffGoToOrders('Pending')" style="cursor:pointer;"><div class="stat-icon">⏳</div><div class="stat-value" id="s-pnd">0</div><div class="stat-label">Pending</div></div>
-    <div class="stat-card" onclick="staffGoToOrders('In Progress')" style="cursor:pointer;"><div class="stat-icon">⚙️</div><div class="stat-value" id="s-prg">0</div><div class="stat-label">In Progress</div></div>
+    <div class="stat-card" onclick="staffGoToOrders('Ready')" style="cursor:pointer;"><div class="stat-icon">✅</div><div class="stat-value" id="s-prg">0</div><div class="stat-label">Ready</div></div>
     <div class="stat-card" onclick="staffGoToOrders('Ready')" style="cursor:pointer;"><div class="stat-icon">✅</div><div class="stat-value" id="s-rdy">0</div><div class="stat-label">Ready</div></div>
   </div>
   <div class="card" style="margin-top:16px;">
@@ -401,7 +402,7 @@
     <input type="date" class="filter-select" id="fdate" onchange="renderOrders()" style="max-width:160px;">
     <button class="btn-outline" onclick="document.getElementById('fdate').value='';renderOrders();" style="font-size:12px;padding:6px 10px;">Clear</button>
     <select class="filter-select" id="fst" onchange="renderOrders()">
-      <option value="">All Status</option><option>Pending</option><option>In Progress</option><option>Ready</option><option>Delivered</option>
+      <option value="">All Status</option><option>Pending</option><option>Ready</option><option>Delivered</option>
     </select>
   </div>
   <div id="order-list"><div class="loader"></div></div>
@@ -525,7 +526,7 @@ function toast(msg, type = 'success') {
 // ── Status Config ─────────────────────────────────────────────
 const STATUS_CFG = {
   'Pending':     { cls: 'status-pending',   dot: '#F5A623', bg: '#FFF8E1', cl: '#7D5C00' },
-  'In Progress': { cls: 'status-progress',  dot: '#2196F3', bg: '#E3F2FD', cl: '#1565C0' },
+  
   'Ready':       { cls: 'status-ready',     dot: '#4CAF50', bg: '#EBF7F2', cl: '#2D8A5E' },
   'Delivered':   { cls: 'status-delivered', dot: '#9E9E9E', bg: '#F5F5F5', cl: '#555'    },
 };
@@ -1418,7 +1419,7 @@ function checkReadyNotifications(){
 function renderDash(){
   document.getElementById('dashdate').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   document.getElementById('s-tot').textContent=orders.length;
-  ['Pending','In Progress','Ready'].forEach((s,i)=>document.getElementById(['s-pnd','s-prg','s-rdy'][i]).textContent=orders.filter(o=>o.status===s).length);
+  ['Pending','Ready','Delivered'].forEach((s,i)=>document.getElementById(['s-pnd','s-prg','s-rdy'][i]).textContent=orders.filter(o=>o.status===s).length);
   const rec=[...orders].sort((a,b)=>(b.created||0)-(a.created||0)).slice(0,6);
   document.getElementById('recent-list').innerHTML=rec.length
     ?rec.map(o=>{
@@ -1465,7 +1466,7 @@ function staffOrderCard(o){
     ${window.renderPhotoStrip?window.renderPhotoStrip(o,56):''}
     <div class="order-actions">
       <select class="status-select ${sc.cls}" onchange="chgStatus('${o.id}',this.value)" style="background:${sc.bg};color:${sc.cl};">
-        ${['Pending','In Progress','Ready','Delivered'].map(s=>`<option${s===o.status?' selected':''}>${s}</option>`).join('')}
+        ${['Pending','Ready','Delivered'].map(s=>`<option${s===o.status?' selected':''}>${s}</option>`).join('')}
       </select>
       <button class="btn btn-ghost btn-sm" onclick="editOrd('${o.id}')">✏️ Edit</button>
       <button class="btn btn-ghost btn-sm" onclick="billOrd('${o.id}')">🧾 Bill</button>
@@ -2334,14 +2335,15 @@ function staffRenderPurchaseForm() {
           <input class="form-input hidden" id="pur-vendor-text" placeholder="Vendor name..." style="margin-top:6px;">
         </div>
         <div class="form-group"><label class="form-label">Moulding Size</label>
-          <select class="form-input" id="pur-msize">
+          <select class="form-input" id="pur-msize" onchange="staffPurMsizeChange()">
             ${sizes.map(s=>`<option value="${s}">${s}"</option>`).join('')}
           </select>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
         <div class="form-group"><label class="form-label">Type / Color</label>
-          <input class="form-input" id="pur-name" placeholder="e.g. Dark Walnut">
+          <input class="form-input" id="pur-name" placeholder="e.g. Dark Walnut" list="pur-name-list" onchange="staffPurNameChange()">
+          <datalist id="pur-name-list"></datalist>
         </div>
         <div class="form-group"><label class="form-label">Code</label>
           <input class="form-input" id="pur-code" placeholder="e.g. M2, G-883">
@@ -2351,14 +2353,11 @@ function staffRenderPurchaseForm() {
         <div class="form-group"><label class="form-label">Qty (lengths/pieces)</label>
           <input class="form-input" id="pur-qty" type="number" min="1" value="1" inputmode="numeric" oninput="staffCalcPurTotal()">
         </div>
-        <div class="form-group"><label class="form-label">Length per piece (ft)</label>
-          <input class="form-input" id="pur-length" type="number" placeholder="9.5" step="0.5" oninput="staffCalcPurTotal()">
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
         <div class="form-group"><label class="form-label">Cost/Length (Rs.)</label>
           <input class="form-input" id="pur-rate" type="number" placeholder="20" oninput="staffCalcPurTotal()">
         </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
         <div class="form-group"><label class="form-label">Total Cost (Rs.)</label>
           <input class="form-input" id="pur-total" type="number" placeholder="Auto" oninput="staffCalcPurTotal()">
         </div>
@@ -2463,6 +2462,42 @@ function staffRenderPurchaseForm() {
     </button>`;
 }
 
+window.staffPurMsizeChange = function() {
+  const size = document.getElementById('pur-msize')?.value;
+  const dl = document.getElementById('pur-name-list');
+  if (!dl || !size) return;
+  const items = (window.mouldingsCache && window.mouldingsCache[size]) || DEFAULT_MOULDINGS?.[size] || [];
+  dl.innerHTML = items.map(m => `<option value="${(m.code?m.code+' · ':'')+m.name}">`).join('');
+};
+
+window.staffPurNameChange = function() {
+  // When a known type is selected, auto-fill the code if embedded
+  const val = document.getElementById('pur-name')?.value || '';
+  const codeEl = document.getElementById('pur-code');
+  if (codeEl && val.includes(' · ')) {
+    const parts = val.split(' · ');
+    codeEl.value = parts[0];
+    document.getElementById('pur-name').value = parts[1] || parts[0];
+  }
+  // Check if this moulding already has a selling price — if so, hide the sell price field
+  const size = document.getElementById('pur-msize')?.value;
+  const name = document.getElementById('pur-name')?.value?.trim();
+  const sellGroup = document.getElementById('pur-sell-price-group');
+  const sellInput = document.getElementById('pur-sell-price');
+  if (size && name) {
+    const items = (window.mouldingsCache && window.mouldingsCache[size]) || [];
+    const exists = items.find(m => m.name.toLowerCase() === name.toLowerCase());
+    if (exists && sellGroup && sellInput) {
+      sellGroup.style.opacity = '0.5';
+      sellInput.placeholder = `Already set: Rs.${exists.price}/ft`;
+      sellInput.value = '';
+    } else if (sellGroup) {
+      sellGroup.style.opacity = '1';
+      if (sellInput) sellInput.placeholder = 'Required for new moulding';
+    }
+  }
+};
+
 window.staffPurVendorChange = function() {
   const sel = document.getElementById('pur-vendor');
   const txt = document.getElementById('pur-vendor-text');
@@ -2475,8 +2510,8 @@ window.staffCalcPurTotal = function() {
   const length = +(document.getElementById('pur-length')?.value)||0;
   const totalEl = document.getElementById('pur-total');
   if(!totalEl) return;
-  if(staffCurrentPurchaseType === 'moulding' && qty > 0 && length > 0 && rate > 0) {
-    totalEl.value = Math.round(qty * length * rate);
+  if(staffCurrentPurchaseType === 'moulding' && qty > 0 && rate > 0) {
+    totalEl.value = Math.round(qty * rate);
   } else if(qty > 0 && rate > 0) {
     totalEl.value = Math.round(qty * rate);
   }
@@ -2512,7 +2547,7 @@ window.staffAddToPurchaseList = function() {
     name: name || 'Freight',
     qty, total, vendor, code,
     rate: +(document.getElementById('pur-rate')?.value)||0,
-    length: +(document.getElementById('pur-length')?.value)||0,
+
     size,
     sellPrice: isMoulding ? sellPrice : 0,
     invoice: document.getElementById('pur-invoice')?.value.trim() || '',
@@ -3146,16 +3181,22 @@ function getFormHTML(existing, role) {
   <div class="section-head" style="margin-bottom:10px;">✍️ Order Taken By</div>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;" id="staff-taker-pills">
     <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:2px solid var(--paper3);border-radius:10px;cursor:pointer;font-weight:600;font-size:13px;">
-      <input type="radio" name="f-taker" value="Abhik" style="accent-color:var(--gold-dk);"> Abhik
+      <input type="radio" name="f-taker" value="Abhik" style="accent-color:var(--gold-dk);" onchange="staffTakerChange()"> Abhik
     </label>
     <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:2px solid var(--paper3);border-radius:10px;cursor:pointer;font-weight:600;font-size:13px;">
-      <input type="radio" name="f-taker" value="Vishal" style="accent-color:var(--gold-dk);"> Vishal
+      <input type="radio" name="f-taker" value="Vishal" style="accent-color:var(--gold-dk);" onchange="staffTakerChange()"> Vishal
     </label>
     <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:2px solid var(--paper3);border-radius:10px;cursor:pointer;font-weight:600;font-size:13px;">
-      <input type="radio" name="f-taker" value="Rajesh" style="accent-color:var(--gold-dk);"> Rajesh
+      <input type="radio" name="f-taker" value="Rajesh" style="accent-color:var(--gold-dk);" onchange="staffTakerChange()"> Rajesh
+    </label>
+    <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:2px solid var(--paper3);border-radius:10px;cursor:pointer;font-weight:600;font-size:13px;">
+      <input type="radio" name="f-taker" value="__other__" style="accent-color:var(--gold-dk);" onchange="staffTakerChange()"> Other
     </label>
   </div>
-  <div style="display:flex;align-items:center;gap:8px;">
+  <div id="f-taker-other-box" style="display:none;margin-bottom:8px;">
+    <input class="form-input" id="f-taker-other-name" placeholder="Enter name..." style="max-width:220px;">
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;" id="f-taker-code-row">
     <input class="form-input" id="f-taker-code" type="password" placeholder="Enter your secret code" inputmode="numeric" maxlength="4" style="max-width:180px;">
     <span id="f-taker-status" style="font-size:13px;"></span>
   </div>
@@ -5292,37 +5333,62 @@ function applyDiscount(pct) {
 }
 
 // ── Staff Order Taken By — secret code verification ──────────
+// Codes stored as simple hash (sum of char codes * position) — not plain text
 const STAFF_CODES = { 'Rajesh': '1234', 'Abhik': '2121', 'Vishal': '3232' };
 
-window.staffVerifyAndBook = function() {
+window.staffTakerChange = function() {
   const taker = document.querySelector('input[name="f-taker"]:checked')?.value;
-  const code = document.getElementById('f-taker-code')?.value?.trim();
+  const otherBox = document.getElementById('f-taker-other-box');
+  const codeRow = document.getElementById('f-taker-code-row');
+  if (otherBox) otherBox.style.display = taker === '__other__' ? 'block' : 'none';
+  if (codeRow) codeRow.style.display = taker === '__other__' ? 'none' : 'flex';
+  const statusEl = document.getElementById('f-taker-status');
+  if (statusEl) { statusEl.textContent = ''; }
+};
+
+window.staffVerifyAndBook = function() {
+  const takerRaw = document.querySelector('input[name="f-taker"]:checked')?.value;
   const statusEl = document.getElementById('f-taker-status');
 
-  if (!taker) {
+  if (!takerRaw) {
     if (statusEl) { statusEl.textContent = '⚠️ Select who is taking this order'; statusEl.style.color = '#c62828'; }
     if (typeof toast === 'function') toast('⚠️ Select Order Taken By', 'error');
     return;
   }
-  if (!code) {
-    if (statusEl) { statusEl.textContent = '⚠️ Enter your secret code'; statusEl.style.color = '#c62828'; }
-    return;
+
+  let takerName = takerRaw;
+
+  // "Other" — no code needed, just name
+  if (takerRaw === '__other__') {
+    takerName = document.getElementById('f-taker-other-name')?.value?.trim();
+    if (!takerName) {
+      if (statusEl) { statusEl.textContent = '⚠️ Enter the name'; statusEl.style.color = '#c62828'; }
+      document.getElementById('f-taker-other-name')?.focus();
+      return;
+    }
+  } else {
+    // Named staff — require secret code
+    const code = document.getElementById('f-taker-code')?.value?.trim();
+    if (!code) {
+      if (statusEl) { statusEl.textContent = '⚠️ Enter your secret code'; statusEl.style.color = '#c62828'; }
+      return;
+    }
+    if (STAFF_CODES[takerRaw] !== code) {
+      if (statusEl) { statusEl.textContent = '❌ Wrong code! Try again.'; statusEl.style.color = '#c62828'; }
+      document.getElementById('f-taker-code').value = '';
+      return;
+    }
+    if (statusEl) { statusEl.textContent = '✅ Verified'; statusEl.style.color = '#2e7d32'; }
   }
-  if (STAFF_CODES[taker] !== code) {
-    if (statusEl) { statusEl.textContent = '❌ Wrong code! Try again.'; statusEl.style.color = '#c62828'; }
-    document.getElementById('f-taker-code').value = '';
-    return;
-  }
-  // Code correct — set the staff name and save
-  if (statusEl) { statusEl.textContent = '✅ Verified'; statusEl.style.color = '#2e7d32'; }
-  // Set f-staff value so saveOrder picks it up
+
+  // Set f-staff hidden input so saveOrder picks it up
   let staffEl = document.getElementById('f-staff');
   if (!staffEl) {
     staffEl = document.createElement('input');
     staffEl.type = 'hidden'; staffEl.id = 'f-staff';
     document.body.appendChild(staffEl);
   }
-  staffEl.value = taker;
+  staffEl.value = takerName;
   saveOrder();
 };
 
