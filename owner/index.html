@@ -1123,7 +1123,10 @@ const SIZE_DIMS = {
   '30x40': {w:30, h:40},
   '30x45': {w:30, h:45},
   '36x54': {w:36, h:54},
-  '44x66': {w:44, h:66}
+  '44x66': {w:44, h:66},
+  '10x15': {w:10, h:15},
+  '12x16': {w:12, h:16},
+  '24x30': {w:24, h:30}
 };
 
 // Human-readable labels for every size key
@@ -7211,7 +7214,7 @@ function getSvcPanelHTML(svcs) {
       ${!hasPrinting ? `
       <!-- Frame size dropdown with custom option -->
       <div style="margin-bottom:14px;">
-        <label class="form-label" style="display:block;margin-bottom:8px;">Frame Size</label>
+        <label class="form-label" style="display:block;margin-bottom:8px;">Print Size</label>
         <select class="form-input" id="frm-size-select" onchange="onFrameSizeSelect()" style="margin-bottom:8px;">
           <option value="">— Select Size —</option>
           <option value="4x6">4×6"</option>
