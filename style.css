@@ -125,11 +125,20 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
   display: flex;
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
   height: var(--tn);
+  background: transparent;
+  padding: 0 8px;
+  align-items: center;
+  overflow: visible;
+}
+/* Background handled separately so FAB can overflow */
+.tab-nav::before {
+  content: '';
+  position: absolute;
+  inset: 0;
   background: rgba(255,255,255,.96);
   backdrop-filter: blur(20px);
   border-top: 1px solid var(--paper3);
-  padding: 0 8px;
-  align-items: center;
+  z-index: -1;
 }
 .tab-nav-inner { display: flex; width: 100%; align-items: center; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .tab-nav-inner::-webkit-scrollbar { display: none; }

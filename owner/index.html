@@ -1030,9 +1030,15 @@ setTimeout(()=>{
 
 // Register real showPage when module loads - flush any queued taps
 let currentPage = 'dashboard';
+window._pageCleanups = [];
 
 window.showPage = window._realShowPage = function(p) {
   try {
+    // Cleanup: unsubscribe any page-specific Firebase listeners
+    if (window._pageCleanups && window._pageCleanups.length) {
+      window._pageCleanups.forEach(fn => { try { fn(); } catch(e) {} });
+      window._pageCleanups = [];
+    }
     currentPage = p;
     // Pages are position:fixed - just toggle hidden class
     document.querySelectorAll('[id^="pg-"]').forEach(el => {
@@ -5328,152 +5334,6 @@ window.submitDayEnd = async function(sales,exp,cashS,upiS,cashE,upiE,netCash,ord
 // ══════════════════════════════════════════════════════════
 // BELL NOTIFICATIONS — Ready orders & 2hr delivery warnings
 // ══════════════════════════════════════════════════════════
-(function() {
-  // Unlock audio on first user interaction
-  let audioUnlocked = false;
-  let bellBuffer = null;
-  window.unlockBellAudio = function() {
-    if (audioUnlocked) return;
-    audioUnlocked = true;
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      // Generate a bell tone programmatically
-      function playBell(freq, duration, vol) {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain); gain.connect(ctx.destination);
-        osc.frequency.value = freq;
-        osc.type = 'sine';
-        gain.gain.setValueAtTime(vol||0.5, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + duration);
-      }
-      window._playBell = function(urgent) {
-        if (!audioUnlocked) return;
-        if (urgent) {
-          playBell(880, 0.3, 0.7); setTimeout(()=>playBell(880,0.3,0.7),350);
-          setTimeout(()=>playBell(660,0.5,0.8),700);
-        } else {
-          playBell(880, 0.4, 0.5); setTimeout(()=>playBell(1100,0.5,0.4),400);
-        }
-      };
-      window._bellCtx = ctx;
-    } catch(e) {}
-  };
-  document.addEventListener('click', window.unlockBellAudio, {once:true});
-  document.addEventListener('touchstart', window.unlockBellAudio, {once:true});
-
-  // Track which orders we've already notified about
-  const notifiedReady = new Set(JSON.parse(sessionStorage.getItem('_notified_ready')||'[]'));
-  const notifiedUrgent = {};
-
-  // Watch for orders becoming Ready via Firestore
-  window._startReadyWatcher = function() {
-    let initialLoad = true;
-    const handleOrders = (newOrders) => {
-      if (initialLoad) { initialLoad = false; return; }
-      newOrders.forEach(o => {
-        if (o.status === 'Ready' && !notifiedReady.has(o.id)) {
-          notifiedReady.add(o.id);
-          sessionStorage.setItem('_notified_ready', JSON.stringify([...notifiedReady]));
-          window._playBell && window._playBell(false);
-          showReadyPopup(o);
-        }
-      });
-    };
-    // Poll orders array every 5 seconds for status changes
-    let prevStatuses = {};
-    (window.orders||[]).forEach(o => prevStatuses[o.id] = o.status);
-    const watcher = setInterval(() => {
-      (window.orders||[]).forEach(o => {
-        if (o.status === 'Ready' && prevStatuses[o.id] !== 'Ready' && !notifiedReady.has(o.id)) {
-          notifiedReady.add(o.id);
-          sessionStorage.setItem('_notified_ready', JSON.stringify([...notifiedReady]));
-          window._playBell && window._playBell(false);
-          showReadyPopup(o);
-        }
-        prevStatuses[o.id] = o.status;
-      });
-    }, 5000);
-    window._readyWatcher = watcher;
-  };
-
-  // 2-hour delivery warning checker
-  window._startDeliveryWatcher = function() {
-    const check = () => {
-      const now = Date.now();
-      (window.orders||[]).forEach(o => {
-        if (o.status === 'Ready' || o.status === 'Delivered' || o.status === 'Cancelled') return;
-        if (!o.delivery) return;
-        const delTime = new Date(o.delivery).getTime();
-        const msUntil = delTime - now;
-        const twoHrs = 2 * 60 * 60 * 1000;
-        const fifteenMin = 15 * 60 * 1000;
-        if (msUntil > 0 && msUntil <= twoHrs) {
-          const lastAlert = notifiedUrgent[o.id] || 0;
-          if (now - lastAlert > fifteenMin) {
-            notifiedUrgent[o.id] = now;
-            window._playBell && window._playBell(true);
-            showUrgentPopup(o);
-          }
-        }
-      });
-    };
-    setInterval(check, 60000); // check every minute
-    setTimeout(check, 3000);   // also check 3s after load
-  };
-
-  function showReadyPopup(o) {
-    removePopup('bell-ready-popup');
-    const svc = (o.cartItems||[]).flatMap(i=>i.svcs||[i.svc]).filter(Boolean).join(', ')||'Order';
-    const popup = document.createElement('div');
-    popup.id = 'bell-ready-popup';
-    popup.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:99999;width:90%;max-width:420px;background:#fff;border:2px solid var(--green,#2e7d32);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.2);padding:18px 20px;animation:slideDown .3s ease;';
-    popup.innerHTML = `
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-        <span style="font-size:28px;">🔔</span>
-        <div><div style="font-size:16px;font-weight:800;color:#2e7d32;">Order Ready!</div>
-        <div style="font-size:12px;color:#555;">${o.name} · ${o.billNo||o.id}</div></div>
-        <button onclick="removePopup('bell-ready-popup')" style="margin-left:auto;border:none;background:none;font-size:20px;cursor:pointer;color:#999;">×</button>
-      </div>
-      <div style="font-size:13px;color:#333;background:#f0fdf4;padding:8px 12px;border-radius:8px;">${svc} is ready for delivery · Rs.${o.total||0}</div>`;
-    document.body.appendChild(popup);
-    setTimeout(() => removePopup('bell-ready-popup'), 12000);
-  }
-
-  function showUrgentPopup(o) {
-    removePopup('bell-urgent-popup');
-    const delStr = o.delivery ? new Date(o.delivery).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) : '';
-    const popup = document.createElement('div');
-    popup.id = 'bell-urgent-popup';
-    popup.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:99999;width:90%;max-width:420px;background:#fff;border:3px solid #dc2626;border-radius:16px;box-shadow:0 8px 32px rgba(220,38,38,.35);padding:18px 20px;animation:urgentPulse 1s ease infinite alternate;';
-    popup.innerHTML = `
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-        <span style="font-size:28px;">🚨</span>
-        <div style="font-size:16px;font-weight:900;color:#dc2626;">PLEASE HURRY!</div>
-        <button onclick="removePopup('bell-urgent-popup')" style="margin-left:auto;border:none;background:none;font-size:20px;cursor:pointer;color:#999;">×</button>
-      </div>
-      <div style="background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:12px;color:#dc2626;font-size:13px;font-weight:700;">
-        🚨 ${o.name} · ${o.billNo||o.id}<br>
-        <span style="font-size:12px;font-weight:400;color:#7f1d1d;">Due at ${delStr} — Order is NOT ready yet!</span>
-      </div>`;
-    document.body.appendChild(popup);
-  }
-
-  function removePopup(id) {
-    const el = document.getElementById(id);
-    if (el) el.remove();
-  }
-
-  // Start watchers after orders load
-  document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-      window._startReadyWatcher && window._startReadyWatcher();
-      window._startDeliveryWatcher && window._startDeliveryWatcher();
-    }, 4000);
-  });
-})();
 
 window.reopenDay = function() {
   if(!confirm('⚠️ Are you sure you want to reopen today? New orders will be allowed.')) return;
@@ -5916,6 +5776,162 @@ initDB().then(async () => {
 });
 
 </script>
-<script src="../form.js?v=1779694442"></script>
+<script src="../form.js?v=1779694442">
+// ══════════════════════════════════════════════════════════
+// BELL NOTIFICATIONS v2 — Fixed for owner & staff
+// Uses local `orders` array directly (no window.orders issue)
+// Starts immediately, no DOMContentLoaded dependency
+// ══════════════════════════════════════════════════════════
+(function initBellSystem() {
+  'use strict';
+
+  // ── Audio setup ──────────────────────────────────────────
+  let _ctx = null;
+  let _unlocked = false;
+
+  function getCtx() {
+    if (!_ctx) {
+      try { _ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+    }
+    return _ctx;
+  }
+
+  function playTone(freq, dur, vol) {
+    const ctx = getCtx(); if (!ctx) return;
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(vol || 0.5, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + dur + 0.05);
+    } catch(e) {}
+  }
+
+  function playBell(urgent) {
+    if (urgent) {
+      playTone(880, 0.25, 0.7);
+      setTimeout(() => playTone(880, 0.25, 0.7), 300);
+      setTimeout(() => playTone(660, 0.4, 0.8), 600);
+    } else {
+      playTone(1047, 0.35, 0.5);
+      setTimeout(() => playTone(1319, 0.45, 0.4), 380);
+    }
+  }
+
+  // Unlock audio on first tap anywhere
+  function unlockAudio() {
+    if (_unlocked) return; _unlocked = true;
+    const ctx = getCtx();
+    if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+  }
+  document.addEventListener('click', unlockAudio, true);
+  document.addEventListener('touchstart', unlockAudio, {capture: true, passive: true});
+
+  // ── Popup helpers ─────────────────────────────────────────
+  function removePopup(id) {
+    document.getElementById(id)?.remove();
+  }
+
+  function showReadyPopup(o) {
+    removePopup('bell-ready-popup');
+    const svc = (o.cartItems || []).flatMap(i => i.svcs || [i.svc]).filter(Boolean).join(', ') || 'Order';
+    const el = document.createElement('div');
+    el.id = 'bell-ready-popup';
+    el.style.cssText = 'position:fixed;top:68px;left:50%;transform:translateX(-50%);z-index:999999;width:90%;max-width:420px;background:#fff;border:2px solid #2e7d32;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.2);padding:16px 18px;animation:bellSlideIn .3s ease;';
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <span style="font-size:26px;">🔔</span>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:800;color:#2e7d32;">Order Ready!</div>
+          <div style="font-size:12px;color:#555;">${o.name} · ${o.billNo || o.id || ''}</div>
+        </div>
+        <button onclick="document.getElementById('bell-ready-popup')?.remove()" style="border:none;background:none;font-size:22px;cursor:pointer;color:#aaa;line-height:1;">×</button>
+      </div>
+      <div style="font-size:12px;color:#2e7d32;background:#f0fdf4;padding:8px 10px;border-radius:8px;">${svc} is ready · Rs.${(o.total||0).toLocaleString('en-IN')}</div>`;
+    document.body.appendChild(el);
+    setTimeout(() => removePopup('bell-ready-popup'), 15000);
+  }
+
+  function showUrgentPopup(o) {
+    removePopup('bell-urgent-popup');
+    const delStr = o.delivery ? new Date(o.delivery).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) : '';
+    const el = document.createElement('div');
+    el.id = 'bell-urgent-popup';
+    el.style.cssText = 'position:fixed;top:68px;left:50%;transform:translateX(-50%);z-index:999999;width:90%;max-width:420px;background:#fff;border:3px solid #c62828;border-radius:16px;box-shadow:0 8px 32px rgba(198,40,40,.4);padding:16px 18px;animation:urgentPulse 1.2s ease-in-out infinite alternate;';
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <span style="font-size:28px;">🚨</span>
+        <div style="font-size:16px;font-weight:900;color:#c62828;flex:1;">PLEASE HURRY!</div>
+        <button onclick="document.getElementById('bell-urgent-popup')?.remove()" style="border:none;background:none;font-size:22px;cursor:pointer;color:#aaa;line-height:1;">×</button>
+      </div>
+      <div style="background:#fef2f2;border:2px solid #ef9a9a;border-radius:10px;padding:12px;">
+        <div style="font-size:13px;font-weight:800;color:#c62828;">🚨 ${o.name} · ${o.billNo || ''}</div>
+        <div style="font-size:12px;color:#b71c1c;margin-top:4px;">Due at ${delStr} — Order is <b>NOT ready</b> yet!</div>
+      </div>`;
+    document.body.appendChild(el);
+  }
+
+  // ── Watcher ───────────────────────────────────────────────
+  const notifiedReady = new Set(JSON.parse(sessionStorage.getItem('_nr') || '[]'));
+  const urgentLastAlert = {};
+  let prevStatuses = null;
+
+  function checkOrders() {
+    // Use the page's local `orders` variable directly
+    const list = (typeof orders !== 'undefined') ? orders : [];
+    if (!list.length) return;
+
+    // Build prev statuses on first run
+    if (prevStatuses === null) {
+      prevStatuses = {};
+      list.forEach(o => prevStatuses[o.id] = o.status);
+      return; // Don't alert on first scan
+    }
+
+    const now = Date.now();
+
+    list.forEach(o => {
+      const prev = prevStatuses[o.id];
+      prevStatuses[o.id] = o.status;
+
+      // ── Ready notification ──
+      if (o.status === 'Ready' && prev !== 'Ready' && prev !== undefined && !notifiedReady.has(o.id)) {
+        notifiedReady.add(o.id);
+        try { sessionStorage.setItem('_nr', JSON.stringify([...notifiedReady])); } catch(e){}
+        unlockAudio();
+        setTimeout(() => playBell(false), 100);
+        showReadyPopup(o);
+        return;
+      }
+
+      // ── 2-hour urgent warning ──
+      if (o.status === 'Delivered' || o.status === 'Ready' || o.status === 'Cancelled') return;
+      if (!o.delivery) return;
+      const msUntil = new Date(o.delivery).getTime() - now;
+      if (msUntil > 0 && msUntil <= 7200000) { // within 2 hours
+        const lastAlert = urgentLastAlert[o.id] || 0;
+        if (now - lastAlert > 900000) { // max once per 15 min per order
+          urgentLastAlert[o.id] = now;
+          unlockAudio();
+          setTimeout(() => playBell(true), 100);
+          showUrgentPopup(o);
+        }
+      }
+    });
+  }
+
+  // Start checking every 6 seconds after 3 second initial delay
+  setTimeout(() => {
+    checkOrders(); // Build initial statuses
+    setInterval(checkOrders, 6000);
+  }, 3000);
+
+})();
+
+</script>
 </body>
 </html>

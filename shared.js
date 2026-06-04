@@ -266,6 +266,16 @@ const SIZE_DIMS = {
   '44x66': {w:44, h:66}
 };
 
+// Human-readable labels for every size key
+const SIZE_LABELS = {};
+Object.entries(SIZE_DIMS).forEach(([k, v]) => {
+  const wStr = Number.isInteger(v.w) ? v.w : v.w;
+  const hStr = Number.isInteger(v.h) ? v.h : v.h;
+  SIZE_LABELS[k] = `${wStr}×${hStr}"`;
+});
+// Overrides for nicer display
+SIZE_LABELS['3.5x5'] = '3.5×5"';
+
 // ── HDR Quantity-based pricing for sizes UP TO 8x12 ───────────
 // Format: [price for 1-19, 20-49, 50-99, 100+]
 const HDR_QTY_PRICES = {

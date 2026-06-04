@@ -758,485 +758,128 @@ function initFormJS(existing, role) {
   if (phoneEl && !phoneEl._autoFillAttached) {
     phoneEl._autoFillAttached = true;
   phoneEl.addEventListener('input', function() {
-      const raw = this.value.replace(/[^0-9]/g,'');
-      const dropdown = document.getElementById('phone-suggest-dropdown');
-      if (dropdown) dropdown.remove();
-      const hint = document.getElementById('returning-customer-hint');
-      if (hint) hint.remove();
+    const raw = this.value.replace(/[^0-9]/g,'');
+    // Remove existing dropdown and hint
+    document.getElementById('phone-suggest-dropdown')?.remove();
+    document.getElementById('returning-customer-hint')?.remove();
+    if (raw.length < 3) return;
 
-      if (raw.length < 3) return;
+    // Get orders - try multiple sources
+    const allOrders = (typeof orders !== 'undefined' && orders.length) ? orders
+      : (window.orders && window.orders.length) ? window.orders
+      : JSON.parse(localStorage.getItem('fv_orders') || '[]');
 
-      const allOrders = window.orders || [];
-      // Build customer map keyed by phone (unique)
-      const custMap = {};
-      allOrders.forEach(o => {
-        const ph = String(o.phone||'').replace(/[^0-9]/g,'').slice(-10);
-        if (!ph || ph.length < 10) return;
-        if (!ph.includes(raw)) return; // filter by typed digits
-        if (!custMap[ph]) {
-          custMap[ph] = { phone:ph, name:o.name||'', address:o.address||'', orders:[], totalSpend:0 };
-        }
-        custMap[ph].orders.push(o);
-        custMap[ph].totalSpend += (+o.total||0);
-        // Keep most recent name
-        if (o.date > (custMap[ph].lastDate||'')) {
-          custMap[ph].lastDate = o.date;
-          custMap[ph].name = o.name || custMap[ph].name;
-          custMap[ph].address = o.address || custMap[ph].address;
-        }
-      });
+    if (!allOrders.length) return;
 
-      const matches = Object.values(custMap).slice(0, 6);
-      if (!matches.length) {
-        // If exactly 10 digits but no match — clear
-        return;
+    // Build customer map keyed by last 10 digits of phone
+    const custMap = {};
+    allOrders.forEach(o => {
+      const ph = String(o.phone||'').replace(/[^0-9]/g,'');
+      const ph10 = ph.length > 10 ? ph.slice(-10) : ph;
+      if (!ph10 || ph10.length < 10) return;
+      if (!custMap[ph10]) {
+        custMap[ph10] = {
+          phone: ph10,
+          name: '',
+          address: '',
+          orders: [],
+          totalSpend: 0,
+          lastDate: ''
+        };
       }
+      custMap[ph10].orders.push(o);
+      custMap[ph10].totalSpend += (+o.total || 0);
+      const oDate = o.date || o.createdAt?.seconds || '';
+      if (String(oDate) > String(custMap[ph10].lastDate)) {
+        custMap[ph10].lastDate = oDate;
+        if (o.name) custMap[ph10].name = o.name;
+        if (o.address) custMap[ph10].address = o.address;
+      }
+    });
 
-      // If exact 10-digit match — auto-fill silently
-      if (raw.length === 10 && custMap[raw]) {
-        const cust = custMap[raw];
+    // Filter matching customers
+    const matches = Object.values(custMap).filter(c => c.phone.includes(raw));
+
+    if (!matches.length) return;
+
+    // Exact 10-digit match — silent autofill + returning badge
+    if (raw.length === 10 && custMap[raw]) {
+      const cust = custMap[raw];
+      const nameEl = document.getElementById('f-name');
+      const addrEl = document.getElementById('f-address');
+      if (nameEl && !nameEl.value.trim()) nameEl.value = cust.name;
+      if (addrEl && !addrEl.value.trim()) addrEl.value = cust.address;
+
+      const badge = document.createElement('div');
+      badge.id = 'returning-customer-hint';
+      badge.style.cssText = 'margin-top:5px;padding:8px 12px;background:#fdf8ee;border:1px solid #e8c96a;border-radius:8px;font-size:12px;color:#7a5c00;';
+      const recent = [...cust.orders].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).slice(0,3);
+      badge.innerHTML = `<b>🔄 Returning Customer</b> — ${cust.orders.length} order${cust.orders.length!==1?'s':''} · Rs.${cust.totalSpend.toLocaleString('en-IN')} total<br>` +
+        recent.map(o=>`<span style="font-size:11px;color:#9a6e1e;">${o.billNo||''} · ${o.date||''} · Rs.${o.total||0} · ${o.status||''}</span>`).join('<br>');
+      phoneEl.parentNode.insertBefore(badge, phoneEl.nextSibling);
+      return;
+    }
+
+    // Partial match — show dropdown
+    if (matches.length === 0) return;
+    const wrap = phoneEl.parentNode;
+    wrap.style.position = 'relative';
+
+    const dd = document.createElement('div');
+    dd.id = 'phone-suggest-dropdown';
+    dd.style.cssText = [
+      'position:absolute',
+      'top:100%',
+      'left:0',
+      'right:0',
+      'z-index:99999',
+      'background:#fff',
+      'border:1.5px solid #e8c96a',
+      'border-radius:10px',
+      'box-shadow:0 6px 24px rgba(0,0,0,.15)',
+      'max-height:220px',
+      'overflow-y:auto',
+      'margin-top:3px'
+    ].join(';');
+
+    matches.slice(0, 7).forEach(cust => {
+      const row = document.createElement('div');
+      row.style.cssText = 'padding:10px 14px;cursor:pointer;border-bottom:1px solid #f5f0e8;display:flex;justify-content:space-between;align-items:center;';
+      row.innerHTML = `<div>
+        <div style="font-size:13px;font-weight:700;color:#1a1a1a;">${cust.name || 'Unknown'}</div>
+        <div style="font-size:11px;color:#888;">${cust.phone} · ${cust.orders.length} order${cust.orders.length!==1?'s':''}</div>
+      </div>
+      <div style="font-size:11px;font-weight:600;color:#9a6e1e;">Rs.${cust.totalSpend.toLocaleString('en-IN')}</div>`;
+      row.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        phoneEl.value = cust.phone;
         const nameEl = document.getElementById('f-name');
         const addrEl = document.getElementById('f-address');
-        if (nameEl && !nameEl.value.trim()) nameEl.value = cust.name;
-        if (addrEl && !addrEl.value.trim()) addrEl.value = cust.address;
-        // Show returning customer badge
-        let badge = document.getElementById('returning-customer-hint');
-        if (!badge) {
-          badge = document.createElement('div');
-          badge.id = 'returning-customer-hint';
-          badge.style.cssText = 'margin-top:5px;padding:7px 11px;background:#fdf8ee;border:1px solid #e8c96a;border-radius:8px;font-size:12px;color:#7a5c00;';
-          phoneEl.parentNode.insertBefore(badge, phoneEl.nextSibling);
-        }
-        const recent = cust.orders.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).slice(0,3);
-        badge.innerHTML = `<b>🔄 Returning Customer</b> · ${cust.orders.length} orders · Rs.${cust.totalSpend.toLocaleString('en-IN')} total<br>
-          ${recent.map(o=>`<span style="font-size:11px;color:#9a6e1e;">${o.billNo||''} · ${o.date||''} · Rs.${o.total||0} · ${o.status||''}</span>`).join('<br>')}`;
-        return;
-      }
-
-      // Show dropdown suggestions
-      const dd = document.createElement('div');
-      dd.id = 'phone-suggest-dropdown';
-      dd.style.cssText = 'position:absolute;z-index:9999;background:#fff;border:1px solid #e8c96a;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.12);width:100%;max-height:200px;overflow-y:auto;margin-top:2px;';
-      matches.forEach(cust => {
-        const row = document.createElement('div');
-        row.style.cssText = 'padding:10px 14px;cursor:pointer;border-bottom:1px solid #f5f0e8;display:flex;justify-content:space-between;align-items:center;';
-        row.innerHTML = `<div><div style="font-size:13px;font-weight:700;color:#1a1a1a;">${cust.name||'Unknown'}</div><div style="font-size:11px;color:#888;">${cust.phone} · ${cust.orders.length} orders</div></div><div style="font-size:11px;font-weight:600;color:#9a6e1e;">Rs.${cust.totalSpend.toLocaleString('en-IN')}</div>`;
-        row.onmousedown = row.ontouchstart = (e) => {
-          e.preventDefault();
-          phoneEl.value = cust.phone;
-          const nameEl = document.getElementById('f-name');
-          const addrEl = document.getElementById('f-address');
-          if (nameEl) nameEl.value = cust.name;
-          if (addrEl) addrEl.value = cust.address;
-          const ddEl = document.getElementById('phone-suggest-dropdown');
-          if (ddEl) ddEl.remove();
-          phoneEl.dispatchEvent(new Event('input'));
-        };
-        dd.appendChild(row);
+        if (nameEl) nameEl.value = cust.name || '';
+        if (addrEl) addrEl.value = cust.address || '';
+        dd.remove();
+        // Trigger input again to show returning badge
+        phoneEl.dispatchEvent(new Event('input'));
       });
-      // Position relative to phone input
-      const wrap = phoneEl.parentNode;
-      wrap.style.position = 'relative';
-      wrap.appendChild(dd);
-      // Close on blur
-      phoneEl.addEventListener('blur', () => setTimeout(()=>{
-        const d = document.getElementById('phone-suggest-dropdown');
-        if (d) d.remove();
-      }, 200), {once:true});
+      row.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        phoneEl.value = cust.phone;
+        const nameEl = document.getElementById('f-name');
+        const addrEl = document.getElementById('f-address');
+        if (nameEl) nameEl.value = cust.name || '';
+        if (addrEl) addrEl.value = cust.address || '';
+        dd.remove();
+        phoneEl.dispatchEvent(new Event('input'));
+      }, {passive: false});
+      dd.appendChild(row);
     });
-  }
-}
 
-// ── Service panel toggle ──────────────────────────────────────
-window.onGroupA = function() {
-  const sel = [...document.querySelectorAll('input[name="groupA"]:checked')].map(c=>c.value);
-  groupAsel = sel; // FIX 1: keep global in sync
-  document.querySelectorAll('input[name="groupB"]').forEach(r=>r.checked=false);
-  document.getElementById('panel-b')?.remove();
+    wrap.appendChild(dd);
 
-  const area = document.getElementById('svc-panel-area');
-
-  // Map service name → panel ID
-  const panelMap = {
-    'Photo Editing': 'panel-editing',
-    'Printing':      'panel-printing',
-    'Framing':       'panel-framing',
-  };
-
-  Object.entries(panelMap).forEach(([svc, panelId]) => {
-    const existing = document.getElementById(panelId);
-    if(sel.includes(svc) && !existing) {
-      const tmp = document.createElement('div');
-      tmp.innerHTML = getSvcPanelHTML([svc]);
-      const newPanel = tmp.querySelector('#'+panelId);
-      if(newPanel) area.appendChild(newPanel);
-      else if(tmp.firstElementChild) area.appendChild(tmp.firstElementChild);
-    } else if(!sel.includes(svc) && existing) {
-      existing.remove();
-    }
+    // Close dropdown on blur
+    const closeDD = () => { setTimeout(() => { document.getElementById('phone-suggest-dropdown')?.remove(); }, 150); };
+    phoneEl.addEventListener('blur', closeDD, {once: true});
   });
-};
-
-window.onGroupB = function(el) {
-  document.querySelectorAll('input[name="groupA"]').forEach(c=>c.checked=false);
-  document.getElementById('svc-panel-area').innerHTML = getBPanelHTML(el.value);
-  if(el.value==='Passport Photos')   calcPassport();
-  if(el.value==='Visa Photos')       { onVisaCountryChange(); }
-  if(el.value==='Doorstep Passport') calcDoorPassport();
-  if(el.value==='Doorstep Visa')     calcDoorVisa();
-  if(el.value==='Readymade Frames')  populateStockCategoryDropdown('frames');
-  if(el.value==='Slip In Albums')    populateStockCategoryDropdown('albums');
-  if(el.value==='Gift Items')        populateStockCategoryDropdown('gifts');
-};
-
-// ── Stock Category Helpers ────────────────────────────────────
-window.stockCatCarts = { frames:[], albums:[], gifts:[] };
-
-function getCatItems(cat) {
-  const catMap = { frames:'Readymade Frames', albums:'Slip In Albums', gifts:'Gift Items' };
-  return (window.stockItems||[]).filter(i=>i.category===catMap[cat] && (+i.qty||0)>0);
-}
-
-window.populateStockCategoryDropdown = function(cat) {
-  const sel = document.getElementById(cat+'-item-select');
-  if(!sel) return;
-  const items = getCatItems(cat);
-  sel.innerHTML = '<option value="">— Select Item —</option>' +
-    items.map(i=>`<option value="${i.id}">${i.name} (Qty: ${i.qty}) — Rs.${i.sellingPrice}</option>`).join('');
-};
-
-window.onStockCatSelect = function(cat) {
-  const id = document.getElementById(cat+'-item-select')?.value;
-  const item = (window.stockItems||[]).find(x=>x.id===id);
-  const priceEl = document.getElementById(cat+'-item-price');
-  if(item && priceEl) { priceEl.value = item.sellingPrice; calcStockCatItem(cat); }
-};
-
-window.calcStockCatItem = function(cat) {
-  const qty   = +(document.getElementById(cat+'-item-qty')?.value)||1;
-  const price = +(document.getElementById(cat+'-item-price')?.value)||0;
-  const el    = document.getElementById(cat+'-item-total');
-  if(el && price>0) { el.classList.remove('hidden'); el.textContent=`Total: Rs.${qty*price} (${qty} × Rs.${price})`; }
-};
-
-window.addStockCatToList = function(cat, svcName) {
-  const id    = document.getElementById(cat+'-item-select')?.value;
-  const qty   = +(document.getElementById(cat+'-item-qty')?.value)||1;
-  const price = +(document.getElementById(cat+'-item-price')?.value)||0;
-  const item  = (window.stockItems||[]).find(x=>x.id===id);
-  if(!item){toast('⚠️ Select an item','error');return;}
-  if(qty>+item.qty){toast(`⚠️ Only ${item.qty} in stock`,'error');return;}
-  if(!price){toast('⚠️ Price not set','error');return;}
-  if(!window.stockCatCarts) window.stockCatCarts={frames:[],albums:[],gifts:[]};
-  window.stockCatCarts[cat].push({id,name:item.name,qty,unitPrice:price,total:qty*price,svc:svcName});
-  const el=document.getElementById(cat+'-items-added');
-  if(el) el.innerHTML=window.stockCatCarts[cat].map((s,i)=>
-    `<div style="display:flex;justify-content:space-between;padding:6px 8px;background:var(--paper);border-radius:6px;margin-bottom:4px;font-size:13px;">
-      <span>${s.name} × ${s.qty}</span>
-      <span style="font-weight:700;">Rs.${s.total} <button onclick="removeStockCatItem('${cat}',${i})" style="background:none;border:none;color:#e53935;cursor:pointer;">✕</button></span>
-    </div>`).join('');
-  document.getElementById(cat+'-item-select').value='';
-  document.getElementById(cat+'-item-qty').value='1';
-  document.getElementById(cat+'-item-price').value='';
-  document.getElementById(cat+'-item-total')?.classList.add('hidden');
-  toast(`✅ ${item.name} added`,'success');
-};
-
-window.removeStockCatItem = function(cat, idx) {
-  if(!window.stockCatCarts?.[cat]) return;
-  window.stockCatCarts[cat].splice(idx,1);
-  const el=document.getElementById(cat+'-items-added');
-  if(el) el.innerHTML=window.stockCatCarts[cat].map((s,i)=>
-    `<div style="display:flex;justify-content:space-between;padding:6px 8px;background:var(--paper);border-radius:6px;margin-bottom:4px;font-size:13px;">
-      <span>${s.name} × ${s.qty}</span>
-      <span style="font-weight:700;">Rs.${s.total} <button onclick="removeStockCatItem('${cat}',${i})" style="background:none;border:none;color:#e53935;cursor:pointer;">✕</button></span>
-    </div>`).join('');
-};
-
-window.onOrderType      = onOrderType;
-window.onMouldSize      = function(el) {
-  ['mt-05','mt-1','mt-15','mt-2','mt-25'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));
-  const map={'0.5"':'mt-05','1"':'mt-1','1.5"':'mt-15','2"':'mt-2','2.5"':'mt-25'};
-  if(map[el.value]) document.getElementById(map[el.value])?.classList.remove('hidden');
-  document.querySelectorAll('input[name="mt"]').forEach(r=>r.checked=false);
-};
-window.toggleMount = function() {}; // legacy stub
-
-// ── Framing Handlers ──────────────────────────────────────────
-
-window.onMouldSizeChange = function(size) {
-  const sec = document.getElementById('frm-mould-type-section');
-  const sel = document.getElementById('frm-mould-select');
-  if (!sec || !sel) return;
-  sec.classList.remove('hidden');
-  const items = window.mouldingsCache[size] || DEFAULT_MOULDINGS[size] || [];
-  let opts = '<option value="">— Select Moulding —</option>';
-  items.forEach((m,i) => opts += `<option value="${i}">${m.code} — ${m.name} (Rs.${m.price||10}/ft)</option>`);
-  sel.innerHTML = opts;
-  sel.dataset.mouldSize = size;
-  document.getElementById('frm-mount-section')?.classList.remove('hidden');
-  updateTableStandVisibility();
-  calcFrame();
-};
-
-window.toggleAddMould = function() {
-  document.getElementById('frm-add-mould-form')?.classList.toggle('hidden');
-};
-
-window.saveNewMoulding = async function() {
-  const size  = document.getElementById('frm-mould-select')?.dataset.mouldSize;
-  const code  = document.getElementById('frm-new-code')?.value.trim();
-  const name  = document.getElementById('frm-new-name')?.value.trim();
-  const price = +(document.getElementById('frm-new-price')?.value) || 0;
-  if (!size || !code || !name) { toast('⚠️ Enter moulding code and name','error'); return; }
-  if (!price) { toast('⚠️ Enter price per ft','error'); return; }
-  await addMoulding(size, code, name, price);
-  onMouldSizeChange(size);
-  document.getElementById('frm-new-code').value = '';
-  document.getElementById('frm-new-name').value = '';
-  document.getElementById('frm-new-price').value = '';
-  document.getElementById('frm-add-mould-form')?.classList.add('hidden');
-  toast('✅ Moulding saved!');
-};
-
-window.onMountChange = function() {
-  const mnt = document.querySelector('input[name="mnt"]:checked')?.value;
-  document.getElementById('frm-mount-size-box')?.classList.toggle('hidden', mnt !== 'Yes');
-  document.getElementById('frm-sleeve-row')?.classList.toggle('hidden', mnt !== 'Yes');
-  if (mnt !== 'Yes') {
-    const slv = document.getElementById('acc-sleeve');
-    if (slv) slv.checked = false;
-    document.getElementById('frm-sleeve-opts')?.classList.add('hidden');
-  }
-  document.getElementById('frm-accessories')?.classList.remove('hidden');
-  updateTableStandVisibility();
-  calcFrame();
-};
-
-window.onSleeveToggle = function() {
-  const checked = document.getElementById('acc-sleeve')?.checked;
-  document.getElementById('frm-sleeve-opts')?.classList.toggle('hidden', !checked);
-  calcFrame();
-};
-
-window.onSleeveTypeChange = function() {
-  const type = document.querySelector('input[name="slvType"]:checked')?.value;
-  document.getElementById('frm-sleeve-colors')?.classList.toggle('hidden', type === 'stripe');
-  calcFrame();
-};
-
-window.onFrameSizeSelect = function() {
-  const sel = document.getElementById('frm-size-select');
-  const val = sel?.value;
-  const customBox = document.getElementById('frm-custom-size');
-  const hidL = document.getElementById('frm-L');
-  const hidB = document.getElementById('frm-B');
-
-  if(val === 'custom') {
-    if(customBox) customBox.style.display = 'block';
-    if(hidL) hidL.value = '';
-    if(hidB) hidB.value = '';
-    updateTableStandVisibility();
-  } else if(val) {
-    if(customBox) customBox.style.display = 'none';
-    const [w,h] = val.split('x').map(Number);
-    if(hidL) hidL.value = w;
-    if(hidB) hidB.value = h;
-    updateTableStandVisibility();
-    calcFrame();
-  } else {
-    if(customBox) customBox.style.display = 'none';
-    if(hidL) hidL.value = '';
-    if(hidB) hidB.value = '';
-    updateTableStandVisibility();
-  }
-};
-
-window.onFrameCustomInput = function() {
-  const w = document.getElementById('frm-L-custom')?.value;
-  const h = document.getElementById('frm-B-custom')?.value;
-  const hidL = document.getElementById('frm-L');
-  const hidB = document.getElementById('frm-B');
-  if(hidL) hidL.value = w||'';
-  if(hidB) hidB.value = h||'';
-  updateTableStandVisibility();
-  calcFrame();
-};
-
-// ── Table Stand Visibility ────────────────────────────────────
-// Called immediately whenever size or mount changes — no dependency on moulding being selected
-function updateTableStandVisibility() {
-  const tsRow = document.getElementById('table-stand-row');
-  if (!tsRow) return;
-
-  let l = 0, b = 0;
-
-  // If printing panel is active, read size from print size select
-  const printingPanel = document.getElementById('panel-printing');
-  const isPrintingActive = printingPanel && !printingPanel.classList.contains('hidden');
-  if (isPrintingActive) {
-    const size = document.getElementById('pr-size')?.value;
-    if (size && window.SIZE_DIMS && SIZE_DIMS[size]) {
-      l = SIZE_DIMS[size].w;
-      b = SIZE_DIMS[size].h;
-    }
-  } else {
-    // Framing-only: read from hidden inputs (set by size select or custom inputs)
-    l = +(document.getElementById('frm-L')?.value) || 0;
-    b = +(document.getElementById('frm-B')?.value) || 0;
-  }
-
-  // Also account for mount size — frame+mount may push over threshold
-  const mnt = document.querySelector('input[name="mnt"]:checked')?.value || 'No';
-  const mountSize = +(document.querySelector('input[name="mntS"]:checked')?.value) || 0;
-  if (mnt === 'Yes' && mountSize > 0) {
-    l = l + mountSize * 2;
-    b = b + mountSize * 2;
-  }
-
-  // Hide if either dimension exceeds 10×12
-  const hide = (l > 0 && b > 0) && (l > 10 || b > 12);
-  tsRow.style.display = hide ? 'none' : '';
-  if (hide) {
-    const tsCb = document.querySelector('input[name="acc"][value="Table Stand"]');
-    if (tsCb) tsCb.checked = false;
-  }
-}
-window.updateTableStandVisibility = updateTableStandVisibility;
-
-function getFrameLB() {
-  if (groupAsel.includes('Printing')) {
-    const size = document.getElementById('pr-size')?.value;
-    if (size && SIZE_DIMS[size]) return { l: SIZE_DIMS[size].w, b: SIZE_DIMS[size].h };
-    return null;
-  }
-  const l = +(document.getElementById('frm-L')?.value) || 0;
-  const b = +(document.getElementById('frm-B')?.value) || 0;
-  if (!l || !b) return null;
-  return { l, b };
-}
-
-window.calcFrame = function() {
-  const costTag  = document.getElementById('frm-cost-tag');
-  const totalTag = document.getElementById('frm-total-tag');
-  const accBox   = document.getElementById('frm-accessories');
-  if (!costTag) return;
-  const lb = getFrameLB();
-  const mouldSize = document.querySelector('input[name="ms"]:checked')?.value;
-  const mouldSel  = document.getElementById('frm-mould-select');
-  const mouldIdx  = mouldSel?.value;
-  const mnt       = document.querySelector('input[name="mnt"]:checked')?.value || 'No';
-  const mountSize = +(document.querySelector('input[name="mntS"]:checked')?.value) || 0;
-  if (!lb || !mouldSize || !mouldIdx) { costTag.classList.add('hidden'); totalTag?.classList.add('hidden'); return; }
-  if (mnt === 'Yes' && !mountSize) { costTag.classList.add('hidden'); totalTag?.classList.add('hidden'); return; }
-  const { l, b } = lb;
-
-  // Hide table stand for large frames (delegated to shared function)
-  updateTableStandVisibility();
-  const mouldItem = (window.mouldingsCache[mouldSize] || DEFAULT_MOULDINGS[mouldSize] || [])[+mouldIdx];
-  const pricePerFt = mouldItem?.price || FRAME_PRICE_PER_FT;
-  let frameCost = 0, costLabel = '';
-  if (mnt === 'Yes') {
-    const newL = l + mountSize*2, newB = b + mountSize*2;
-    const perim = (newL + newB) * 2;
-    const mouldCost = mouldRound(mouldSize) * 8 * pricePerFt;
-    frameCost = perim + mouldCost;
-    costLabel = `Frame+Mount: [(${newL}+${newB})×2]+[${mouldRound(mouldSize)}×8×Rs.${pricePerFt}] = <b>Rs.${frameCost}</b>`;
-  } else {
-    const perim = (l + b) * 2;
-    const mouldCost = mouldRound(mouldSize) * 8 * pricePerFt;
-    frameCost = perim + mouldCost;
-    costLabel = `Frame: [(${l}+${b})×2]+[${mouldRound(mouldSize)}×8×Rs.${pricePerFt}] = <b>Rs.${frameCost}</b>`;
-  }
-  costTag.classList.remove('hidden');
-  costTag.innerHTML = costLabel;
-  accBox?.classList.remove('hidden');
-  let sleeveTotal = 0;
-  const slvChk = document.getElementById('acc-sleeve')?.checked;
-  if (slvChk && mnt === 'Yes') {
-    const slvType  = document.querySelector('input[name="slvType"]:checked')?.value || 'plain';
-    sleeveTotal = calcSleeveCost(slvType, l, b);
-    const slvTag = document.getElementById('frm-sleeve-price');
-    if (slvTag) {
-      slvTag.classList.remove('hidden');
-      const slvColor = document.querySelector('input[name="slvColor"]:checked')?.value || '';
-      slvTag.innerHTML = `Sleeve (${slvType==='plain'?'Plain Plastic':'Golden Stripe'}${slvColor?' · '+slvColor:''}): <b>Rs.${sleeveTotal}</b>`;
-    }
-  } else {
-    document.getElementById('frm-sleeve-price')?.classList.add('hidden');
-  }
-  const grand = frameCost + sleeveTotal;
-  totalTag.classList.remove('hidden');
-  totalTag.textContent = `Total Framing Cost: Rs.${grand}`;
-  updateCartPanel(); // Live preview update
-};
-
-function onOrderType() {
-  const otype = document.querySelector('input[name="otype"]:checked')?.value;
-  const box = document.getElementById('delivery-box');
-  box.classList.toggle('hidden', otype!=='Booking');
-  if(otype==='Booking') {
-    initDeliveryPicker();
-  }
-  updatePaymentSection();
-}
-
-function updatePaymentSection() {
-  const otype = document.querySelector('input[name="otype"]:checked')?.value||'Instant';
-  document.getElementById('instant-pay-note').classList.toggle('hidden', otype!=='Instant');
-  document.getElementById('booking-advance-box').classList.toggle('hidden', otype!=='Booking');
-}
-
-window.onPayModeChange = function() {
-  const pm = document.querySelector('input[name="paymode"]:checked')?.value;
-  const isCredit = pm && (window.creditCompanies||[]).includes(pm);
-  document.getElementById('cash-upi-split')?.classList.toggle('hidden', pm !== 'Cash+UPI');
-  document.getElementById('credit-pay-info')?.classList.toggle('hidden', !isCredit);
-  if(isCredit) {
-    const nameEl = document.getElementById('credit-company-name');
-    if(nameEl) nameEl.textContent = pm;
-  }
-  if(pm !== 'Cash+UPI') {
-    const sc = document.getElementById('split-cash'); if(sc) sc.value='';
-    const su = document.getElementById('split-upi'); if(su) su.value='';
-  }
-};
-
-// Populate credit company payment options
-window.updateCreditPaymentOptions = function() {
-  const el = document.getElementById('credit-companies-pay');
-  if(!el) return;
-  const companies = window.creditCompanies||[];
-  if(!companies.length) { el.innerHTML=''; return; }
-  el.innerHTML = companies.map(c=>
-    `<label class="toggle-option">
-      <input type="radio" name="paymode" value="${c}" onchange="onPayModeChange()">
-      <span>🏢 ${c}</span>
-    </label>`
-  ).join('');
-};
-
-window.calcSplitPayment = function() {
-  const cash = +(document.getElementById('split-cash')?.value)||0;
-  const upi  = +(document.getElementById('split-upi')?.value)||0;
-  const splitTotal = cash + upi;
-  const orderTotal = window.cart.reduce((s,i)=>s+(+i.price||0),0);
-  const tag  = document.getElementById('split-total-tag');
-  const warn = document.getElementById('split-warn');
-  if (tag) tag.innerHTML = `Cash Rs.${cash} + UPI Rs.${upi} = <b>Rs.${splitTotal}</b> (Order Total: Rs.${orderTotal})`;
-  if (warn) warn.classList.toggle('hidden', splitTotal === orderTotal);
-};
-
-// ── Print Quality / Size / Quantity Logic ─────────────────────
-
-// Display labels for sizes
-const SIZE_LABELS = {
-  '2x3':'2×3"','3x4':'3×4"','3.5x5':'3.5×5"','4x6':'4×6"',
-  '5x7':'5×7"','6x8':'6×8"','6x9':'6×9"','8x10':'8×10"','8x12':'8×12"',
-  '10x12':'10×12"','12x15':'12×15"','12x18':'12×18"','13x19':'13×19"',
-  '16x20':'16×20"','16x24':'16×24"','20x24':'20×24"','20x30':'20×30"',
-  '24x36':'24×36"','36x54':'36×54"','44x66':'44×66"'
-};
 
 window.onPrintQualityChange = function() {
   const qual = document.querySelector('input[name="pq"]:checked')?.value;
@@ -2136,7 +1779,9 @@ window.updateDeliveryDisplay = function() {
   if(display) display.textContent=`${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()} · ${hour}:${min} ${ampm}`;
   if(hidden) {
     let h24=hour; if(ampm==='PM'&&hour!==12)h24=hour+12; if(ampm==='AM'&&hour===12)h24=0;
-    hidden.value=`${d.toISOString().slice(0,10)}T${String(h24).padStart(2,'0')}:${min}:00`;
+    // Use LOCAL date (not UTC) to avoid IST→UTC day-shift bug
+    const localDate = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    hidden.value=`${localDate}T${String(h24).padStart(2,'0')}:${min}:00`;
   }
 };
 
