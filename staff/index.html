@@ -2005,8 +2005,7 @@ window.staffPrintLabels = function(id) {
     </div>`).join('');
   const w=window.open('','_blank','width=800,height=700');
   w.document.write(`<!DOCTYPE html><html><head><title>Labels</title>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-<script><\/script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>\n<script><\/script>
     <style>body{margin:0;padding:8mm;}.grid{display:grid;grid-template-columns:repeat(3,63mm);gap:3mm;}@media print{@page{size:A4;margin:8mm;}}</style>
     </head><body><div class="grid">${labelHTML}</div>
     <script>JsBarcode(".barcode").init();window.onload=()=>{window.print();setTimeout(()=>window.close(),1500);}<\/script>
