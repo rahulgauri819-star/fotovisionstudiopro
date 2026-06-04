@@ -3031,40 +3031,70 @@ window.ownerPurMsizeChange = function() {
 window.renderMouldingsManager = function() {
   const container = document.getElementById('mouldings-manager');
   if (!container) return;
+  const safeVendors = (typeof vendors !== 'undefined' && vendors) ? vendors : {};
+  const vendorOpts = Object.keys(safeVendors).map(v=>`<option value="${v}">${v}</option>`).join('');
   container.innerHTML = MOULDING_SIZES.map(size => {
     const items = window.mouldingsCache[size] || DEFAULT_MOULDINGS[size] || [];
+    const k = size.replace('.','_');
     const rows = items.map((m,i) => `
-      <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--paper);border-radius:var(--r-sm);margin-bottom:6px;">
-        <span style="font-weight:700;color:var(--gold-dk);min-width:50px;">${m.code}</span>
-        <span style="flex:1;">${m.name}</span>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--paper);border-radius:var(--r-sm);margin-bottom:6px;flex-wrap:wrap;">
+        <span style="font-weight:700;color:var(--gold-dk);min-width:45px;font-size:13px;">${m.code||'—'}</span>
+        <span style="flex:1;font-size:13px;">${m.name}</span>
+        ${m.vendor?`<span style="font-size:11px;color:var(--ink3);background:var(--gold-bg);padding:2px 7px;border-radius:5px;">${m.vendor}</span>`:''}
         <span style="font-size:12px;color:var(--ink3);white-space:nowrap;">Rs.${m.price||10}/ft</span>
-        <button onclick="ownerDeleteMoulding('${size}',${i})" style="background:#e53935;color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;">🗑️ Delete</button>
-      </div>`).join('') || '<div style="color:var(--ink-lt);font-size:13px;padding:8px;">No mouldings yet</div>';
+        <button onclick="ownerDeleteMoulding('${size}',${i})" style="background:#e53935;color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;">🗑️</button>
+      </div>`).join('') || '<div style="color:var(--ink3);font-size:13px;padding:8px;">No mouldings yet</div>';
     return `
     <div style="background:#fff;border-radius:var(--r-md);padding:16px;box-shadow:var(--shadow-sm);">
       <div style="font-weight:700;font-size:14px;color:var(--gold-dk);margin-bottom:10px;">📐 ${size}" Moulding</div>
-      <div id="mould-list-${size.replace('.','_')}">${rows}</div>
-      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-        <input id="mc-${size.replace('.','_')}" class="form-input" placeholder="Code (e.g. M6)" style="max-width:100px;">
-        <input id="mn-${size.replace('.','_')}" class="form-input" placeholder="Name/Color" style="flex:1;min-width:120px;">
-        <input id="mp-${size.replace('.','_')}" class="form-input" type="number" min="1" placeholder="Rs./ft" style="max-width:80px;">
-        <button style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#b8831a,#C9973A);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:12px 24px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 10px rgba(201,151,58,.35);transition:transform .18s,box-shadow .18s;letter-spacing:0.2px;padding:8px 14px;font-size:13px;" onclick="ownerAddMoulding('${size}')">➕ Add</button>
+      <div id="mould-list-${k}">${rows}</div>
+      <div style="background:var(--paper);border-radius:10px;padding:12px;margin-top:10px;">
+        <div style="font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:8px;text-transform:uppercase;">+ Add New</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--ink3);display:block;margin-bottom:3px;">VENDOR</label>
+            <select class="form-input" id="mv-${k}" style="font-size:13px;padding:8px;">
+              <option value="">— Select —</option>
+              ${vendorOpts}
+              <option value="__other__">Other</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--ink3);display:block;margin-bottom:3px;">CODE</label>
+            <input id="mc-${k}" class="form-input" placeholder="M2, G-883" style="font-size:13px;padding:8px;">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--ink3);display:block;margin-bottom:3px;">TYPE / COLOR</label>
+            <input id="mn-${k}" class="form-input" placeholder="e.g. Classic Gold" style="font-size:13px;padding:8px;">
+          </div>
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--ink3);display:block;margin-bottom:3px;">SELLING PRICE/FT (Rs.)</label>
+            <input id="mp-${k}" class="form-input" type="number" min="1" placeholder="Price" style="font-size:13px;padding:8px;">
+          </div>
+        </div>
+        <button style="background:linear-gradient(135deg,#8a6520,#C9973A);color:#fff;border:none;border-radius:10px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;width:100%;" onclick="ownerAddMoulding('${size}')">➕ Add Moulding</button>
       </div>
     </div>`;
   }).join('');
 };
 
 window.ownerAddMoulding = async function(size) {
-  const key   = size.replace('.','_');
+  const key = size.replace('.','_');
+  const vendorSel = document.getElementById('mv-'+key);
+  const vendor = vendorSel?.value === '__other__'
+    ? (prompt('Vendor name?') || '')
+    : (vendorSel?.value || '');
   const code  = document.getElementById('mc-'+key)?.value.trim();
   const name  = document.getElementById('mn-'+key)?.value.trim();
   const price = +(document.getElementById('mp-'+key)?.value) || 0;
-  if (!code || !name) { toast('⚠️ Enter code and name','error'); return; }
-  if (!price) { toast('⚠️ Enter price per ft','error'); return; }
-  await addMoulding(size, code, name, price);
-  document.getElementById('mc-'+key).value = '';
-  document.getElementById('mn-'+key).value = '';
-  document.getElementById('mp-'+key).value = '';
+  if (!name) { toast('⚠️ Enter type/color name','error'); return; }
+  if (!price) { toast('⚠️ Enter selling price/ft','error'); return; }
+  if (!window.mouldingsCache[size]) window.mouldingsCache[size] = [];
+  window.mouldingsCache[size].push({ code:code||'', name, price, vendor });
+  await saveMouldings(size);
+  ['mv','mc','mn','mp'].forEach(pre => { const el=document.getElementById(pre+'-'+key); if(el) el.value=''; });
   renderMouldingsManager();
   toast('✅ Moulding added!');
 };
@@ -4200,10 +4230,11 @@ async function _saveProductionOrder(initialStatus) {
       const mouldW=parseFloat(f.msize)||1;
       const l=f.fw+(f.mountSize||0)*2+mouldW*2;
       const b=f.fh+(f.mountSize||0)*2+mouldW*2;
-      const needed=(l*2+b*2)*f.qty;
+      // Add 20% mitre/corner waste to required footage before checking availability
+      const needed=Math.ceil((l*2+b*2)*f.qty*1.20);
       const typeStock=mouldingStock?.[f.msize]?.[f.mtype]||[];
       const avail=typeStock.filter(p=>p>4).reduce((s,p)=>s+p,0);
-      if(avail<needed){toast(`❌ Not enough ${f.msize} ${f.mtype} stock for ${f.name}`,'error');return;}
+      if(avail<needed){toast(`❌ Not enough ${f.msize}" ${f.mtype} stock for ${f.name} (need ~${Math.ceil(needed/12)}ft with waste)`,'error');return;}
       for(let i=0;i<f.qty;i++) deductMouldingStock(f.msize,f.mtype,f.fw,f.fh,f.mountSize||0);
     }
   }
@@ -4238,9 +4269,10 @@ window.approvePO=async function(id){
     const mouldW=parseFloat(f.msize)||1;
     const l=f.fw+(f.mountSize||0)*2+mouldW*2;
     const b=f.fh+(f.mountSize||0)*2+mouldW*2;
-    const needed=(l*2+b*2)*f.qty;
+    // Add 20% mitre/corner waste
+    const needed=Math.ceil((l*2+b*2)*f.qty*1.20);
     const avail=(mouldingStock?.[f.msize]?.[f.mtype]||[]).filter(p=>p>4).reduce((s,p)=>s+p,0);
-    if(avail<needed){toast(`❌ Not enough stock for ${f.name}`,'error');return;}
+    if(avail<needed){toast(`❌ Not enough stock for ${f.name} (need ~${Math.ceil(needed/12)}ft with waste)`,'error');return;}
     for(let i=0;i<f.qty;i++) deductMouldingStock(f.msize,f.mtype,f.fw,f.fh,f.mountSize||0);
   }
   await updatePOStatus(id,'Approved');

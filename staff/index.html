@@ -71,6 +71,7 @@
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:8px;">
     <button onclick="showPage('readymade-stock');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">📦</span>Stock</button>
     <button onclick="showPage('moulding-stock');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">📐</span>Moulds</button>
+    <button onclick="showPage('mouldings');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">🖼️</span>Manage<br>Mouldings</button>
     <button onclick="showPage('dayend');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">🌙</span>Day End</button>
     <button onclick="showPage('framer');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">🖼️</span>Framing</button>
     <button onclick="showPage('estimates');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">💰</span>Estimates</button>
@@ -194,6 +195,14 @@
 </div>
 
 <!-- MOULDING STOCK -->
+<div id="pg-mouldings" class="hidden">
+  <div class="page-header">
+    <div class="page-title">🖼️ Manage Mouldings</div>
+    <div class="page-sub">Add or delete mouldings for each size</div>
+  </div>
+  <div id="staff-mouldings-manager" style="display:flex;flex-direction:column;gap:16px;"></div>
+</div>
+
 <div id="pg-moulding-stock" class="hidden">
   <div class="page-header">
     <div class="page-title">📐 Moulding Stock</div>
@@ -1348,7 +1357,7 @@ let lastReadyIds = new Set();
 window.showPage = window._realShowPage = function(p) {
   try {
     currentPage=p;
-    ['dashboard','orders','framer','form','bookings','expenses','dayend','readymade-stock','moulding-stock','estimates','purchases','production'].forEach(x=>document.getElementById('pg-'+x)?.classList.add('hidden'));
+    ['dashboard','orders','framer','form','bookings','expenses','dayend','readymade-stock','moulding-stock','mouldings','estimates','purchases','production'].forEach(x=>document.getElementById('pg-'+x)?.classList.add('hidden'));
     document.getElementById('pg-'+p)?.classList.remove('hidden');
     document.querySelectorAll('.hdr-nav-btn, .tab-btn').forEach(b=>b.classList.remove('act'));
     document.getElementById('nav-'+p)?.classList.add('act');
@@ -1362,6 +1371,7 @@ window.showPage = window._realShowPage = function(p) {
     if(p==='dayend')          renderStaffDayEnd();
     if(p==='readymade-stock') renderStaffReadymadeStock();
     if(p==='moulding-stock')  renderStaffMouldingStock();
+    if(p==='mouldings')       { if(typeof renderStaffMouldingsManager==='function') renderStaffMouldingsManager(); }
     if(p==='estimates')       { if(typeof renderEstimates==='function') renderEstimates(); }
     if(p==='purchases')       { if(typeof renderPurchases==='function') renderPurchases(); }
     if(p==='production')      { if(typeof renderProductionOrders==='function') renderProductionOrders(); }
@@ -2072,6 +2082,108 @@ function staffPopulateMouldingType() {
     :'<option value="default">Default</option>';
 }
 
+// ── saveMouldingStock (staff) ─────────────────────────────────
+function saveMouldingStock() {
+  localStorage.setItem('fv_moulding_stock', JSON.stringify(mouldingStock));
+}
+
+// ── Staff Mouldings Manager ───────────────────────────────────
+const STAFF_MOULDING_SIZES = ['0.5','0.75','1','1.5','2','2.5','3','3.5','4','5'];
+
+window.renderStaffMouldingsManager = function() {
+  const container = document.getElementById('staff-mouldings-manager');
+  if (!container) return;
+  const safeVendors = (typeof vendors !== 'undefined' && vendors) ? vendors : {};
+  const vendorOpts = Object.keys(safeVendors).map(v=>`<option value="${v}">${v}</option>`).join('');
+
+  container.innerHTML = STAFF_MOULDING_SIZES.map(size => {
+    const items = (window.mouldingsCache && window.mouldingsCache[size]) || [];
+    const k = size.replace('.','_');
+    const rows = items.map((m,i) => `
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--paper);border-radius:8px;margin-bottom:6px;flex-wrap:wrap;">
+        <span style="font-weight:700;color:var(--gold-dk);min-width:45px;font-size:13px;">${m.code||'—'}</span>
+        <span style="flex:1;font-size:13px;">${m.name}</span>
+        ${m.vendor?`<span style="font-size:11px;color:var(--ink3);">${m.vendor}</span>`:''}
+        <span style="font-size:12px;color:var(--ink3);white-space:nowrap;">Rs.${m.price||10}/ft</span>
+        <button onclick="staffDeleteMoulding('${size}',${i})" style="background:#e53935;color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;">🗑️</button>
+      </div>`).join('') || '<div style="color:var(--ink3);font-size:13px;padding:6px;">No mouldings yet</div>';
+
+    return `
+    <div style="background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.08);">
+      <div style="font-weight:700;font-size:14px;color:var(--gold-dk);margin-bottom:10px;">📐 ${size}" Moulding</div>
+      <div id="smlist-${k}">${rows}</div>
+      <div style="background:var(--paper);border-radius:10px;padding:12px;margin-top:10px;">
+        <div style="font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:8px;text-transform:uppercase;">+ Add New</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--ink3);display:block;margin-bottom:3px;">VENDOR</label>
+            <select class="form-input" id="smv-${k}" style="font-size:13px;padding:8px;">
+              <option value="">— Select —</option>
+              ${vendorOpts}
+              <option value="__other__">Other / Free text</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--ink3);display:block;margin-bottom:3px;">CODE</label>
+            <input class="form-input" id="smc-${k}" placeholder="M2, G-883" style="font-size:13px;padding:8px;">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--ink3);display:block;margin-bottom:3px;">TYPE / COLOR</label>
+            <input class="form-input" id="smn-${k}" placeholder="e.g. Classic Gold" style="font-size:13px;padding:8px;">
+          </div>
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--ink3);display:block;margin-bottom:3px;">SELLING PRICE/FT (Rs.)</label>
+            <input class="form-input" id="smp-${k}" type="number" min="1" placeholder="Price" style="font-size:13px;padding:8px;">
+          </div>
+        </div>
+        <button onclick="staffAddMouldingEntry('${size}')" style="background:linear-gradient(135deg,#8a6520,#C9973A);color:#fff;border:none;border-radius:10px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;width:100%;">➕ Add Moulding</button>
+      </div>
+    </div>`;
+  }).join('');
+};
+
+window.staffAddMouldingEntry = async function(size) {
+  const k = size.replace('.','_');
+  const vendorSel = document.getElementById('smv-'+k);
+  const vendor = vendorSel?.value === '__other__'
+    ? (prompt('Vendor name?') || '')
+    : (vendorSel?.value || '');
+  const code  = document.getElementById('smc-'+k)?.value.trim();
+  const name  = document.getElementById('smn-'+k)?.value.trim();
+  const price = +(document.getElementById('smp-'+k)?.value) || 0;
+  if (!name) { toast('⚠️ Enter type/color name','error'); return; }
+  if (!price) { toast('⚠️ Enter selling price/ft','error'); return; }
+
+  if (!window.mouldingsCache) window.mouldingsCache = {};
+  if (!window.mouldingsCache[size]) window.mouldingsCache[size] = [];
+  window.mouldingsCache[size].push({ code:code||'', name, price, vendor });
+
+  // Save to Firebase
+  if (window.db) {
+    try {
+      await window.db.collection('mouldings').doc(size+'inch').set({ items: window.mouldingsCache[size] });
+    } catch(e) {}
+  }
+  // Clear inputs
+  ['smv','smc','smn','smp'].forEach(pre => { const el=document.getElementById(pre+'-'+k); if(el) el.value=''; });
+  renderStaffMouldingsManager();
+  toast('✅ Moulding added!','success');
+};
+
+window.staffDeleteMoulding = async function(size, index) {
+  if (!confirm('Delete this moulding?')) return;
+  if (window.mouldingsCache?.[size]) {
+    window.mouldingsCache[size].splice(index, 1);
+    if (window.db) {
+      try { await window.db.collection('mouldings').doc(size+'inch').set({ items: window.mouldingsCache[size] }); } catch(e) {}
+    }
+  }
+  renderStaffMouldingsManager();
+  toast('🗑️ Deleted','success');
+};
+
 window.staffAddMouldingStock = async function() {
   const size=document.getElementById('sms-size')?.value;
   const type=document.getElementById('sms-type')?.value||'default';
@@ -2087,14 +2199,36 @@ window.staffAddMouldingStock = async function() {
 };
 
 window.staffAddMouldingStockFor = async function(size,type) {
-  const n=prompt(`Add how many 9.5ft lengths to ${size} ${type}?`);
-  if(!n||isNaN(+n))return;
-  if(!mouldingStock[size])mouldingStock[size]={};
-  const _rawss=mouldingStock[size][type];mouldingStock[size][type]=Array.isArray(_rawss)?_rawss:(_rawss&&typeof _rawss==='object'?Object.values(_rawss):[]);
-  for(let i=0;i<+n;i++)mouldingStock[size][type].push(114);
-  saveMouldingStock();
-  toast(`✅ Added ${n} lengths`,'success');
-  renderStaffMouldingStock();
+  // Show inline modal instead of prompt()
+  const existing = document.getElementById('_staff-stock-modal');
+  if(existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = '_staff-stock-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML = `<div style="background:#fff;border-radius:16px;padding:20px;width:100%;max-width:320px;">
+    <div style="font-weight:800;font-size:15px;margin-bottom:6px;">➕ Add Stock</div>
+    <div style="font-size:13px;color:#666;margin-bottom:14px;">${size}" — ${type}</div>
+    <label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;display:block;margin-bottom:5px;">Qty (lengths of 9.5ft)</label>
+    <input id="_ssf-qty" class="form-input" type="number" min="1" value="1" style="margin-bottom:14px;">
+    <div style="display:flex;gap:8px;">
+      <button onclick="document.getElementById('_staff-stock-modal').remove()" style="flex:1;background:#f5f5f5;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;">Cancel</button>
+      <button onclick="(async()=>{
+        const n=+document.getElementById('_ssf-qty')?.value||0;
+        if(!n){return;}
+        const sz='${size}';const tp='${type}';
+        if(!mouldingStock[sz])mouldingStock[sz]={};
+        const raw=mouldingStock[sz][tp];mouldingStock[sz][tp]=Array.isArray(raw)?raw:(raw&&typeof raw==='object'?Object.values(raw):[]);
+        for(let i=0;i<n;i++)mouldingStock[sz][tp].push(114);
+        saveMouldingStock();
+        if(!useLocal){try{await window.db.collection('mouldingStock').doc(sz+'-'+tp).set({pieces:mouldingStock[sz][tp],size:sz,type:tp});}catch(e){}}
+        document.getElementById('_staff-stock-modal').remove();
+        toast('✅ Added '+n+' length'+(n>1?'s':''),'success');
+        renderStaffMouldingStock();
+      })()" style="flex:2;background:linear-gradient(135deg,#8a6520,#C9973A);color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;">Add Stock</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  setTimeout(()=>document.getElementById('_ssf-qty')?.focus(),100);
 };
 
 // ══════════════════════════════════════════════════════
