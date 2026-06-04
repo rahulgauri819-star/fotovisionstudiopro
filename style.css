@@ -165,8 +165,8 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
   z-index: 600;
 }
 /* Standalone fixed FAB */
-#fab-new-order:hover { transform: translateX(-50%) scale(1.08); }
-#fab-new-order:active { transform: translateX(-50%) scale(0.95); }
+#fab-new-order:hover { filter: brightness(1.1); }
+#fab-new-order:active { filter: brightness(0.9); }
 .tab-btn-fab:hover { transform: scale(1.08); }
 
 /* ── MAIN LAYOUT ── */
