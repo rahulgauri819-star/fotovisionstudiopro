@@ -3104,6 +3104,49 @@ _formGridStyle.textContent = '@media(max-width:700px){.form-outer-grid{grid-temp
 document.head?.appendChild(_formGridStyle);
 
 // ── Service Detail Panels HTML ────────────────────────────────
+
+// ── onGroupA: called when Printing/Framing/Photo Editing checkboxes change ──
+window.onGroupA = function onGroupA() {
+  const checked = Array.from(document.querySelectorAll('input[name="groupA"]:checked'))
+                      .map(el => el.value);
+  // Clear group B selection when group A is active
+  const groupBInputs = document.querySelectorAll('input[name="groupB"]');
+  if (checked.length > 0) {
+    groupBInputs.forEach(el => el.checked = false);
+  }
+  // Update svc-warn
+  const hasB = Array.from(groupBInputs).some(el => el.checked);
+  const warnEl = document.getElementById('svc-warn-ab');
+  if (warnEl) warnEl.classList.toggle('hidden', !(checked.length > 0 && hasB));
+  // Render service panels
+  const area = document.getElementById('svc-panel-area');
+  if (!area) return;
+  if (checked.length === 0) {
+    area.innerHTML = '';
+    return;
+  }
+  area.innerHTML = getSvcPanelHTML(checked);
+  if (typeof initFormJS === 'function') initFormJS(null, window._currentRole || 'owner');
+  else if (typeof window.onPrintQualityChange === 'function') window.onPrintQualityChange();
+};
+
+// ── onGroupB: called when individual job radio buttons change ──
+window.onGroupB = function onGroupB(el) {
+  const svc = el ? el.value : '';
+  // Clear group A selections when group B is active
+  if (svc) {
+    document.querySelectorAll('input[name="groupA"]').forEach(cb => cb.checked = false);
+  }
+  const warnEl = document.getElementById('svc-warn-ab');
+  if (warnEl) warnEl.classList.add('hidden');
+  const area = document.getElementById('svc-panel-area');
+  if (!area) return;
+  if (!svc) { area.innerHTML = ''; return; }
+  area.innerHTML = getBPanelHTML(svc);
+  // Init any dynamic parts
+  if (typeof window.onGroupBInit === 'function') window.onGroupBInit(svc);
+};
+
 function getSvcPanelHTML(svcs) {
   let html = '';
   if(svcs.includes('Photo Editing')) html += `
