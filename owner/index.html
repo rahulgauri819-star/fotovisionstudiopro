@@ -7012,19 +7012,42 @@ window.saveNewMoulding = function saveNewMoulding() {
   const code = document.getElementById('frm-new-code')?.value?.trim();
   const price = parseFloat(document.getElementById('frm-new-price')?.value || 0);
   if (!name || price <= 0) { if(typeof toast==='function') toast('Enter moulding name and price', 'error'); return; }
+  const size = document.querySelector('input[name="ms"]:checked')?.value;
+  if (!size) { if(typeof toast==='function') toast('Select moulding size first', 'error'); return; }
+  // Add to mouldingsCache
+  if (!window.mouldingsCache) window.mouldingsCache = {};
+  if (!window.mouldingsCache[size]) window.mouldingsCache[size] = [];
+  const newItem = { code: code||'', name, price };
+  window.mouldingsCache[size].push(newItem);
+  // Re-render the dropdown (numeric index values)
   const mouldEl = document.getElementById('frm-mould-select');
   if (mouldEl) {
-    const opt = document.createElement('option');
-    opt.value = '1.5|' + (code||name) + '|' + price;
-    opt.textContent = name + ' — Rs.' + price + '/ft';
-    mouldEl.appendChild(opt);
-    mouldEl.value = opt.value;
+    const items = window.mouldingsCache[size];
+    mouldEl.innerHTML = '<option value="">— Select Moulding —</option>' +
+      items.map((m, i) => `<option value="${i}">${m.code ? m.code+' · ' : ''}${m.name} — Rs.${m.price}/ft</option>`).join('');
+    mouldEl.value = String(items.length - 1); // Select the newly added one
   }
+  // Clear inputs
+  ['frm-new-code','frm-new-name','frm-new-price'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   toggleAddMould();
   calcFrame();
 };
 
-window.onMouldSizeChange = function onMouldSizeChange() { calcFrame(); };
+window.onMouldSizeChange = function onMouldSizeChange() {
+  const size = document.querySelector('input[name="ms"]:checked')?.value;
+  const mouldEl = document.getElementById('frm-mould-select');
+  const mouldSection = document.getElementById('frm-mould-type-section');
+  if (mouldEl && size) {
+    const items = (window.mouldingsCache && window.mouldingsCache[size]) || DEFAULT_MOULDINGS[size] || [];
+    const prev = mouldEl.value;
+    mouldEl.innerHTML = '<option value="">— Select Moulding —</option>' +
+      items.map((m, i) => `<option value="${i}">${m.code ? m.code+' · ' : ''}${m.name} — Rs.${m.price}/ft</option>`).join('');
+    // Preserve previous selection if still valid
+    if (prev && mouldEl.querySelector(`option[value="${prev}"]`)) mouldEl.value = prev;
+    if (mouldSection) mouldSection.classList.remove('hidden');
+  }
+  calcFrame();
+};
 
 window.calcSplitPayment = function calcSplitPayment() {
   const cashEl = document.getElementById('split-cash');
@@ -8155,8 +8178,17 @@ window.addToCart = function() {
       const mouldIdx  = mouldSel?.value;
       if (!mouldSize) { toast('⚠️ Select moulding size','error'); return; }
       if (!mouldIdx)  { toast('⚠️ Select moulding type','error'); return; }
-      const mouldItem = (window.mouldingsCache[mouldSize] || DEFAULT_MOULDINGS[mouldSize] || [])[+mouldIdx];
-      const pricePerFt = mouldItem?.price || FRAME_PRICE_PER_FT;
+      // Support both numeric index (from dropdown) and legacy pipe format "size|code|price"
+      let mouldItem, pricePerFt;
+      if (mouldIdx && mouldIdx.includes('|')) {
+        // Pipe-delimited format from old saveNewMoulding: "size|code|price"
+        const parts = mouldIdx.split('|');
+        pricePerFt = parseFloat(parts[2]) || FRAME_PRICE_PER_FT;
+        mouldItem = { code: parts[1]||'', name: parts[1]||mouldSize+'"', price: pricePerFt };
+      } else {
+        mouldItem = (window.mouldingsCache[mouldSize] || DEFAULT_MOULDINGS[mouldSize] || [])[+mouldIdx];
+        pricePerFt = mouldItem?.price || FRAME_PRICE_PER_FT;
+      }
       const mnt       = document.querySelector('input[name="mnt"]:checked')?.value || 'No';
       const mountSize = +(document.querySelector('input[name="mntS"]:checked')?.value) || 0;
       if (mnt === 'Yes' && !mountSize) { toast('⚠️ Select mount size','error'); return; }
