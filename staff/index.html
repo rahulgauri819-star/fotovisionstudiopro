@@ -1210,7 +1210,8 @@ window.staffPrintLabels = function(id) {
     </div>`).join('');
   const w=window.open('','_blank','width=800,height=700');
   w.document.write(`<!DOCTYPE html><html><head><title>Labels</title>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+<script><\/script>
     <style>body{margin:0;padding:8mm;}.grid{display:grid;grid-template-columns:repeat(3,63mm);gap:3mm;}@media print{@page{size:A4;margin:8mm;}}</style>
     </head><body><div class="grid">${labelHTML}</div>
     <script>JsBarcode(".barcode").init();window.onload=()=>{window.print();setTimeout(()=>window.close(),1500);}<\/script>
@@ -2082,7 +2083,7 @@ window.cancelForm=()=>{window.cart=[];window.editId=null;showPage('orders');};
 
 
 
-<button id="fab-new-order" onclick="try{openForm();}catch(e){alert('Error: '+e.message);console.error(e);}" style="position:fixed;bottom:3px;left:calc(50% - 30px);width:60px;height:60px;background:linear-gradient(135deg,#8a6520,#C9973A);border-radius:50%;border:none;cursor:pointer;font-size:32px;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,.3);z-index:99999;pointer-events:auto;-webkit-tap-highlight-color:transparent;touch-action:manipulation;">+</button>
+<button id="fab-new-order" onclick="try{openForm();}catch(e){alert('Error: '+e.message);console.error(e);}" style="position:fixed;bottom:3px;left:calc(41.666% - 30px);width:60px;height:60px;background:linear-gradient(135deg,#8a6520,#C9973A);border-radius:50%;border:none;cursor:pointer;font-size:32px;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,.3);z-index:99999;pointer-events:auto;-webkit-tap-highlight-color:transparent;touch-action:manipulation;">+</button>
 
 </body>
 </html>
