@@ -55,28 +55,6 @@
   </div>
 </div>
 
-<!-- FAB: standalone fixed — not inside any container so it never gets clipped -->
-<button id="fab-new-order" onclick="openForm()" style="
-  position:fixed;
-  bottom:calc(var(--tn, 56px) - 2px);
-  left:50%;
-  transform:translateX(-50%);
-  width:58px; height:58px;
-  background:linear-gradient(135deg,var(--gold-dk,#8a6520),var(--gold,#C9973A));
-  border-radius:50%;
-  border:none;
-  cursor:pointer;
-  font-size:28px;
-  font-weight:300;
-  color:#fff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  box-shadow:0 4px 20px rgba(201,151,58,.55);
-  z-index:9999;
-  -webkit-tap-highlight-color:transparent;
-">+</button>
-
 <!-- Owner More Menu - slides up from bottom -->
 <div id="owner-more-menu" style="display:none;position:fixed;bottom:70px;left:0;right:0;background:#fff;border-top:1px solid #eee;border-radius:16px 16px 0 0;box-shadow:0 -4px 24px rgba(0,0,0,.12);z-index:9999;padding:16px;">
   <div style="font-size:11px;font-weight:700;color:#9A6E1E;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;">More Options</div>
@@ -2018,7 +1996,36 @@ window.printBill = function() {
     .receipt-header{text-align:center;margin-bottom:10px;}
     .receipt-footer{text-align:center;font-size:9.5px;color:#555;margin-top:10px;line-height:1.8;}
     </style></head><body>${c}
-    <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1200);}<\/script></body></html>`);
+    <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1200);}<\/script>
+<!-- ++ FAB NEW ORDER — standalone fixed, no transform, full click support ++ -->
+<button
+  id="fab-new-order"
+  ontouchend="event.preventDefault();openForm();"
+  onclick="openForm()"
+  style="
+    position:fixed;
+    bottom:32px;
+    left:calc(50% - 29px);
+    width:58px;
+    height:58px;
+    background:linear-gradient(135deg,#8a6520,#C9973A);
+    border-radius:50%;
+    border:3px solid rgba(255,255,255,.4);
+    cursor:pointer;
+    font-size:30px;
+    line-height:1;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 4px 24px rgba(0,0,0,.25),0 2px 8px rgba(201,151,58,.5);
+    z-index:99999;
+    pointer-events:auto;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+  "
+>+</button>
+</body></html>`);
   w.document.close();
 };
 
@@ -2966,7 +2973,36 @@ window.printSelectedBarcodes = function() {
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
   <style>body{margin:0;padding:8mm;}.grid{display:grid;grid-template-columns:repeat(3,63mm);gap:3mm;}@media print{@page{size:A4;margin:8mm;}}</style>
   </head><body><div class="grid">${allLabels}</div>
-  <script>JsBarcode(".barcode").init();window.onload=()=>{window.print();setTimeout(()=>window.close(),1500);}<\/script></body></html>`);
+  <script>JsBarcode(".barcode").init();window.onload=()=>{window.print();setTimeout(()=>window.close(),1500);}<\/script>
+<!-- ++ FAB NEW ORDER — standalone fixed, no transform, full click support ++ -->
+<button
+  id="fab-new-order"
+  ontouchend="event.preventDefault();openForm();"
+  onclick="openForm()"
+  style="
+    position:fixed;
+    bottom:32px;
+    left:calc(50% - 29px);
+    width:58px;
+    height:58px;
+    background:linear-gradient(135deg,#8a6520,#C9973A);
+    border-radius:50%;
+    border:3px solid rgba(255,255,255,.4);
+    cursor:pointer;
+    font-size:30px;
+    line-height:1;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 4px 24px rgba(0,0,0,.25),0 2px 8px rgba(201,151,58,.5);
+    z-index:99999;
+    pointer-events:auto;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+  "
+>+</button>
+</body></html>`);
   w.document.close();
   // Reset selection
   selectedBarcodeItems={};
@@ -4414,7 +4450,36 @@ window.downloadReportPDF = function() {
   ${expRows?`<h2>💸 Expense Details</h2><table><tr><th>Date</th><th>Description</th><th>Qty</th><th>Unit Price</th><th>Total</th><th>Paid By</th><th>Added By</th></tr>${expRows}</table>`:''}
   <div class="footer">Fotovision Studio Pro — Confidential Report</div>
   <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),2000);}<\/script>
-  </body></html>`);
+  
+<!-- ++ FAB NEW ORDER — standalone fixed, no transform, full click support ++ -->
+<button
+  id="fab-new-order"
+  ontouchend="event.preventDefault();openForm();"
+  onclick="openForm()"
+  style="
+    position:fixed;
+    bottom:32px;
+    left:calc(50% - 29px);
+    width:58px;
+    height:58px;
+    background:linear-gradient(135deg,#8a6520,#C9973A);
+    border-radius:50%;
+    border:3px solid rgba(255,255,255,.4);
+    cursor:pointer;
+    font-size:30px;
+    line-height:1;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 4px 24px rgba(0,0,0,.25),0 2px 8px rgba(201,151,58,.5);
+    z-index:99999;
+    pointer-events:auto;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+  "
+>+</button>
+</body></html>`);
   w.document.close();
 };
 
@@ -4739,7 +4804,36 @@ window.printReadymadeLabels = function(id) {
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
     <style>body{margin:0;padding:8mm;}.grid{display:grid;grid-template-columns:repeat(3,63mm);gap:3mm;}@media print{@page{size:A4;margin:8mm;}}</style>
     </head><body><div class="grid">${labelHTML}</div>
-    <script>JsBarcode(".barcode").init();window.onload=()=>{window.print();setTimeout(()=>window.close(),1500);}<\/script></body></html>`);
+    <script>JsBarcode(".barcode").init();window.onload=()=>{window.print();setTimeout(()=>window.close(),1500);}<\/script>
+<!-- ++ FAB NEW ORDER — standalone fixed, no transform, full click support ++ -->
+<button
+  id="fab-new-order"
+  ontouchend="event.preventDefault();openForm();"
+  onclick="openForm()"
+  style="
+    position:fixed;
+    bottom:32px;
+    left:calc(50% - 29px);
+    width:58px;
+    height:58px;
+    background:linear-gradient(135deg,#8a6520,#C9973A);
+    border-radius:50%;
+    border:3px solid rgba(255,255,255,.4);
+    cursor:pointer;
+    font-size:30px;
+    line-height:1;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 4px 24px rgba(0,0,0,.25),0 2px 8px rgba(201,151,58,.5);
+    z-index:99999;
+    pointer-events:auto;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+  "
+>+</button>
+</body></html>`);
   w.document.close();
 };
 
@@ -5096,7 +5190,36 @@ window.ownerPrintLabels = function(id) {
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
     <style>body{margin:0;padding:8mm;}.grid{display:grid;grid-template-columns:repeat(3,63mm);gap:4mm;}@media print{@page{size:A4;margin:8mm;}}</style>
     </head><body><div class="grid">${labelHTML}</div>
-    <script>JsBarcode(".barcode").init();window.onload=()=>{window.print();setTimeout(()=>window.close(),1500);}<\/script></body></html>`);
+    <script>JsBarcode(".barcode").init();window.onload=()=>{window.print();setTimeout(()=>window.close(),1500);}<\/script>
+<!-- ++ FAB NEW ORDER — standalone fixed, no transform, full click support ++ -->
+<button
+  id="fab-new-order"
+  ontouchend="event.preventDefault();openForm();"
+  onclick="openForm()"
+  style="
+    position:fixed;
+    bottom:32px;
+    left:calc(50% - 29px);
+    width:58px;
+    height:58px;
+    background:linear-gradient(135deg,#8a6520,#C9973A);
+    border-radius:50%;
+    border:3px solid rgba(255,255,255,.4);
+    cursor:pointer;
+    font-size:30px;
+    line-height:1;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 4px 24px rgba(0,0,0,.25),0 2px 8px rgba(201,151,58,.5);
+    z-index:99999;
+    pointer-events:auto;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+  "
+>+</button>
+</body></html>`);
   w.document.close();
 };
 
@@ -5955,5 +6078,34 @@ initDB().then(async () => {
 })();
 
 </script>
+
+<!-- ++ FAB NEW ORDER — standalone fixed, no transform, full click support ++ -->
+<button
+  id="fab-new-order"
+  ontouchend="event.preventDefault();openForm();"
+  onclick="openForm()"
+  style="
+    position:fixed;
+    bottom:32px;
+    left:calc(50% - 29px);
+    width:58px;
+    height:58px;
+    background:linear-gradient(135deg,#8a6520,#C9973A);
+    border-radius:50%;
+    border:3px solid rgba(255,255,255,.4);
+    cursor:pointer;
+    font-size:30px;
+    line-height:1;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 4px 24px rgba(0,0,0,.25),0 2px 8px rgba(201,151,58,.5);
+    z-index:99999;
+    pointer-events:auto;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+  "
+>+</button>
 </body>
 </html>
