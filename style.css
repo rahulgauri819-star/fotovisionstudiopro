@@ -129,6 +129,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
   padding: 0 8px;
   align-items: center;
   overflow: visible;
+  pointer-events: none;
 }
 /* Background handled separately so FAB can overflow */
 .tab-nav::before {
@@ -141,10 +142,10 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
   z-index: -1;
   pointer-events: none;
 }
-.tab-nav-inner { display: flex; width: 100%; align-items: center; overflow: visible; scrollbar-width: none; }
+.tab-nav-inner { pointer-events: none; display: flex; width: 100%; align-items: center; overflow: visible; scrollbar-width: none; }
 .tab-nav-inner::-webkit-scrollbar { display: none; }
 .tab-nav-inner::before { display: none; }
-.tab-btn {
+.tab-btn { pointer-events: auto;
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 3px; padding: 6px 0;
   font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 500;
