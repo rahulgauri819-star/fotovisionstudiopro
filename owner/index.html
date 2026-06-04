@@ -6906,6 +6906,168 @@ window.onGroupB = function onGroupB(el) {
   if (typeof window.onGroupBInit === 'function') window.onGroupBInit(svc);
 };
 
+
+// ══════════════════════════════════════════════════════════════
+// MISSING FORM EVENT HANDLERS — Reconstructed from HTML usage
+// ══════════════════════════════════════════════════════════════
+
+window.onOrderType = function onOrderType() {
+  const otype = document.querySelector('input[name="otype"]:checked')?.value || 'Instant';
+  const box = document.getElementById('delivery-box');
+  if (box) box.classList.toggle('hidden', otype !== 'Booking');
+  if (otype === 'Booking' && typeof initDeliveryPicker === 'function') initDeliveryPicker();
+  updatePaymentSection();
+};
+
+window.onPayModeChange = function onPayModeChange() {
+  const pm = document.querySelector('input[name="paymode"]:checked')?.value || 'Cash';
+  const splitBox = document.getElementById('cash-upi-split');
+  const creditBox = document.getElementById('credit-companies-pay');
+  const creditInfo = document.getElementById('credit-pay-info');
+  if (splitBox) splitBox.classList.toggle('hidden', pm !== 'Split');
+  if (creditBox) creditBox.classList.toggle('hidden', pm !== 'Credit');
+  if (creditInfo) creditInfo.classList.toggle('hidden', pm !== 'Credit');
+};
+
+window.calcFrame = function calcFrame() {
+  const sizeEl = document.getElementById('frm-size-select');
+  const mouldEl = document.getElementById('frm-mould-select');
+  const mountEl = document.querySelector('input[name="mnt"]:checked');
+  const mountSzEl = document.getElementById('frm-mount-size');
+  const costTag = document.getElementById('frm-cost-tag');
+  const totalTag = document.getElementById('frm-total-tag');
+
+  if (!sizeEl || !mouldEl) return;
+
+  const sizeKey = sizeEl.value;
+  const mouldStr = mouldEl.value; // e.g. "1.5|G-883|18"  (size|code|price)
+  const mountYes = mountEl?.value === 'Yes';
+  const mountSz = mountYes ? parseFloat(mountSzEl?.value || 1) : 0;
+
+  if (!sizeKey || !mouldStr) {
+    if (costTag) costTag.textContent = '';
+    return;
+  }
+
+  const dims = (typeof SIZE_DIMS !== 'undefined' && SIZE_DIMS[sizeKey]) ? SIZE_DIMS[sizeKey] : {w:8, h:10};
+  const L = dims.w + mountSz * 2;
+  const B = dims.h + mountSz * 2;
+
+  const parts = mouldStr.split('|');
+  const mouldSize = parseFloat(parts[0] || 1.5);
+  const mouldPrice = parseFloat(parts[2] || FRAME_PRICE_PER_FT || 10);
+
+  const perim = (L + B) * 2;
+  const mouldCost = Math.ceil(mouldSize) * 8 * mouldPrice;
+  const totalCost = Math.round(perim + mouldCost);
+
+  if (costTag) costTag.textContent = 'Frame cost: Rs.' + totalCost;
+  if (totalTag) totalTag.textContent = 'Rs.' + totalCost;
+
+  // Update size info
+  const sizeInfo = document.getElementById('frm-size-info');
+  if (sizeInfo) sizeInfo.textContent = L + '×' + B + '" with mount';
+};
+
+window.onFrameCustomInput = function onFrameCustomInput() {
+  const L = parseFloat(document.getElementById('frm-L-custom')?.value || 0);
+  const B = parseFloat(document.getElementById('frm-B-custom')?.value || 0);
+  const sizeEl = document.getElementById('frm-size-select');
+  if (L > 0 && B > 0 && sizeEl) {
+    sizeEl.value = 'custom';
+  }
+  calcFrame();
+};
+
+window.onMountChange = function onMountChange() {
+  const mountVal = document.querySelector('input[name="mnt"]:checked')?.value;
+  const mountSzBox = document.getElementById('frm-mount-size-box');
+  if (mountSzBox) mountSzBox.classList.toggle('hidden', mountVal !== 'Yes');
+  calcFrame();
+};
+
+window.onFrameSizeSelect = function onFrameSizeSelect() {
+  const sizeEl = document.getElementById('frm-size-select');
+  const customBox = document.getElementById('frm-custom-size');
+  if (customBox) customBox.classList.toggle('hidden', sizeEl?.value !== 'custom');
+  // Show moulding section
+  const mouldSection = document.getElementById('frm-mould-type-section');
+  if (mouldSection && sizeEl?.value) mouldSection.classList.remove('hidden');
+  calcFrame();
+};
+
+window.toggleAddMould = function toggleAddMould() {
+  const form = document.getElementById('frm-add-mould-form');
+  if (form) form.classList.toggle('hidden');
+};
+
+window.saveNewMoulding = function saveNewMoulding() {
+  const name = document.getElementById('frm-new-name')?.value?.trim();
+  const code = document.getElementById('frm-new-code')?.value?.trim();
+  const price = parseFloat(document.getElementById('frm-new-price')?.value || 0);
+  if (!name || price <= 0) { if(typeof toast==='function') toast('Enter moulding name and price', 'error'); return; }
+  const mouldEl = document.getElementById('frm-mould-select');
+  if (mouldEl) {
+    const opt = document.createElement('option');
+    opt.value = '1.5|' + (code||name) + '|' + price;
+    opt.textContent = name + ' — Rs.' + price + '/ft';
+    mouldEl.appendChild(opt);
+    mouldEl.value = opt.value;
+  }
+  toggleAddMould();
+  calcFrame();
+};
+
+window.onMouldSizeChange = function onMouldSizeChange() { calcFrame(); };
+
+window.calcSplitPayment = function calcSplitPayment() {
+  const cashEl = document.getElementById('split-cash');
+  const upiEl = document.getElementById('split-upi');
+  const totalTag = document.getElementById('split-total-tag');
+  const warnEl = document.getElementById('split-warn');
+  const chargeEl = document.getElementById('f-charge');
+  const cash = parseFloat(cashEl?.value || 0);
+  const upi = parseFloat(upiEl?.value || 0);
+  const total = parseFloat(chargeEl?.value || 0);
+  const sum = cash + upi;
+  if (totalTag) totalTag.textContent = 'Total: Rs.' + sum.toLocaleString('en-IN');
+  if (warnEl) warnEl.classList.toggle('hidden', Math.abs(sum - total) < 1);
+};
+
+window.onSleeveTypeChange = function onSleeveTypeChange() {
+  const slvType = document.querySelector('input[name="slvType"]:checked')?.value || 'plain';
+  const colorBox = document.getElementById('frm-sleeve-colors');
+  if (colorBox) colorBox.classList.toggle('hidden', slvType !== 'stripe');
+  // Recalc sleeve price
+  const priceTag = document.getElementById('frm-sleeve-price');
+  if (priceTag) {
+    const qty = parseInt(document.getElementById('slv-qty')?.value || 1);
+    const price = slvType === 'stripe' ? qty * 15 : qty * 10;
+    priceTag.textContent = 'Price: Rs.' + price;
+  }
+};
+
+window.onSleeveToggle = function onSleeveToggle() {
+  const slvRow = document.getElementById('frm-sleeve-opts');
+  if (slvRow) slvRow.classList.toggle('hidden');
+};
+
+window.onStockCatSelect = function onStockCatSelect(el) {
+  if (typeof populateStockDropdown === 'function') populateStockDropdown(el?.value);
+};
+
+window.addStockCatToList = function addStockCatToList() {
+  if (typeof addStockItemToCart === 'function') addStockItemToCart();
+};
+
+window.calcStockCatItem = function calcStockCatItem() {
+  if (typeof calcStockItem === 'function') calcStockItem();
+};
+
+window.resetForm = function resetForm() {
+  if (typeof window.openForm === 'function') window.openForm();
+};
+
 function getSvcPanelHTML(svcs) {
   let html = '';
   if(svcs.includes('Photo Editing')) html += `
