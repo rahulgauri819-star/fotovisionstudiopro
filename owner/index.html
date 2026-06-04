@@ -1909,7 +1909,7 @@ function setGreeting() {
 // ── Dashboard ─────────────────────────────────────────────────
 // ── Dashboard filter state ────────────────────────────────────
 var salesFilter = 'today';
-let orderFilter = 'today';
+var orderFilter = 'today';
 var svcFilter   = 'today';
 
 function getFilteredOrders(filter, dateId) {
@@ -7815,7 +7815,7 @@ window.onPrintSizeChange = function() {
     if (no && !document.querySelector('input[name="stretch"]:checked')) no.checked = true;
   }
 
-  updateTableStandVisibility();
+  checkTableStandVisibility();
   calcPrint();
 };
 
