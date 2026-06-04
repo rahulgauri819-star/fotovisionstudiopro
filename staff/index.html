@@ -3234,6 +3234,12 @@ window.onFrameSizeSelect = function onFrameSizeSelect() {
   // Show moulding section
   const mouldSection = document.getElementById('frm-mould-type-section');
   if (mouldSection && sizeEl?.value) mouldSection.classList.remove('hidden');
+  // Populate hidden frm-L / frm-B from SIZE_DIMS lookup
+  if (sizeEl && sizeEl.value && sizeEl.value !== 'custom' && typeof SIZE_DIMS !== 'undefined' && SIZE_DIMS[sizeEl.value]) {
+    const d = SIZE_DIMS[sizeEl.value];
+    const lEl = document.getElementById('frm-L'); if (lEl) lEl.value = d.w;
+    const bEl = document.getElementById('frm-B'); if (bEl) bEl.value = d.h;
+  }
   calcFrame();
 };
 
@@ -4056,7 +4062,7 @@ window.onPrintSizeChange = function() {
     if (no && !document.querySelector('input[name="stretch"]:checked')) no.checked = true;
   }
 
-  updateTableStandVisibility();
+  checkTableStandVisibility();
   calcPrint();
 };
 
@@ -4833,6 +4839,28 @@ window.updateDeliveryDisplay = function() {
     hidden.value=`${localDate}T${String(h24).padStart(2,'0')}:${min}:00`;
   }
 };
+
+// ── getFrameLB: returns {l, b} for framing calculation ───────
+function getFrameLB() {
+  const printSizeEl = document.getElementById('pr-size');
+  if (printSizeEl && printSizeEl.value && typeof SIZE_DIMS !== 'undefined' && SIZE_DIMS[printSizeEl.value]) {
+    const d = SIZE_DIMS[printSizeEl.value];
+    return { l: d.w, b: d.h };
+  }
+  const frmL = parseFloat(document.getElementById('frm-L')?.value || 0);
+  const frmB = parseFloat(document.getElementById('frm-B')?.value || 0);
+  if (frmL > 0 && frmB > 0) return { l: frmL, b: frmB };
+  const sizeEl = document.getElementById('frm-size-select');
+  if (sizeEl && sizeEl.value && sizeEl.value !== 'custom' && typeof SIZE_DIMS !== 'undefined' && SIZE_DIMS[sizeEl.value]) {
+    const d = SIZE_DIMS[sizeEl.value];
+    return { l: d.w, b: d.h };
+  }
+  const cL = parseFloat(document.getElementById('frm-L-custom')?.value || 0);
+  const cB = parseFloat(document.getElementById('frm-B-custom')?.value || 0);
+  if (cL > 0 && cB > 0) return { l: cL, b: cB };
+  return null;
+}
+window.getFrameLB = getFrameLB;
 
 // ── Table Stand visibility ────────────────────────────────────
 window.checkTableStandVisibility = function() {
