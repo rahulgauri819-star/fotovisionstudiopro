@@ -184,6 +184,25 @@
 
 <script src="../shared.js?v=1779694442"></script>
 <script>
+
+// ── Toast notification ─────────────────────────────────────
+function toast(msg, type) {
+  let el = document.getElementById('_framer-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = '_framer-toast';
+    el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:9px 18px;border-radius:20px;font-size:12px;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;white-space:nowrap;pointer-events:none;';
+    document.body.appendChild(el);
+  }
+  if (type === 'error') el.style.background = '#c62828';
+  else if (type === 'success') el.style.background = '#2e7d32';
+  else el.style.background = '#1a1a1a';
+  el.textContent = msg;
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.opacity = '0'; }, 2500);
+}
+
 // ── Firebase (non-module version) ────────────────────────────
 const FRAMER_FIREBASE_CONFIG = {
   apiKey: "AIzaSyAerxTK5t5tYqDJ-AZg5_BMZJEk3pRD0uI",
