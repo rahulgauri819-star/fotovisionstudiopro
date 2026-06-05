@@ -1439,7 +1439,7 @@ function renderDash(){
   const today=todayStr();
   const due=orders.filter(o=>o.delivery&&o.delivery.startsWith(today)&&o.status!=='Delivered');
   document.getElementById('due-today').innerHTML=due.length
-    ?due.map(o=>`<div onclick="openSheet('${o.id}')" style="padding:10px 0;border-bottom:1px solid var(--paper2);cursor:pointer;display:flex;align-items:center;justify-content:space-between;"><div><div style="font-size:13px;font-weight:600;">${o.name}</div><div style="font-size:11px;color:var(--red);margin-top:2px;">⏰ ${formatDelivery(o.delivery)}</div></div><span style="color:var(--ink3);">→</span></div>`).join('')
+    ?due.map(o=>`<div onclick="openOrderSheet('${o.id}')" style="padding:10px 0;border-bottom:1px solid var(--paper2);cursor:pointer;display:flex;align-items:center;justify-content:space-between;"><div><div style="font-size:13px;font-weight:600;">${o.name}</div><div style="font-size:11px;color:var(--red);margin-top:2px;">⏰ ${formatDelivery(o.delivery)}</div></div><span style="color:var(--ink3);">→</span></div>`).join('')
     :'<div style="font-size:12px;color:var(--ink3);padding:8px 0;">None due today 🎉</div>';
 }
 
@@ -3059,11 +3059,37 @@ window.renderStaffDayEnd = function() {
         </div>
       </div>
 
+      <!-- Last 3 Day Reports -->
+      <div id="staff-last-reports" style="margin-bottom:14px;"></div>
+
       <!-- Submit -->
-      <button onclick="staffSubmitDayEnd(${totalSales},${totalExp},${cashSales},${upiSales},${cashExp},${upiExp},${netCash},${todayOrds.length})"
+      <button onclick="staffShowDayEndConfirm(${totalSales},${totalExp},${cashSales},${upiSales},${cashExp},${upiExp},${netCash},${todayOrds.length})"
         class="btn-gold" style="width:100%;padding:16px;font-size:16px;font-weight:700;border-radius:12px;">
         ✅ Submit &amp; Close Day
-      </button>`;
+      </button>
+      <script>
+        // Render last 3 reports inline
+        (function(){
+          try {
+            const rpts = (window.dayReports||[]).slice().sort((a,b)=>b.date>a.date?1:-1).slice(0,3);
+            const el = document.getElementById('staff-last-reports');
+            if (!el || !rpts.length) return;
+            el.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📋 Last 3 Day Reports</div>'
+              + rpts.map(r => '<div style="background:#fff;border-radius:10px;border:1px solid var(--paper3);padding:10px 12px;margin-bottom:8px;">'
+                + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
+                + '<span style="font-weight:700;font-size:13px;">' + (r.date||'') + '</span>'
+                + '<span style="font-size:12px;font-weight:700;color:var(--gold-dk);">Rs.' + ((r.totalSales||0).toLocaleString('en-IN')) + '</span>'
+                + '</div>'
+                + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;font-size:11px;color:var(--ink3);">'
+                + '<span>📦 ' + (r.ordersCount||0) + ' orders</span>'
+                + '<span>💸 Exp Rs.' + ((r.totalExpenses||0).toLocaleString('en-IN')) + '</span>'
+                + '<span>💰 Net Rs.' + ((r.netCashExpected||0).toLocaleString('en-IN')) + '</span>'
+                + '</div>'
+                + (r.remarks ? '<div style="font-size:11px;color:var(--ink3);margin-top:3px;font-style:italic;">' + r.remarks + '</div>' : '')
+                + '</div>').join('');
+          } catch(e) {}
+        })();
+      </scr` + `ipt>`;
   } catch(err) {
     console.error('renderStaffDayEnd error:', err);
     document.getElementById('staff-dayend-content').innerHTML =
@@ -3072,6 +3098,47 @@ window.renderStaffDayEnd = function() {
 };
 
 // buildNav removed - tab nav is hardcoded in HTML
+window.staffShowDayEndConfirm = function(sales,exp,cashS,upiS,cashE,upiE,netCash,ordCount) {
+  const cashCount = +(document.getElementById('staff-cash-count')?.value)||0;
+  const remarks = document.getElementById('staff-dayend-remarks')?.value||'';
+  const diff = cashCount - netCash;
+  const staffName = sessionStorage.getItem('fv_name') || 'Staff';
+
+  // Remove existing modal
+  document.getElementById('_dayend-confirm-modal')?.remove();
+  const modal = document.createElement('div');
+  modal.id = '_dayend-confirm-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;display:flex;align-items:flex-end;padding:0;';
+  modal.innerHTML = '<div style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-height:85vh;overflow-y:auto;">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">'
+    + '<div style="font-size:18px;font-weight:800;">📋 Day End Summary</div>'
+    + '<button onclick="closeModal(&quot;_dayend-confirm-modal&quot;)" style="border:none;background:#f5f5f5;border-radius:8px;padding:6px 12px;font-size:16px;cursor:pointer;">✕</button>'
+    + '</div>'
+    + '<div style="background:linear-gradient(135deg,#1a1008,#3a2008);border-radius:14px;padding:16px;margin-bottom:16px;color:#fff;">'
+    + '<div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:4px;">Submitted by ' + staffName + ' · ' + new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'}) + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;">'
+    + '<div><div style="font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;">Total Sales</div><div style="font-size:22px;font-weight:800;color:#C9973A;">Rs.' + (sales||0).toLocaleString('en-IN') + '</div></div>'
+    + '<div><div style="font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;">Total Orders</div><div style="font-size:22px;font-weight:800;color:#C9973A;">' + ordCount + '</div></div>'
+    + '<div><div style="font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;">Cash Sales</div><div style="font-size:16px;font-weight:700;">Rs.' + (cashS||0).toLocaleString('en-IN') + '</div></div>'
+    + '<div><div style="font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;">UPI Sales</div><div style="font-size:16px;font-weight:700;">Rs.' + (upiS||0).toLocaleString('en-IN') + '</div></div>'
+    + '<div><div style="font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;">Expenses</div><div style="font-size:16px;font-weight:700;color:#ef9a9a;">Rs.' + (exp||0).toLocaleString('en-IN') + '</div></div>'
+    + '<div><div style="font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;">Net Cash</div><div style="font-size:16px;font-weight:700;color:#a5d6a7;">Rs.' + (netCash||0).toLocaleString('en-IN') + '</div></div>'
+    + '</div>'
+    + '</div>'
+    + '<div style="background:' + (Math.abs(diff)<50?'#e8f5e9':'#fce4ec') + ';border-radius:12px;padding:12px 14px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">'
+    + '<span style="font-size:13px;font-weight:700;">Cash Count vs Expected</span>'
+    + '<span style="font-size:16px;font-weight:800;color:' + (Math.abs(diff)<50?'#2e7d32':'#c62828') + ';">' + (diff>=0?'+':'') + 'Rs.' + diff.toLocaleString('en-IN') + '</span>'
+    + '</div>'
+    + (remarks ? '<div style="background:#f9f8f5;border-radius:10px;padding:10px 12px;margin-bottom:16px;font-size:13px;color:#555;"><b>Remarks:</b> ' + remarks + '</div>' : '')
+    + '<div style="font-size:14px;font-weight:700;color:#c62828;text-align:center;margin-bottom:16px;">⚠️ Are you sure you want to submit Day Report and End the Day?</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
+    + '<button onclick="closeModal(&quot;_dayend-confirm-modal&quot;)" style="background:#f5f5f5;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;">← Go Back</button>'
+    + '<button onclick="staffSubmitDayEnd(' + sales + ',' + exp + ',' + cashS + ',' + upiS + ',' + cashE + ',' + upiE + ',' + netCash + ',' + ordCount + ');closeModal(&quot;_dayend-confirm-modal&quot;)" style="background:linear-gradient(135deg,#2e7d32,#43a047);color:#fff;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;">✅ Yes, End Day</button>'
+    + '</div>'
+    + '</div>';
+  document.body.appendChild(modal);
+};
+
 window.staffSubmitDayEnd = async function(sales,exp,cashS,upiS,cashE,upiE,netCash,ordCount) {
   const cashCount = +(document.getElementById('staff-cash-count')?.value)||0;
   const remarks = document.getElementById('staff-dayend-remarks')?.value||'';
