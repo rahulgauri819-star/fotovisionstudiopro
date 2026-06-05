@@ -4,7 +4,11 @@
 
 // ── Auth Guard ──────────────────────────────────────────────
 function requireRole(expectedRole) {
-  const role = sessionStorage.getItem('fv_role');
+  let role = sessionStorage.getItem('fv_role');
+  if (!role) {
+    const lsRole = localStorage.getItem('fv_current_role');
+    if (lsRole) { sessionStorage.setItem('fv_role', lsRole); role = lsRole; }
+  }
   if (!role) { window.location.href = '../index.html'; return false; }
   if (expectedRole && role !== expectedRole) {
     window.location.href = '../index.html'; return false;

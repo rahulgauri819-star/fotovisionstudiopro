@@ -833,7 +833,16 @@
 
 // ── Auth Guard ──────────────────────────────────────────────
 function requireRole(expectedRole) {
-  const role = sessionStorage.getItem('fv_role');
+  // Check sessionStorage first, fallback to localStorage (survives hard refresh)
+  let role = sessionStorage.getItem('fv_role');
+  if (!role) {
+    // Restore from localStorage if available
+    const lsRole = localStorage.getItem('fv_current_role');
+    if (lsRole) {
+      sessionStorage.setItem('fv_role', lsRole);
+      role = lsRole;
+    }
+  }
   if (!role) { window.location.href = '../index.html'; return false; }
   if (expectedRole && role !== expectedRole) {
     window.location.href = '../index.html'; return false;
@@ -5766,11 +5775,6 @@ window.closeModal = function(id) {
 
 window.ownerCloseStockModal = function() { document.getElementById('_owner-stock-modal')?.remove(); };
 
-
-// ── Universal modal close helper ─────────────────────────
-window.closeModal = function(id) {
-  document.getElementById(id)?.remove();
-};
 
 window.ownerCloseStockModal = function() { document.getElementById('_owner-stock-modal')?.remove(); };
 
