@@ -3008,20 +3008,25 @@ window.renderMouldingsManager = function() {
   const container = document.getElementById('mouldings-manager');
   if (!container) return;
   const safeVendors = (typeof vendors !== 'undefined' && vendors) ? vendors : {};
-  const vendorOpts = Object.keys(safeVendors).map(v=>`<option value="${v}">${v}</option>`).join('');
+  // Also collect vendors from existing mouldings cache so any previously entered vendor appears
+  const allVendorSet = new Set(Object.keys(safeVendors));
+  Object.values(window.mouldingsCache||{}).forEach(arr => (arr||[]).forEach(m => { if(m.vendor && m.vendor.trim()) allVendorSet.add(m.vendor.trim()); }));
+  const vendorOpts = Array.from(allVendorSet).map(v=>`<option value="${v}">${v}</option>`).join('');
+
   container.innerHTML = MOULDING_SIZES.map(size => {
     const items = window.mouldingsCache[size] || DEFAULT_MOULDINGS[size] || [];
     const k = size.replace('.','_');
     const rows = items.map((m,i) => `
-      <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--paper);border-radius:var(--r-sm);margin-bottom:6px;flex-wrap:wrap;">
-        <span style="font-weight:700;color:var(--gold-dk);min-width:45px;font-size:13px;">${m.code||'—'}</span>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--paper);border-radius:var(--r-sm);margin-bottom:6px;flex-wrap:wrap;">
+        <span style="font-weight:700;color:var(--gold-dk);min-width:40px;font-size:13px;">${m.code||'—'}</span>
         <span style="flex:1;font-size:13px;">${m.name}</span>
         ${m.vendor?`<span style="font-size:11px;color:var(--ink3);background:var(--gold-bg);padding:2px 7px;border-radius:5px;">${m.vendor}</span>`:''}
         <span style="font-size:12px;color:var(--ink3);white-space:nowrap;">Rs.${m.price||10}/ft</span>
+        <button onclick="ownerEditMoulding('${size}',${i})" style="background:var(--gold-bg);color:var(--gold-dk);border:1.5px solid var(--gold);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;font-weight:700;">✏️</button>
         <button onclick="ownerDeleteMoulding('${size}',${i})" style="background:#e53935;color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;">🗑️</button>
       </div>`).join('') || '<div style="color:var(--ink3);font-size:13px;padding:8px;">No mouldings yet</div>';
     return `
-    <div style="background:#fff;border-radius:var(--r-md);padding:16px;box-shadow:var(--shadow-sm);">
+    <div style="background:#fff;border-radius:var(--r-md);padding:16px;box-shadow:var(--shadow-sm);margin-bottom:14px;">
       <div style="font-weight:700;font-size:14px;color:var(--gold-dk);margin-bottom:10px;">📐 ${size}" Moulding</div>
       <div id="mould-list-${k}">${rows}</div>
       <div style="background:var(--paper);border-radius:10px;padding:12px;margin-top:10px;">
@@ -3032,9 +3037,9 @@ window.renderMouldingsManager = function() {
             <select class="form-input" id="mv-${k}" style="font-size:13px;padding:8px;" onchange="ownerVendorChange('${size}')">
               <option value="">— Select —</option>
               ${vendorOpts}
-              <option value="__other__">Other / Free text</option>
+              <option value="__other__">➕ Add New Vendor...</option>
             </select>
-            <input id="mv-txt-${k}" class="form-input" placeholder="Vendor name..." style="font-size:13px;padding:8px;margin-top:6px;display:none;">
+            <input id="mv-txt-${k}" class="form-input" placeholder="New vendor name..." style="font-size:13px;padding:8px;margin-top:6px;display:none;">
           </div>
           <div>
             <label style="font-size:10px;font-weight:700;color:var(--ink3);display:block;margin-bottom:3px;">CODE</label>
@@ -3061,9 +3066,17 @@ window.ownerAddMoulding = async function(size) {
   const key = size.replace('.','_');
   const vendorSel = document.getElementById('mv-'+key);
   const vendorTxt = document.getElementById('mv-txt-'+key);
-  const vendor = vendorSel?.value === '__other__'
+  let vendor = vendorSel?.value === '__other__'
     ? (vendorTxt?.value.trim() || '')
     : (vendorSel?.value || '');
+  // If new vendor entered, save it to vendors DB
+  if (vendor && vendorSel?.value === '__other__' && vendor.trim()) {
+    if (!window.vendors) window.vendors = {};
+    if (!window.vendors[vendor]) {
+      window.vendors[vendor] = { name: vendor };
+      try { if(window.db) await window.db.collection('vendors').doc(vendor).set({ name: vendor }); } catch(e) {}
+    }
+  }
   const code  = document.getElementById('mc-'+key)?.value.trim();
   const name  = document.getElementById('mn-'+key)?.value.trim();
   const price = +(document.getElementById('mp-'+key)?.value) || 0;
@@ -3083,6 +3096,73 @@ window.ownerVendorChange = function(size) {
   const sel = document.getElementById('mv-'+key);
   const txt = document.getElementById('mv-txt-'+key);
   if(txt) txt.style.display = sel?.value==='__other__' ? 'block' : 'none';
+};
+
+window.ownerEditMoulding = function(size, index) {
+  const m = (window.mouldingsCache[size] || [])[index];
+  if (!m) return;
+  const safeVendors = (typeof vendors !== 'undefined' && vendors) ? vendors : {};
+  const allVendorSet = new Set(Object.keys(safeVendors));
+  Object.values(window.mouldingsCache||{}).forEach(function(arr) {
+    (arr||[]).forEach(function(x) { if(x.vendor && x.vendor.trim()) allVendorSet.add(x.vendor.trim()); });
+  });
+  const vopts = Array.from(allVendorSet).map(function(v) {
+    return '<option value="'+v+'"'+(m.vendor===v?' selected':'')+'>'+v+'</option>';
+  }).join('');
+
+  document.getElementById('_owner-edit-modal')?.remove();
+  const modal = document.createElement('div');
+  modal.id = '_owner-edit-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  const esc = function(s){ return String(s||'').replace(/"/g,'&quot;'); };
+  modal.innerHTML = [
+    '<div style="background:#fff;border-radius:16px;padding:22px;width:100%;max-width:380px;box-shadow:0 8px 32px rgba(0,0,0,.2);">',
+    '<div style="font-weight:800;font-size:16px;margin-bottom:16px;">&#9999;&#65039; Edit Moulding &mdash; '+esc(size)+'"</div>',
+    '<label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;display:block;margin-bottom:4px;">VENDOR</label>',
+    '<select id="_oe-vendor" onchange="ownerEditVendorChange(this)" style="width:100%;padding:10px;border:1.5px solid #ede8df;border-radius:10px;font-size:14px;font-family:inherit;margin-bottom:4px;">',
+    '<option value="">&#8212; None &#8212;</option>',
+    vopts,
+    '<option value="__other__">&#10133; Add New Vendor...</option>',
+    '</select>',
+    '<input id="_oe-vendor-txt" placeholder="New vendor name..." style="width:100%;padding:10px;border:1.5px solid #ede8df;border-radius:10px;font-size:14px;font-family:inherit;margin-bottom:12px;display:none;">',
+    '<label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;display:block;margin-bottom:4px;">CODE</label>',
+    '<input id="_oe-code" value="'+esc(m.code)+'" style="width:100%;padding:10px;border:1.5px solid #ede8df;border-radius:10px;font-size:14px;font-family:inherit;margin-bottom:12px;">',
+    '<label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;display:block;margin-bottom:4px;">TYPE / COLOR</label>',
+    '<input id="_oe-name" value="'+esc(m.name)+'" style="width:100%;padding:10px;border:1.5px solid #ede8df;border-radius:10px;font-size:14px;font-family:inherit;margin-bottom:12px;">',
+    '<label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;display:block;margin-bottom:4px;">SELLING PRICE/FT (Rs.)</label>',
+    '<input id="_oe-price" type="number" min="1" value="'+esc(m.price||10)+'" style="width:100%;padding:10px;border:1.5px solid #ede8df;border-radius:10px;font-size:14px;font-family:inherit;margin-bottom:16px;">',
+    '<div style="display:flex;gap:10px;">',
+    '<button onclick="closeModal(&quot;_owner-edit-modal&quot;)" style="flex:1;background:#f5f5f5;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;">Cancel</button>',
+    '<button onclick="ownerSaveEditMoulding(&quot;'+esc(size)+'&quot;,'+index+')" style="flex:2;background:linear-gradient(135deg,#8a6520,#C9973A);color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;">&#128190; Save</button>',
+    '</div></div>'
+  ].join('');
+  document.body.appendChild(modal);
+};
+
+window.ownerSaveEditMoulding = async function(size, index) {
+  const vendorSel = document.getElementById('_oe-vendor');
+  const vendorTxt = document.getElementById('_oe-vendor-txt');
+  let vendor = vendorSel?.value === '__other__'
+    ? (vendorTxt?.value.trim() || '')
+    : (vendorSel?.value || '');
+  if (vendor && vendorSel?.value === '__other__' && vendor.trim()) {
+    if (!window.vendors) window.vendors = {};
+    if (!window.vendors[vendor]) {
+      window.vendors[vendor] = { name: vendor };
+      try { if(window.db) await window.db.collection('vendors').doc(vendor).set({ name: vendor }); } catch(e) {}
+    }
+  }
+  const code  = document.getElementById('_oe-code')?.value.trim() || '';
+  const name  = document.getElementById('_oe-name')?.value.trim() || '';
+  const price = +(document.getElementById('_oe-price')?.value) || 0;
+  if (!name) { toast('⚠️ Enter type/color name','error'); return; }
+  if (!price) { toast('⚠️ Enter price','error'); return; }
+  if (!window.mouldingsCache[size]) window.mouldingsCache[size] = [];
+  window.mouldingsCache[size][index] = { ...window.mouldingsCache[size][index], code, name, price, vendor };
+  await saveMouldings(size);
+  closeModal('_owner-edit-modal');
+  renderMouldingsManager();
+  toast('✅ Moulding updated!');
 };
 
 window.ownerDeleteMoulding = async function(size, index) {
@@ -9259,20 +9339,17 @@ window.requestCancelOrder = function() {
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
         <span style="font-size:28px;animation:urgentPulse 0.6s ease-in-out infinite alternate;">🚨</span>
         <div style="font-size:16px;font-weight:900;color:#c62828;flex:1;">${hoursLeft===1?"🔴 1 HOUR LEFT!":"🟠 2 HOURS LEFT!"}</div>
-        <button onclick="document.getElementById('bell-urgent-popup')?.remove();if(window._urgentSirenInterval){clearInterval(window._urgentSirenInterval);window._urgentSirenInterval=null;}" style="border:none;background:none;font-size:22px;cursor:pointer;color:#aaa;line-height:1;">×</button>
+        <button onclick="closeModal(&quot;bell-urgent-popup&quot;)" style="border:none;background:none;font-size:22px;cursor:pointer;color:#aaa;line-height:1;">×</button>
       </div>
       <div style="background:#fef2f2;border:2px solid #ef9a9a;border-radius:10px;padding:12px;">
         <div style="font-size:14px;font-weight:800;color:#c62828;">🚨 ${o.name} · ${o.billNo || ''}</div>
         <div style="font-size:12px;color:#b71c1c;margin-top:4px;">Due at ${delStr} — Order is <b>NOT ready</b> yet!</div>
       </div>`;
     document.body.appendChild(el);
-    // Keep sounding alarm every 8 seconds until popup is closed
-    window._urgentSirenInterval = setInterval(() => {
-      if (!document.getElementById('bell-urgent-popup')) {
-        clearInterval(window._urgentSirenInterval); window._urgentSirenInterval = null; return;
-      }
-      unlockAudio(); playBell(true);
-    }, 8000);
+    // Play bell ONCE only — no repeating
+    setTimeout(() => { unlockAudio(); playBell(true); }, 200);
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => removePopup('bell-urgent-popup'), 5000);
   }
 
   // ── Watcher ───────────────────────────────────────────────
