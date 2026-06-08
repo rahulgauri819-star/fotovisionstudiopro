@@ -954,11 +954,10 @@ function mouldRound(size) {
 }
 
 // Frame cost without mount
-// Cost = [(L+B)×2] + [mouldRound(size) × 8 × FRAME_PRICE_PER_FT]
-function calcFrameCost(l, b, mouldSize) {
-  const perim = (l + b) * 2;
-  const mouldCost = mouldRound(mouldSize) * 8 * FRAME_PRICE_PER_FT;
-  return perim + mouldCost;
+// Cost = ((L+B)×2 + 8×mouldWidth) / 12 × pricePerFt
+function calcFrameCost(l, b, mouldSize, pricePerFt) {
+  const p = pricePerFt || FRAME_PRICE_PER_FT;
+  return Math.round(((l + b) * 2 + 8 * parseFloat(mouldSize)) / 12 * p);
 }
 
 // Frame cost with mount
@@ -1622,7 +1621,8 @@ window.openForm=function(){window.editId=null;window.cart=[];document.getElement
 function editOrd(id){const o=orders.find(x=>x.id===id);if(!o)return;window.editId=id;window.cart=JSON.parse(JSON.stringify(o.cartItems||[]));document.getElementById('ftit').textContent='Edit Order · '+id;renderFormContent(o);showPage('form');}
 function renderFormContent(existing){document.getElementById('form-content').innerHTML=getFormHTML(existing,'staff');initFormJS(existing,'staff');}
 
-function billOrd(id){const o=orders.find(x=>x.id===id);if(!o)return;document.getElementById('bill-content').innerHTML=buildReceiptHTML(o);document.getElementById('bill-modal').classList.remove('hidden');}
+function billOrd(id, isDuplicate=false){const o=orders.find(x=>x.id===id);if(!o)return;document.getElementById('bill-content').innerHTML=buildReceiptHTML(o, isDuplicate);document.getElementById('bill-modal').classList.remove('hidden');}
+window.reprintBill = function(id) { billOrd(id, true); };
 window.closeBill=()=>document.getElementById('bill-modal').classList.add('hidden');
 window.printBill=function(){const c=document.getElementById('bill-content').innerHTML;const w=window.open('','_blank','width=400,height=700');w.document.write(`<!DOCTYPE html><html><head><title>Bill</title><style>body{font-family:'Courier New',monospace;padding:8px;max-width:360px;margin:0 auto;font-size:11px;}.receipt-row{display:flex;justify-content:space-between;padding:1.5px 0;font-size:10.5px;}.receipt-total{font-weight:700;font-size:12px;border-top:2px solid #000;padding-top:4px;display:flex;justify-content:space-between;margin-top:3px;}.receipt-div{border-top:1px dashed #bbb;margin:7px 0;}.receipt-header{text-align:center;margin-bottom:10px;}</style></head><body>${c}<script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1200);}<\/script>
 
@@ -1645,7 +1645,8 @@ function buildReceiptHTML(o){
   ${discAmt>0?`<div class="receipt-row"><span>Sub-Total</span><span>Rs.${cartT}</span></div><div class="receipt-row" style="color:#2D8A5E;"><span>Discount (${o.discountPct}%)</span><span>- Rs.${discAmt}</span></div>`:''}
   <div class="receipt-row"><span><b>Total</b></span><span><b>Rs.${total}</b></span></div>
   ${o.orderType==='Instant'?`<div class="receipt-total"><span>PAID (${o.payMode||'Cash'})</span><span>Rs.${total}</span></div>`:`<div class="receipt-row"><span>Advance Paid</span><span>Rs.${adv}</span></div><div class="receipt-total"><span>BALANCE DUE</span><span>Rs.${bal}</span></div>`}
-  <div class="receipt-footer" style="text-align:center;font-size:10px;color:#555;margin-top:12px;line-height:1.8;"><div class="receipt-div"></div>✨ Thank you for choosing Fotovision Studio! ✨</div>`;
+  <div class="receipt-footer" style="text-align:center;font-size:10px;color:#555;margin-top:12px;line-height:1.8;"><div class="receipt-div"></div>${o.fileNo?'<div class="receipt-row" style="margin-top:5px;background:#fff8e1;padding:3px 6px;border-radius:4px;"><span>📁 <b>File No:</b> '+o.fileNo+'</span></div>':''}
+  ✨ Thank you for choosing Fotovision Studio! ✨</div>`;
 }
 
 window.saveOrder=async function(){
@@ -1882,6 +1883,7 @@ window.openOrderSheet = function(id) {
       <div style="display:flex;gap:8px;">
         <button onclick="editOrd('${o.id}');closeOrderSheet();" class="btn-outline" style="flex:1;padding:10px;font-size:13px;">✏️ Edit</button>
         <button onclick="billOrd('${o.id}');closeOrderSheet();" class="btn-outline" style="flex:1;padding:10px;font-size:13px;">🧾 Bill</button>
+        <button onclick="reprintBill('${o.id}');closeOrderSheet();" class="btn-outline" style="flex:1;padding:10px;font-size:13px;">🖨️ Reprint</button>
       </div>
       ${o.status!=='Delivered'?`<div style="display:flex;gap:8px;">
         ${o.status!=='Ready'?`<button onclick="chgStatus('${o.id}','Ready');closeOrderSheet();" style="flex:1;background:#388e3c;color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">✅ Mark Ready</button>`:''}
@@ -3667,9 +3669,8 @@ window.calcFrame = function calcFrame() {
   const mouldSize = parseFloat(parts[0] || 1.5);
   const mouldPrice = parseFloat(parts[2] || FRAME_PRICE_PER_FT || 10);
 
-  const perim = (L + B) * 2;
-  const mouldCost = Math.ceil(mouldSize) * 8 * mouldPrice;
-  const totalCost = Math.round(perim + mouldCost);
+  // Formula: ((L+B)×2 + 8×mouldWidth) / 12 × pricePerFt
+  const totalCost = Math.round(((L + B) * 2 + 8 * parseFloat(mouldSize)) / 12 * mouldPrice);
 
   if (costTag) costTag.textContent = 'Frame cost: Rs.' + totalCost;
   if (totalTag) totalTag.textContent = 'Rs.' + totalCost;
@@ -4081,10 +4082,20 @@ function getBPanelHTML(svc) {
 
   if(svc==='Passport Photos') return `<div class="svc-panel" id="panel-b">
     <div class="section-head" style="font-size:15px;">📷 Passport Photos</div>
-    <div class="price-info" style="margin-bottom:10px;"><b>Rs.200</b> for 8 copies · <b>Rs.100</b> per extra 8 copies</div>
-    <div class="form-group" style="max-width:260px;margin-bottom:12px;">
-      <label class="form-label">Number of Copies</label>
-      <select class="form-input" id="pp-copies" onchange="calcPassport()">${ppOpts}</select>
+    <div class="price-info" style="margin-bottom:10px;"><b>Rs.200</b> first set · <b>Rs.100</b> each extra set</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label">Number of Sets</label>
+        <input class="form-input" id="pp-sets" type="number" min="1" value="1" inputmode="numeric" oninput="calcPassport()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Copies per Set</label>
+        <select class="form-input" id="pp-copies" onchange="calcPassport()">${ppOpts}</select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label">📁 File Number <span style="font-weight:400;color:var(--ink3);">(optional)</span></label>
+      <input class="form-input" id="pp-file-no" placeholder="e.g. A-142, RAHUL-2026..." style="font-size:14px;">
     </div>
     <div id="pp-cost-tag" class="price-tag" style="margin-bottom:12px;">Rs.200</div>
     <label class="form-label" style="display:block;margin-bottom:8px;">Add Soft Copy? (Optional)</label>
@@ -4097,7 +4108,7 @@ function getBPanelHTML(svc) {
 
   if(svc==='Visa Photos') return `<div class="svc-panel" id="panel-b">
     <div class="section-head" style="font-size:15px;">🛂 Visa Photos</div>
-    <div class="price-info" style="margin-bottom:10px;"><b>Rs.250</b> for first set · <b>Rs.100</b> per extra set</div>
+    <div class="price-info" style="margin-bottom:10px;"><b>Rs.300</b> first set · <b>Rs.100</b> each extra set</div>
     <div class="form-group" style="margin-bottom:10px;">
       <label class="form-label">Visa Country</label>
       <select class="form-input" id="visa-type" onchange="onVisaCountryChange()">
@@ -4123,6 +4134,10 @@ function getBPanelHTML(svc) {
       <select class="form-input" id="vp-copies" onchange="calcVisa()">
         <option value="8">8 copies</option>
       </select>
+    </div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label">📁 File Number <span style="font-weight:400;color:var(--ink3);">(optional)</span></label>
+      <input class="form-input" id="vp-file-no" placeholder="e.g. V-201, SHARMA-CANADA..." style="font-size:14px;">
     </div>
     <div id="vp-cost-tag" class="price-tag" style="margin-bottom:12px;"></div>
     <label class="form-label" style="display:block;margin-bottom:8px;">Add Soft Copy? (Optional)</label>
@@ -4676,8 +4691,7 @@ window.calcPrint = function() {
 };
 
 window.calcPassport = () => {
-  const c    = +(document.getElementById('pp-copies')?.value) || 8;
-  const sets = Math.ceil(c / 8);
+  const sets = Math.max(1, +(document.getElementById('pp-sets')?.value) || 1);
   const base = 200 + Math.max(0, sets - 1) * 100;
   const soft = document.querySelector('input[name="ppSoft"]:checked')?.value === 'Yes' ? 100 : 0;
   const total = base + soft;
@@ -4711,7 +4725,8 @@ window.onVisaCountryChange = function() {
 
 window.calcVisa = () => {
   const c    = +(document.getElementById('vp-copies')?.value)||8;
-  const base = 250 + Math.max(0, Math.ceil(c/8)-1)*100;
+  const sets = Math.ceil(c / (+(document.getElementById('visa-type')?.value?.split('|')[2])||8));
+  const base = 300 + Math.max(0, sets - 1) * 100;
   const soft = document.querySelector('input[name="vpSoft"]:checked')?.value==='Yes'?100:0;
   const total = base+soft;
   const ct = document.getElementById('vp-cost-tag');
@@ -4926,23 +4941,28 @@ window.addToCart = function() {
   } else if(groupBsel) {
     svcs=[groupBsel];
     if(groupBsel==='Passport Photos'){
-      const c    = +(document.getElementById('pp-copies')?.value)||8;
-      const sets = Math.ceil(c/8);
+      const sets = Math.max(1, +(document.getElementById('pp-sets')?.value)||1);
+      const copies = +(document.getElementById('pp-copies')?.value)||8;
       const base = 200+Math.max(0,sets-1)*100;
       const soft = document.querySelector('input[name="ppSoft"]:checked')?.value==='Yes'?100:0;
+      const fileNo = document.getElementById('pp-file-no')?.value.trim()||'';
       price = base+soft;
-      label = `${c} copies${soft?' +SoftCopy Rs.100':''}`;
+      label = `${sets} set${sets>1?'s':''} (${copies} copies each)${soft?' +SoftCopy Rs.100':''}${fileNo?' 📁'+fileNo:''}`;
+      if(fileNo) details = (details||'') + ' | FileNo:'+fileNo;
     }
     else if(groupBsel==='Visa Photos'){
       const c    = +(document.getElementById('vp-copies')?.value)||8;
       const vtVal= document.getElementById('visa-type')?.value||'';
       const vt   = vtVal ? vtVal.split('|')[0] : 'Visa';
       const vsz  = vtVal ? vtVal.split('|')[1] : '';
-      const sets = Math.ceil(c/8);
-      const base = 250+Math.max(0,sets-1)*100;
+      const basePerSet = +(vtVal.split('|')[2])||8;
+      const sets = Math.ceil(c/basePerSet);
+      const base = 300+Math.max(0,sets-1)*100;
       const soft = document.querySelector('input[name="vpSoft"]:checked')?.value==='Yes'?100:0;
+      const fileNo = document.getElementById('vp-file-no')?.value.trim()||'';
       price = base+soft;
-      label = `${vt}${vsz?' ('+vsz+')':''} · ${c} copies${soft?' +SoftCopy Rs.100':''}`;
+      label = `${vt}${vsz?' ('+vsz+')':''} · ${c} copies${soft?' +SoftCopy Rs.100':''}${fileNo?' 📁'+fileNo:''}`;
+      if(fileNo) details = (details||'') + ' | FileNo:'+fileNo;
     }
     else if(groupBsel==='Collage Making'){
       price=+(document.getElementById('collage-charge')?.value)||0;
@@ -5540,6 +5560,7 @@ window.saveEstimate = async function() {
     phone: document.getElementById('f-phone')?.value||'',
     staff: document.getElementById('f-staff')?.value||'',
     notes: document.getElementById('f-notes')?.value||'',
+    fileNo: (()=>{ const pp=document.getElementById('pp-file-no')?.value.trim()||''; const vp=document.getElementById('vp-file-no')?.value.trim()||''; return pp||vp||''; })(),
     cartItems: window.cart,
     total, photos: window._orderPhotos||[],
     date: todayStr(), created: Date.now(),

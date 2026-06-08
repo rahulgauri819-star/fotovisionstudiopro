@@ -507,9 +507,8 @@ window.fvwCalcFrame=function(){
   const item=(mouldingsCache[ms]||[])[+mtIdx];
   const pricePerFt=item?.price||FRAME_PRICE_PER_FT;
   const L=d.w+mntSz*2, B=d.h+mntSz*2;
-  const perim=(L+B)*2;
-  const mouldCost=Math.ceil(parseFloat(ms))*8*pricePerFt;
-  const total=Math.round(perim+mouldCost);
+  // Formula: ((L+B)×2 + 8×mouldWidth) / 12 × pricePerFt
+  const total=Math.round(((L+B)*2 + 8*parseFloat(ms)) / 12 * pricePerFt);
   tag.textContent=`Frame ${fvwSizeLabel(sk)}${mnt?' + '+mntSz+'" Mount':''} · ${ms}" ${item?.name||''} = Rs.${total}`;
   tag.classList.remove('hidden');
 };
@@ -546,8 +545,8 @@ window.fvwAddFrameToCart=function(){
   const item=(mouldingsCache[ms]||[])[+mtIdx];
   const pricePerFt=item?.price||FRAME_PRICE_PER_FT;
   const L=d.w+mntSz*2,B=d.h+mntSz*2;
-  const mouldCost=Math.ceil(parseFloat(ms))*8*pricePerFt;
-  const total=Math.round((L+B)*2+mouldCost);
+  // Formula: ((L+B)×2 + 8×mouldWidth) / 12 × pricePerFt
+  const total=Math.round(((L+B)*2 + 8*parseFloat(ms)) / 12 * pricePerFt);
   const label=`Frame ${fvwSizeLabel(sk)} · ${ms}" ${item?.name||''}${mnt?' + '+mntSz+'" Mount':''}`;
   fvwCart.push({svc:'Framing',svcs:['Framing'],label,price:total,mouldingSize:ms,mouldingType:item?.name||'',printSize:sk.replace('x','x'),mountSize:mnt?mntSz:''});
   toast('✅ Framing added to cart','success');
