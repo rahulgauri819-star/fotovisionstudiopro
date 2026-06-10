@@ -729,7 +729,7 @@
       <option value="">All Services</option>
       <option>Photo Editing</option><option>Printing</option><option>Framing</option>
       <option>Passport Photos</option><option>Visa Photos</option>
-      <option>Collage Making</option><option>Scanning</option>
+      <option>Scanning</option>
       <option>Album Printing</option><option>Portfolio Shoot</option>
       <option>Video Editing</option><option>Video Converting</option>
       <option>Doorstep Passport</option><option>Doorstep Visa</option>
@@ -1307,10 +1307,18 @@ function mouldRound(size) {
 }
 
 // Frame cost without mount
-// Cost = ((L+B)×2 + 8×mouldWidth) / 12 × pricePerFt
-function calcFrameCost(l, b, mouldSize, pricePerFt) {
-  const p = pricePerFt || FRAME_PRICE_PER_FT;
-  return Math.round(((l + b) * 2 + 8 * parseFloat(mouldSize)) / 12 * p);
+// Frame cost formula:
+// Moulding: (((L+B)×2 + cornerWaste) / 12) × (pricePerLength ÷ 9.5)
+// cornerWaste: 8 if mouldWidth<=1, else 8×mouldWidth
+// Material (Glass+MDF): L×B×1.05
+// Labour: manual input
+function calcFrameCost(l, b, mouldSize, pricePerLength) {
+  const mw = parseFloat(mouldSize) || 1;
+  const cornerWaste = mw <= 1 ? 8 : 8 * mw;
+  const pricePerFt = (pricePerLength || 10) / 9.5;
+  const mouldCost = Math.round(((l + b) * 2 + cornerWaste) / 12 * pricePerFt);
+  const matCost = Math.round(l * b * 1.05);
+  return { mouldCost, matCost, total: mouldCost + matCost };
 }
 
 // Frame cost with mount
@@ -6863,8 +6871,7 @@ function getFormHTML(existing, role) {
     <div class="pill-group">
       <label class="pill-option"><input type="radio" name="groupB" value="Passport Photos" onchange="onGroupB(this)"><span>📷 Passport Photos</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Visa Photos" onchange="onGroupB(this)"><span>🛂 Visa Photos</span></label>
-      <label class="pill-option"><input type="radio" name="groupB" value="Collage Making" onchange="onGroupB(this)"><span>🖼️ Collage Making</span></label>
-      <label class="pill-option"><input type="radio" name="groupB" value="Scanning" onchange="onGroupB(this)"><span>🔍 Scanning</span></label>
+      <label class="pill-option"><input type="radio" name="groupB" value="Reprint & Scanning" onchange="onGroupB(this)"><span>🔍 Reprint &amp; Scanning</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Custom Order" onchange="onGroupB(this)"><span>✏️ Custom Order</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Readymade Frames" onchange="onGroupB(this)"><span>🖼️ Readymade Frames</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Slip In Albums" onchange="onGroupB(this)"><span>📒 Slip In Albums</span></label>
@@ -7161,36 +7168,47 @@ window.calcFrame = function calcFrame() {
   const mountSzEl = document.getElementById('frm-mount-size');
   const costTag = document.getElementById('frm-cost-tag');
   const totalTag = document.getElementById('frm-total-tag');
+  const labourEl = document.getElementById('frm-labour');
 
   if (!sizeEl || !mouldEl) return;
-
   const sizeKey = sizeEl.value;
-  const mouldStr = mouldEl.value; // e.g. "1.5|G-883|18"  (size|code|price)
+  const mouldStr = mouldEl.value;
   const mountYes = mountEl?.value === 'Yes';
   const mountSz = mountYes ? parseFloat(mountSzEl?.value || 1) : 0;
 
-  if (!sizeKey || !mouldStr) {
-    if (costTag) costTag.textContent = '';
-    return;
-  }
+  if (!sizeKey || !mouldStr) { if (costTag) costTag.textContent = ''; return; }
 
-  const dims = (typeof SIZE_DIMS !== 'undefined' && SIZE_DIMS[sizeKey]) ? SIZE_DIMS[sizeKey] : {w:8, h:10};
+  const dims = (typeof SIZE_DIMS !== 'undefined' ? SIZE_DIMS : {})[sizeKey] || (() => {
+    const m = sizeKey.match(/(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i);
+    return m ? {w:+m[1],h:+m[2]} : {w:0,h:0};
+  })();
+
   const L = dims.w + mountSz * 2;
   const B = dims.h + mountSz * 2;
-
   const parts = mouldStr.split('|');
   const mouldSize = parseFloat(parts[0] || 1.5);
-  const mouldPrice = parseFloat(parts[2] || FRAME_PRICE_PER_FT || 10);
+  const pricePerLength = parseFloat(parts[2] || 10);
 
-  // Formula: ((L+B)×2 + 8×mouldWidth) / 12 × pricePerFt
-  const totalCost = Math.round(((L + B) * 2 + 8 * parseFloat(mouldSize)) / 12 * mouldPrice);
+  const mw = mouldSize;
+  const cornerWaste = mw <= 1 ? 8 : 8 * mw;
+  const pricePerFt = pricePerLength / 9.5;
+  const mouldCost = Math.round(((L + B) * 2 + cornerWaste) / 12 * pricePerFt);
+  const matCost = Math.round(L * B * 1.05);
+  const labour = +(labourEl?.value) || 0;
+  const totalCost = mouldCost + matCost + labour;
 
-  if (costTag) costTag.textContent = 'Frame cost: Rs.' + totalCost;
+  if (costTag) costTag.innerHTML =
+    '<div style="font-size:11px;color:var(--ink3);margin-bottom:4px;">' +
+    '🪵 Moulding: <b>Rs.' + mouldCost + '</b> &nbsp;|&nbsp; ' +
+    '🔲 Material: <b>Rs.' + matCost + '</b>' +
+    (labour ? ' &nbsp;|&nbsp; 👷 Labour: <b>Rs.' + labour + '</b>' : '') +
+    '</div>' +
+    '<div style="font-size:15px;font-weight:800;color:var(--gold-dk);">Total: Rs.' + totalCost + '</div>';
   if (totalTag) totalTag.textContent = 'Rs.' + totalCost;
-
-  // Update size info
-  const sizeInfo = document.getElementById('frm-size-info');
-  if (sizeInfo) sizeInfo.textContent = L + '×' + B + '" with mount';
+  if (mountYes) {
+    const sizeInfo = document.getElementById('frm-size-info');
+    if (sizeInfo) sizeInfo.textContent = L + '×' + B + '" with mount';
+  }
 };
 
 window.onFrameCustomInput = function onFrameCustomInput() {
@@ -7515,7 +7533,11 @@ function getSvcPanelHTML(svcs) {
       </div>
 
       <!-- Auto-calculated Frame Cost -->
-      <div id="frm-cost-tag" class="price-tag hidden" style="margin-bottom:14px;"></div>
+      <div class="form-group" style="margin-bottom:10px;">
+        <label class="form-label">👷 Labour Charges (Rs.) <span style="font-weight:400;color:var(--ink3);">— manual entry</span></label>
+        <input class="form-input" id="frm-labour" type="number" min="0" placeholder="0" oninput="calcFrame()" style="max-width:160px;">
+      </div>
+            <div id="frm-cost-tag" class="price-tag hidden" style="margin-bottom:14px;"></div>
 
       <!-- Accessories -->
       <div id="frm-accessories" class="hidden" style="margin-bottom:10px;">
@@ -7664,22 +7686,32 @@ function getBPanelHTML(svc) {
     </div>
   </div>`;
 
-  if(svc==='Collage Making') return `<div class="svc-panel" id="panel-b">
-    <div class="section-head" style="font-size:15px;">🖼️ Collage Making</div>
-    <div class="form-group" style="max-width:250px;">
-      <label class="form-label">Collage Charge (Rs.)</label>
-      <input class="form-input" id="collage-charge" type="number" min="0" placeholder="Enter custom price">
-    </div>
-  </div>`;
 
-  if(svc==='Scanning') return `<div class="svc-panel" id="panel-b">
-    <div class="section-head" style="font-size:15px;">🔍 Scanning</div>
-    <div class="price-info" style="margin-bottom:10px;"><b>Rs.50/picture</b></div>
-    <div class="form-group" style="max-width:200px;margin-bottom:10px;">
-      <label class="form-label">Number of Pictures</label>
-      <input class="form-input" id="scan-qty" type="number" min="1" value="1" inputmode="numeric" oninput="calcScanning()">
+
+    if(svc==='Reprint & Scanning') return `<div class="svc-panel" id="panel-b">
+    <div class="section-head" style="font-size:15px;">🔍 Reprint &amp; Scanning</div>
+    <div class="price-info" style="margin-bottom:12px;">Select one or more services below</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
+      <label class="check-btn" style="flex-direction:column;align-items:flex-start;gap:6px;">
+        <div style="display:flex;align-items:center;gap:8px;width:100%;"><input type="checkbox" name="scan-svc" value="reprint" onchange="calcScanning()"><span style="font-weight:700;">🖨️ 4×6 Reprint — Rs.70/copy</span></div>
+        <div id="scan-reprint-row" style="display:none;padding-left:24px;width:100%;"><label class="form-label">Copies</label><input class="form-input" id="scan-reprint-qty" type="number" min="1" value="1" oninput="calcScanning()" style="max-width:120px;"></div>
+      </label>
+      <label class="check-btn" style="flex-direction:column;align-items:flex-start;gap:6px;">
+        <div style="display:flex;align-items:center;gap:8px;width:100%;"><input type="checkbox" name="scan-svc" value="paper" onchange="calcScanning()"><span style="font-weight:700;">📄 4×6 Paper Cost — Rs.30/copy</span></div>
+        <div id="scan-paper-row" style="display:none;padding-left:24px;width:100%;"><label class="form-label">Copies</label><input class="form-input" id="scan-paper-qty" type="number" min="1" value="1" oninput="calcScanning()" style="max-width:120px;"></div>
+      </label>
+      <label class="check-btn" style="flex-direction:column;align-items:flex-start;gap:6px;">
+        <div style="display:flex;align-items:center;gap:8px;width:100%;"><input type="checkbox" name="scan-svc" value="hiscan" onchange="calcScanning()"><span style="font-weight:700;">🔬 High Resolution Scan — Rs.200</span></div>
+      </label>
+      <label class="check-btn" style="flex-direction:column;align-items:flex-start;gap:6px;">
+        <div style="display:flex;align-items:center;gap:8px;width:100%;"><input type="checkbox" name="scan-svc" value="custom" onchange="calcScanning()"><span style="font-weight:700;">✏️ Custom Scanning</span></div>
+        <div id="scan-custom-row" style="display:none;padding-left:24px;width:100%;">
+          <label class="form-label">Description</label><input class="form-input" id="scan-custom-desc" placeholder="Describe service..." style="margin-bottom:6px;" oninput="calcScanning()">
+          <label class="form-label">Amount (Rs.)</label><input class="form-input" id="scan-custom-price" type="number" min="0" placeholder="0" oninput="calcScanning()" style="max-width:120px;">
+        </div>
+      </label>
     </div>
-    <div id="scan-cost-tag" class="price-tag">Rs.50</div>
+    <div id="scan-cost-tag" class="price-tag hidden"></div>
   </div>`;
 
   if(svc==='Custom Order') return `<div class="svc-panel" id="panel-b">
@@ -7751,7 +7783,18 @@ function getBPanelHTML(svc) {
 
   if(svc==='Video Editing') return `<div class="svc-panel" id="panel-b">
     <div class="section-head" style="font-size:15px;">🎬 Video Editing</div>
-    <div class="form-group" style="max-width:250px;"><label class="form-label">Editing Charge (Rs.)</label><input class="form-input" id="vid-edit-charge" type="number" min="0" placeholder="Enter charge"></div></div>`;
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div class="form-group">
+        <label class="form-label">Number of Hours</label>
+        <input class="form-input" id="vid-hours" type="number" min="1" value="1" inputmode="numeric" oninput="calcVideoEdit()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cost per Hour (Rs.)</label>
+        <input class="form-input" id="vid-rate" type="number" min="0" placeholder="e.g. 1000" oninput="calcVideoEdit()">
+      </div>
+    </div>
+    <div id="vid-edit-tag" class="price-tag hidden"></div>
+  </div>`;
 
   if(svc==='Video Converting') return `<div class="svc-panel" id="panel-b">
     <div class="section-head" style="font-size:15px;">📼 Video Converting</div>
@@ -8250,7 +8293,27 @@ window.calcVisa = () => {
   if(ct) ct.textContent = soft ? `Total: Rs.${total} (Print Rs.${base} + Soft Copy Rs.${soft})` : `Total: Rs.${base}`;
   updateCartPanel(); // FIX 3: live panel update for visa
 };
-window.calcScanning    = () => { const q=+(document.getElementById('scan-qty')?.value)||1; const t=document.getElementById('scan-cost-tag'); if(t) t.textContent=`Total: Rs.${q*50} (${q} × Rs.50)`; };
+window.calcScanning = () => {
+  // Show/hide sub-rows based on checkbox state
+  const checks = {};
+  document.querySelectorAll('input[name="scan-svc"]').forEach(cb => { checks[cb.value] = cb.checked; });
+  const showHide = (id, show) => { const el=document.getElementById(id); if(el) el.style.display=show?'block':'none'; };
+  showHide('scan-reprint-row', checks.reprint);
+  showHide('scan-paper-row', checks.paper);
+  showHide('scan-custom-row', checks.custom);
+  // Calculate total
+  let total = 0, parts = [];
+  if (checks.reprint) { const q=+(document.getElementById('scan-reprint-qty')?.value)||1; total+=q*70; parts.push(`${q}× Reprint Rs.${q*70}`); }
+  if (checks.paper)   { const q=+(document.getElementById('scan-paper-qty')?.value)||1;   total+=q*30; parts.push(`${q}× Paper Rs.${q*30}`); }
+  if (checks.hiscan)  { total+=200; parts.push('Hi-Res Scan Rs.200'); }
+  if (checks.custom)  { const p=+(document.getElementById('scan-custom-price')?.value)||0; total+=p; if(p) parts.push(`Custom Rs.${p}`); }
+  const tag = document.getElementById('scan-cost-tag');
+  if (tag) {
+    if (parts.length) { tag.textContent = parts.join(' + ') + ' = Rs.' + total; tag.classList.remove('hidden'); }
+    else { tag.classList.add('hidden'); }
+  }
+  if(typeof updateCartPanel==='function') updateCartPanel();
+};
 window.calcCustom      = () => {
   const q=+(document.getElementById('custom-qty')?.value)||1;
   const p=+(document.getElementById('custom-price')?.value)||0;
@@ -8431,15 +8494,20 @@ window.addToCart = function() {
       const mountSize = +(document.querySelector('input[name="mntS"]:checked')?.value) || 0;
       if (mnt === 'Yes' && !mountSize) { toast('⚠️ Select mount size','error'); return; }
       const { l, b } = lb;
-      // Use moulding's own price
-      const mouldCost = mouldRound(mouldSize) * 8 * pricePerFt;
-      let frameCost;
+      // Formula: (((L+B)×2 + cornerWaste) / 12) × (pricePerLength÷9.5) + L×B×1.05 + labour
+      const labour = +(document.getElementById('frm-labour')?.value) || 0;
+      const cornerWaste = parseFloat(mouldSize) <= 1 ? 8 : 8 * parseFloat(mouldSize);
+      const pPerFt = pricePerFt / 9.5;
+      let mouldCost, matCost, frameCost;
       if (mnt === 'Yes') {
         const newL = l + mountSize*2, newB = b + mountSize*2;
-        frameCost = (newL + newB) * 2 + mouldCost;
+        mouldCost = Math.round(((newL + newB) * 2 + cornerWaste) / 12 * pPerFt);
+        matCost = Math.round(newL * newB * 1.05);
       } else {
-        frameCost = (l + b) * 2 + mouldCost;
+        mouldCost = Math.round(((l + b) * 2 + cornerWaste) / 12 * pPerFt);
+        matCost = Math.round(l * b * 1.05);
       }
+      frameCost = mouldCost + matCost + labour;
       // Accessories
       const accs = [...document.querySelectorAll('input[name="acc"]:checked')].map(a=>a.value);
       const slvChk = document.getElementById('acc-sleeve')?.checked;
@@ -8483,15 +8551,17 @@ window.addToCart = function() {
       label = `${vt}${vsz?' ('+vsz+')':''} · ${c} copies${soft?' +SoftCopy Rs.100':''}${fileNo?' 📁'+fileNo:''}`;
       if(fileNo) details = (details||'') + ' | FileNo:'+fileNo;
     }
-    else if(groupBsel==='Collage Making'){
-      price=+(document.getElementById('collage-charge')?.value)||0;
-      if(!price){toast('⚠️ Enter collage charge','error');return;}
-      label=`Custom Collage Rs.${price}`;
-    }
-    else if(groupBsel==='Scanning'){
-      const q=+(document.getElementById('scan-qty')?.value)||0;
-      if(!q){toast('⚠️ Enter number of pictures','error');return;}
-      price=q*50; label=`${q} pictures × Rs.50`;
+
+    else if(groupBsel==='Reprint & Scanning'){
+      const checks = {};
+      document.querySelectorAll('input[name="scan-svc"]').forEach(cb => { checks[cb.value] = cb.checked; });
+      if(!Object.values(checks).some(Boolean)){toast('⚠️ Select at least one service','error');return;}
+      let total=0; const parts=[];
+      if(checks.reprint){const q=+(document.getElementById('scan-reprint-qty')?.value)||1;total+=q*70;parts.push(`${q}× 4×6 Reprint`);}
+      if(checks.paper){const q=+(document.getElementById('scan-paper-qty')?.value)||1;total+=q*30;parts.push(`${q}× 4×6 Paper`);}
+      if(checks.hiscan){total+=200;parts.push('Hi-Res Scan');}
+      if(checks.custom){const p=+(document.getElementById('scan-custom-price')?.value)||0;const d=document.getElementById('scan-custom-desc')?.value.trim()||'Custom';total+=p;parts.push(`${d} Rs.${p}`);}
+      price=total; label=parts.join(' + ');
     }
     else if(['Readymade Frames','Slip In Albums','Gift Items'].includes(groupBsel)){
       const cat = groupBsel==='Readymade Frames'?'frames':groupBsel==='Slip In Albums'?'albums':'gifts';
@@ -8517,7 +8587,12 @@ window.addToCart = function() {
       label=`${name}${desc?' · '+desc:''} · Qty:${qty} × Rs.${unitPrice}`;
     }
     else if(groupBsel==='Portfolio Shoot'){const ex=+(document.getElementById('port-extra')?.value)||0;price=1000+ex;const pt=document.getElementById('port-type')?.value;label=`${pt}${ex?' +Extra Rs.'+ex:''}`;}
-    else if(groupBsel==='Video Editing'){price=+(document.getElementById('vid-edit-charge')?.value)||0;label=`Charge Rs.${price}`;}
+    else if(groupBsel==='Video Editing'){
+      const hrs=+(document.getElementById('vid-hours')?.value)||0;
+      const rate=+(document.getElementById('vid-rate')?.value)||0;
+      if(!hrs||!rate){toast('⚠️ Enter hours and rate','error');return;}
+      price=hrs*rate;label=`${hrs} hr${hrs>1?'s':''} × Rs.${rate}/hr`;
+    }
     else if(groupBsel==='Video Converting'){price=+(document.getElementById('vid-conv-charge')?.value)||0;label=`Charge Rs.${price}`;}
     else if(groupBsel==='Doorstep Passport'){const c=+(document.getElementById('dpp-copies')?.value)||8;const s=Math.ceil(c/8);price=500+Math.max(0,s-1)*100;const addr=document.getElementById('ds-addr')?.value||'';label=`${c} copies${addr?' · '+addr.slice(0,20):''}`;}
     else if(groupBsel==='Doorstep Visa'){const c=+(document.getElementById('dvp-copies')?.value)||8;const s=Math.ceil(c/8);price=500+Math.max(0,s-1)*100;const addr=document.getElementById('dvs-addr')?.value||'';label=`${c} copies${addr?' · '+addr.slice(0,20):''}`;}
@@ -8542,6 +8617,41 @@ window.removeFromCart = function(idx) {
   window.cart.splice(idx,1);
   renderCart();
   updateCartPanel();
+};
+
+
+window.editCartItem = function(idx) {
+  const item = window.cart[idx];
+  if (!item) return;
+  document.getElementById('_edit-cart-modal')?.remove();
+  const modal = document.createElement('div');
+  modal.id = '_edit-cart-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  const svcName = (item.svcs||[item.svc||'Item']).join('+');
+  modal.innerHTML = '<div style="background:#fff;border-radius:16px;padding:22px;width:100%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.2);">'
+    + '<div style="font-weight:800;font-size:16px;margin-bottom:16px;">✏️ Edit — ' + svcName + '</div>'
+    + '<label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;display:block;margin-bottom:4px;">DESCRIPTION / LABEL</label>'
+    + '<input id="_ec-label" value="' + (item.label||'').replace(/"/g,'&quot;') + '" style="width:100%;padding:10px;border:1.5px solid #ede8df;border-radius:10px;font-size:14px;font-family:inherit;margin-bottom:12px;">'
+    + '<label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;display:block;margin-bottom:4px;">PRICE (Rs.)</label>'
+    + '<input id="_ec-price" type="number" min="0" value="' + (+item.price||0) + '" style="width:100%;padding:10px;border:1.5px solid #ede8df;border-radius:10px;font-size:16px;font-family:inherit;margin-bottom:16px;">'
+    + '<div style="display:flex;gap:10px;">'
+    + '<button onclick="closeModal(&quot;_edit-cart-modal&quot;)" style="flex:1;background:#f5f5f5;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;">Cancel</button>'
+    + '<button onclick="saveEditCartItem(' + idx + ')" style="flex:2;background:linear-gradient(135deg,#8a6520,#C9973A);color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;">💾 Save</button>'
+    + '</div></div>';
+  document.body.appendChild(modal);
+  setTimeout(function(){ document.getElementById('_ec-price')?.select(); }, 80);
+};
+
+window.saveEditCartItem = function(idx) {
+  const label = document.getElementById('_ec-label')?.value.trim() || '';
+  const price = +(document.getElementById('_ec-price')?.value) || 0;
+  if (window.cart[idx]) {
+    window.cart[idx].label = label;
+    window.cart[idx].price = price;
+  }
+  closeModal('_edit-cart-modal');
+  renderCart();
+  if(typeof toast==='function') toast('✅ Cart item updated');
 };
 
 window.duplicateCartItem = function(idx) {
@@ -8599,8 +8709,9 @@ function updateCartPanel() {
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
         <span style="font-weight:700;color:var(--gold-dk);font-size:13px;">Rs.${(+item.price||0).toLocaleString('en-IN')}</span>
         <div style="display:flex;gap:4px;">
-          <button onclick="duplicateCartItem(${idx})" style="background:none;border:none;color:var(--gold-dk);font-size:11px;cursor:pointer;padding:2px 4px;">📋</button>
-          <button onclick="removeFromCart(${idx})" style="background:none;border:none;color:#e53935;font-size:11px;cursor:pointer;padding:2px 4px;">❌</button>
+          <button onclick="editCartItem(${idx})" style="background:none;border:none;color:#1565c0;font-size:11px;cursor:pointer;padding:2px 4px;" title="Edit">✏️</button>
+          <button onclick="duplicateCartItem(${idx})" style="background:none;border:none;color:var(--gold-dk);font-size:11px;cursor:pointer;padding:2px 4px;" title="Duplicate">📋</button>
+          <button onclick="removeFromCart(${idx})" style="background:none;border:none;color:#e53935;font-size:11px;cursor:pointer;padding:2px 4px;" title="Remove">❌</button>
         </div>
       </div>
       <div style="border-bottom:1px solid var(--paper3);margin-top:6px;"></div>
@@ -8713,7 +8824,7 @@ function getLiveFillingPreview() {
   }
 
   // ── Scanning panel ───────────────────────────────────────────
-  if(panelB && groupBSel === 'Scanning') {
+  if(panelB && groupBSel === 'Reprint & Scanning') {
     const qty = document.getElementById('scan-qty')?.value;
     if(qty && +qty > 0) lines.push(`🔍 Scanning: ${qty} pics · Rs.${+qty*50}`);
   }
