@@ -3148,6 +3148,10 @@ window.ownerEditMoulding = function(size, index) {
   document.body.appendChild(modal);
 };
 
+window.ownerEditVendorChange = function(sel) {
+  const txt = document.getElementById('_oe-vendor-txt');
+  if(txt) txt.style.display = sel.value==='__other__' ? 'block' : 'none';
+};
 window.ownerSaveEditMoulding = async function(size, index) {
   const vendorSel = document.getElementById('_oe-vendor');
   const vendorTxt = document.getElementById('_oe-vendor-txt');
@@ -3802,7 +3806,7 @@ function renderReadymadeList() {
             </div>
           </div>
           <div style="display:flex;flex-direction:column;gap:6px;">
-            <button onclick="staffAddReadymadeQty('${item.id}')" class="btn-outline" style="font-size:12px;padding:5px 10px;">+ Qty</button>
+            <button onclick="addReadymadeQty('${item.id}')" class="btn-outline" style="font-size:12px;padding:5px 10px;">+ Qty</button>
             <button onclick="deleteReadymadeItem('${item.id}')" style="background:#e53935;color:#fff;border:none;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px;">🗑️</button>
           </div>
         </div>
@@ -5653,15 +5657,7 @@ window.ownerConfirmQty = function() {
     if(typeof ownerQtyCallback==='function')ownerQtyCallback(id,n);
   }
 };
-window._addReadymadeQtyOld = function(id) {
-  const n=0;
-  if(!n||isNaN(+n))return;
-  const item=window.stockItems.find(x=>x.id===id);if(!item)return;
-  item.qty=(+item.qty||0)+(+n);
-  updateStockQty(id,item.qty);
-  renderReadymadeStock();
-  toast(`✅ Added ${n} units`,'success');
-};
+
 
 window.deleteReadymadeItem = async function(id) {
   if(!confirm('Delete this item?'))return;
@@ -6085,15 +6081,7 @@ window.ownerAddQty = function(id) {
   document.body.appendChild(modal);
   setTimeout(function(){var el=document.getElementById('_qty-inp');if(el){el.focus();el.select();}},80);
 };
-window._ownerAddQtyLegacy = function(id) {
-  const n=0;
-  if(!n||isNaN(+n))return;
-  const item=window.stockItems.find(x=>x.id===id);if(!item)return;
-  item.qty=(+item.qty||0)+(+n);
-  updateStockQty(id,item.qty);
-  renderStock();
-  toast(`✅ Added ${n} units`,'success');
-};
+
 
 window.ownerDeleteStock = async function(id) {
   if(!confirm('Delete this stock item?'))return;
@@ -7209,6 +7197,9 @@ window.calcFrame = function calcFrame() {
     const sizeInfo = document.getElementById('frm-size-info');
     if (sizeInfo) sizeInfo.textContent = L + '×' + B + '" with mount';
   }
+  // Live preview in Order Summary panel (right side) before adding to cart
+  window._framingLivePreview = { total: totalCost, mouldCost, matCost, labour, label: 'Frame ' + sizeKey };
+  if (typeof updateCartPanel === 'function') updateCartPanel();
 };
 
 window.onFrameCustomInput = function onFrameCustomInput() {
@@ -7232,9 +7223,14 @@ window.onFrameSizeSelect = function onFrameSizeSelect() {
   const sizeEl = document.getElementById('frm-size-select');
   const customBox = document.getElementById('frm-custom-size');
   if (customBox) customBox.classList.toggle('hidden', sizeEl?.value !== 'custom');
-  // Show moulding section
+  // Show moulding section + mount + accessories when size selected
   const mouldSection = document.getElementById('frm-mould-type-section');
   if (mouldSection && sizeEl?.value) mouldSection.classList.remove('hidden');
+  if (sizeEl?.value) {
+    document.getElementById('frm-mount-section')?.classList.remove('hidden');
+    document.getElementById('frm-accessories')?.classList.remove('hidden');
+    document.getElementById('frm-cost-tag')?.classList.remove('hidden');
+  }
   // Populate hidden frm-L / frm-B from SIZE_DIMS lookup
   if (sizeEl && sizeEl.value && sizeEl.value !== 'custom' && typeof SIZE_DIMS !== 'undefined' && SIZE_DIMS[sizeEl.value]) {
     const d = SIZE_DIMS[sizeEl.value];
@@ -8304,6 +8300,18 @@ window.calcVisa = () => {
   if(ct) ct.textContent = soft ? `Total: Rs.${total} (Print Rs.${base} + Soft Copy Rs.${soft})` : `Total: Rs.${base}`;
   updateCartPanel(); // FIX 3: live panel update for visa
 };
+window.calcVideoEdit = function() {
+  const hrs = +(document.getElementById('vid-hours')?.value)||0;
+  const rate = +(document.getElementById('vid-rate')?.value)||0;
+  const total = hrs * rate;
+  const tag = document.getElementById('vid-edit-tag');
+  if (tag) {
+    if (hrs && rate) { tag.textContent = hrs + ' hr' + (hrs>1?'s':'') + ' × Rs.' + rate + '/hr = Rs.' + total; tag.classList.remove('hidden'); }
+    else { tag.classList.add('hidden'); }
+  }
+  if(typeof updateCartPanel==='function') updateCartPanel();
+};
+
 window.calcScanning = () => {
   // Show/hide sub-rows based on checkbox state
   const checks = {};

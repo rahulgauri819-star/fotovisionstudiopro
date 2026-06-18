@@ -2025,15 +2025,7 @@ window.staffConfirmQty = function() {
   if(typeof staffRenderReadymadeStock==='function')staffRenderReadymadeStock();
   if(typeof toast==='function')toast('✅ Added '+n+' units','success');
 };
-window._staffAddReadymadeQtyLegacy = function(id) {
-  const n=0;
-  if(!n||isNaN(+n))return;
-  const item=window.stockItems.find(x=>x.id===id);if(!item)return;
-  item.qty=(+item.qty||0)+(+n);
-  updateStockQty(id,item.qty);
-  renderStaffReadymadeList();
-  toast(`✅ Added ${n} units`,'success');
-};
+
 
 window.staffPrintLabels = function(id) {
   const item=window.stockItems.find(x=>x.id===id);if(!item)return;
@@ -2258,6 +2250,10 @@ window.staffEditMoulding = function(size, index) {
   document.body.appendChild(modal);
 };
 
+window.staffEditVendorChange = function(sel) {
+  const txt = document.getElementById('_se-vendor-txt');
+  if(txt) txt.style.display = sel.value==='__other__' ? 'block' : 'none';
+};
 window.staffSaveEditMoulding = async function(size, index) {
   const vendorSel = document.getElementById('_se-vendor');
   const vendorTxt = document.getElementById('_se-vendor-txt');
@@ -3187,6 +3183,18 @@ window.renderStaffDayEnd = function() {
 };
 
 // buildNav removed - tab nav is hardcoded in HTML
+
+window.staffUpdateDiff = function(netCash) {
+  const counted = +(document.getElementById('staff-cash-count')?.value) || 0;
+  const diff = counted - (+netCash || 0);
+  const el = document.getElementById('staff-diff-display');
+  if (!el) return;
+  if (!document.getElementById('staff-cash-count')?.value) { el.innerHTML = ''; return; }
+  const color = Math.abs(diff) < 50 ? '#2e7d32' : '#c62828';
+  const sign = diff >= 0 ? '+' : '';
+  el.innerHTML = '<span style="color:' + color + ';font-weight:700;">Difference: ' + sign + 'Rs.' + diff.toLocaleString('en-IN') + '</span>';
+};
+
 window.staffShowDayEndConfirm = function(sales,exp,cashS,upiS,cashE,upiE,netCash,ordCount) {
   const cashCount = +(document.getElementById('staff-cash-count')?.value)||0;
   const remarks = document.getElementById('staff-dayend-remarks')?.value||'';
@@ -3696,6 +3704,9 @@ window.calcFrame = function calcFrame() {
     const sizeInfo = document.getElementById('frm-size-info');
     if (sizeInfo) sizeInfo.textContent = L + '×' + B + '" with mount';
   }
+  // Live preview in Order Summary panel (right side) before adding to cart
+  window._framingLivePreview = { total: totalCost, mouldCost, matCost, labour, label: 'Frame ' + sizeKey };
+  if (typeof updateCartPanel === 'function') updateCartPanel();
 };
 
 window.onFrameCustomInput = function onFrameCustomInput() {
@@ -3719,9 +3730,14 @@ window.onFrameSizeSelect = function onFrameSizeSelect() {
   const sizeEl = document.getElementById('frm-size-select');
   const customBox = document.getElementById('frm-custom-size');
   if (customBox) customBox.classList.toggle('hidden', sizeEl?.value !== 'custom');
-  // Show moulding section
+  // Show moulding section + mount + accessories when size selected
   const mouldSection = document.getElementById('frm-mould-type-section');
   if (mouldSection && sizeEl?.value) mouldSection.classList.remove('hidden');
+  if (sizeEl?.value) {
+    document.getElementById('frm-mount-section')?.classList.remove('hidden');
+    document.getElementById('frm-accessories')?.classList.remove('hidden');
+    document.getElementById('frm-cost-tag')?.classList.remove('hidden');
+  }
   // Populate hidden frm-L / frm-B from SIZE_DIMS lookup
   if (sizeEl && sizeEl.value && sizeEl.value !== 'custom' && typeof SIZE_DIMS !== 'undefined' && SIZE_DIMS[sizeEl.value]) {
     const d = SIZE_DIMS[sizeEl.value];
@@ -4787,6 +4803,18 @@ window.calcVisa = () => {
   if(ct) ct.textContent = soft ? `Total: Rs.${total} (Print Rs.${base} + Soft Copy Rs.${soft})` : `Total: Rs.${base}`;
   updateCartPanel(); // FIX 3: live panel update for visa
 };
+window.calcVideoEdit = function() {
+  const hrs = +(document.getElementById('vid-hours')?.value)||0;
+  const rate = +(document.getElementById('vid-rate')?.value)||0;
+  const total = hrs * rate;
+  const tag = document.getElementById('vid-edit-tag');
+  if (tag) {
+    if (hrs && rate) { tag.textContent = hrs + ' hr' + (hrs>1?'s':'') + ' × Rs.' + rate + '/hr = Rs.' + total; tag.classList.remove('hidden'); }
+    else { tag.classList.add('hidden'); }
+  }
+  if(typeof updateCartPanel==='function') updateCartPanel();
+};
+
 window.calcScanning = () => {
   // Show/hide sub-rows based on checkbox state
   const checks = {};
@@ -5048,7 +5076,7 @@ window.addToCart = function() {
       if(fileNo) details = (details||'') + ' | FileNo:'+fileNo;
     }
 
-    else if(groupBsel==='Scanning'){
+    else if(groupBsel==='Reprint & Scanning'){
       const q=+(document.getElementById('scan-qty')?.value)||0;
       if(!q){toast('⚠️ Enter number of pictures','error');return;}
       price=q*50; label=`${q} pictures × Rs.50`;
