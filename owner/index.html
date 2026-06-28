@@ -7212,9 +7212,21 @@ window.calcFrame = function calcFrame() {
 
   const L = dims.w + mountSz * 2;
   const B = dims.h + mountSz * 2;
-  const parts = mouldStr.split('|');
-  const mouldSize = parseFloat(parts[0] || 1.5);
-  const pricePerLength = parseFloat(parts[2] || 10);
+  // mouldStr is the index into mouldingsCache[selectedSize]; look up real size + price
+  const selSize = document.querySelector('input[name="ms"]:checked')?.value;
+  let mouldSize = parseFloat(selSize || 1.5);
+  let pricePerLength = 10;
+  if (selSize) {
+    const items = (window.mouldingsCache && window.mouldingsCache[selSize]) || (typeof DEFAULT_MOULDINGS!=='undefined'?DEFAULT_MOULDINGS[selSize]:[]) || [];
+    let mItem;
+    if (mouldStr && mouldStr.includes('|')) {
+      const p = mouldStr.split('|');
+      pricePerLength = parseFloat(p[2]) || 10;
+    } else {
+      mItem = items[+mouldStr];
+      if (mItem) pricePerLength = parseFloat(mItem.price) || 10;
+    }
+  }
 
   const mw = mouldSize;
   const cornerWaste = mw <= 1 ? 8 : 8 * mw;
@@ -8689,43 +8701,39 @@ window.editCartItem = function(idx) {
   const primary = svcs[0] || '';
   const groupA = ['Photo Editing','Printing','Framing'];
 
-  // Scroll to the service selection area
-  const formTop = document.getElementById('pg-form') || document.body;
-
-  // Re-check the correct service checkbox/radio and open its panel
-  if (groupA.includes(primary)) {
-    // Group A service (checkbox)
-    document.querySelectorAll('input[name="groupA"]').forEach(cb => {
-      cb.checked = svcs.includes(cb.value);
-    });
-    if (typeof onGroupA === 'function') onGroupA();
-  } else {
-    // Group B service (radio)
-    const radio = document.querySelector('input[name="groupB"][value="' + primary + '"]');
-    if (radio) {
-      radio.checked = true;
-      if (typeof onGroupB === 'function') onGroupB(radio);
-    }
-  }
-
-  // Remove the old item so the re-added one replaces it
+  // Remove item from cart first so re-adding replaces it
   window.cart.splice(idx, 1);
   renderCart();
   updateCartPanel();
 
-  // Scroll up to the form so user can edit
+  if (groupA.includes(primary)) {
+    // Check all groupA services that were in this item
+    document.querySelectorAll('input[name="groupA"]').forEach(cb => {
+      cb.checked = svcs.includes(cb.value);
+    });
+    // Clear groupB
+    document.querySelectorAll('input[name="groupB"]').forEach(r => r.checked = false);
+    // Render the panel
+    if (typeof onGroupA === 'function') onGroupA();
+  } else {
+    // Find and check the groupB radio
+    const radio = document.querySelector('input[name="groupB"][value="' + primary + '"]');
+    if (radio) {
+      radio.checked = true;
+      // Clear groupA
+      document.querySelectorAll('input[name="groupA"]').forEach(cb => cb.checked = false);
+      // Render the panel — must pass the radio element
+      if (typeof onGroupB === 'function') onGroupB(radio);
+    }
+  }
+
+  // Scroll to the panel after it renders
   setTimeout(function() {
-    const svcSection = document.getElementById('service-selection') || document.querySelector('.svc-panel') || formTop;
-    svcSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 100);
+    const panel = document.getElementById('svc-panel-area') || document.querySelector('.svc-panel');
+    if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 150);
 
-  toast('✏️ Edit the selections and tap Add to Cart to save', 'info');
-};
-
-window.saveEditCartItem = function(idx) {
-  // Legacy fallback — kept for compatibility
-  closeModal('_edit-cart-modal');
-  renderCart();
+  toast('✏️ Service panel re-opened — make changes and tap Add to Cart', 'info');
 };
 
 window.duplicateCartItem = function(idx) {
