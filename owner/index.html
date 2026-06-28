@@ -2887,7 +2887,7 @@ window.saveOrder = async function() {
     email: document.getElementById('f-email')?.value||'',
     address: document.getElementById('f-address')?.value||'',
     staff: document.getElementById('f-staff')?.value||'',
-    status: window.editId?(orders.find(x=>x.id===window.editId)?.status||'Pending'):'Pending',
+    status: window.editId?(orders.find(x=>x.id===window.editId)?.status||'Pending'):(otype==='Instant'?'Delivered':'Pending'),
     orderType: otype, delivery: otype==='Booking'?delivery:'',
     date: window.editId?(orders.find(x=>x.id===window.editId)?.date||todayStr()):todayStr(),
     notes: document.getElementById('f-notes')?.value||'',
@@ -3007,9 +3007,38 @@ window.ownerPurMsizeChange = function() {
   const sizeEl = document.getElementById('pur-msize');
   const size = sizeEl ? sizeEl.value.replace('"','') : '';
   const dl = document.getElementById('owner-pur-mtype-list');
-  if (dl && size && window.mouldingsCache) {
+  const codeDl = document.getElementById('owner-pur-code-list');
+  if (size && window.mouldingsCache) {
     const items = window.mouldingsCache[size] || [];
-    dl.innerHTML = items.map(m => `<option value="${(m.code?m.code+' · ':'')+m.name}">`).join('');
+    if (dl) dl.innerHTML = items.map(m => `<option value="${(m.code?m.code+' · ':'')+m.name}">`).join('');
+    if (codeDl) {
+      const codes = [...new Set(items.map(m=>m.code).filter(Boolean))];
+      codeDl.innerHTML = codes.map(cc => `<option value="${cc}">`).join('');
+    }
+  }
+};
+
+window.ownerPurMtypeChange = function() {
+  const val = document.getElementById('pur-mtype')?.value || '';
+  const codeEl = document.getElementById('pur-code-mould');
+  if (codeEl && val.includes(' · ')) {
+    const parts = val.split(' · ');
+    codeEl.value = parts[0];
+    document.getElementById('pur-mtype').value = parts[1] || parts[0];
+  }
+  // Auto-fill vendor + code from matching moulding
+  const size = document.getElementById('pur-msize')?.value.replace('"','') || '';
+  const nm = document.getElementById('pur-mtype')?.value?.trim().toLowerCase();
+  if (size && nm && window.mouldingsCache) {
+    const its = window.mouldingsCache[size] || [];
+    const match = its.find(m => (m.name||'').toLowerCase() === nm);
+    if (match) {
+      if (match.code && codeEl && !codeEl.value) codeEl.value = match.code;
+      if (match.vendor) {
+        const btn = document.getElementById('purv-'+match.vendor.replace(/\s/g,'_'));
+        if (btn) selectPurchaseVendor(match.vendor);
+      }
+    }
   }
 };
 
@@ -3349,11 +3378,11 @@ function renderPurchaseForm() {
             <option>0.5"</option><option>0.75"</option><option selected>1"</option><option>1.25"</option><option>1.5"</option><option>1.75"</option><option>2"</option><option>2.5"</option><option>3"</option>
           </select>
         </div>
-        <div><label class="form-label">Code</label><input class="form-input" id="pur-code-mould" placeholder="e.g. M2, G-883"></div>
+        <div><label class="form-label">Code</label><input class="form-input" id="pur-code-mould" placeholder="e.g. M2, G-883" list="owner-pur-code-list"><datalist id="owner-pur-code-list"></datalist></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
         <div><label class="form-label">Type/Color</label>
-          <input class="form-input" id="pur-mtype" placeholder="e.g. Golden Oak" list="owner-pur-mtype-list">
+          <input class="form-input" id="pur-mtype" placeholder="e.g. Golden Oak" list="owner-pur-mtype-list" onchange="ownerPurMtypeChange()">
           <datalist id="owner-pur-mtype-list"></datalist>
         </div>
         <div><label class="form-label">Invoice No.</label><input class="form-input" id="pur-invoice-mould" placeholder="INV-001"></div>
@@ -3600,7 +3629,9 @@ async function _saveSinglePurchase(item) {
 function renderPurchaseVendorPills() {
   const el = document.getElementById('pur-vendor-pills');
   if(!el) return;
-  const vendorNames = [...Object.keys(vendors||{}), 'Others'];
+  const vSet = new Set(Object.keys(vendors||{}));
+  Object.values(window.mouldingsCache||{}).forEach(arr=>(arr||[]).forEach(m=>{if(m.vendor&&m.vendor.trim())vSet.add(m.vendor.trim());}));
+  const vendorNames = [...vSet, 'Others'];
   el.innerHTML = vendorNames.map(v=>`
     <button onclick="selectPurchaseVendor('${v}')" id="purv-${v.replace(/\s/g,'_')}"
       style="padding:6px 12px;border:2px solid var(--paper3);border-radius:100px;font-size:12px;font-weight:600;cursor:pointer;background:#fff;color:var(--ink2);">
@@ -7166,10 +7197,18 @@ window.calcFrame = function calcFrame() {
 
   if (!sizeKey || !mouldStr) { if (costTag) costTag.textContent = ''; return; }
 
-  const dims = (typeof SIZE_DIMS !== 'undefined' ? SIZE_DIMS : {})[sizeKey] || (() => {
-    const m = sizeKey.match(/(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i);
-    return m ? {w:+m[1],h:+m[2]} : {w:0,h:0};
-  })();
+  let dims;
+  if (sizeKey === 'custom') {
+    const cw = parseFloat(document.getElementById('frm-L-custom')?.value || 0);
+    const ch = parseFloat(document.getElementById('frm-B-custom')?.value || 0);
+    dims = { w: cw, h: ch };
+    if (!cw || !ch) { if (costTag) costTag.textContent = ''; return; }
+  } else {
+    dims = (typeof SIZE_DIMS !== 'undefined' ? SIZE_DIMS : {})[sizeKey] || (() => {
+      const m = sizeKey.match(/(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i);
+      return m ? {w:+m[1],h:+m[2]} : {w:0,h:0};
+    })();
+  }
 
   const L = dims.w + mountSz * 2;
   const B = dims.h + mountSz * 2;
@@ -7186,12 +7225,12 @@ window.calcFrame = function calcFrame() {
   const totalCost = mouldCost + matCost + labour;
 
   if (costTag) costTag.innerHTML =
-    '<div style="font-size:11px;color:var(--ink3);margin-bottom:4px;">' +
+    '<div style="font-size:11px;color:#fff;margin-bottom:4px;opacity:.95;">' +
     '🪵 Moulding: <b>Rs.' + mouldCost + '</b> &nbsp;|&nbsp; ' +
     '🔲 Material: <b>Rs.' + matCost + '</b>' +
     (labour ? ' &nbsp;|&nbsp; 👷 Labour: <b>Rs.' + labour + '</b>' : '') +
     '</div>' +
-    '<div style="font-size:15px;font-weight:800;color:var(--gold-dk);">Total: Rs.' + totalCost + '</div>';
+    '<div style="font-size:15px;font-weight:800;color:#fff;">Total: Rs.' + totalCost + '</div>';
   if (totalTag) totalTag.textContent = 'Rs.' + totalCost;
   if (mountYes) {
     const sizeInfo = document.getElementById('frm-size-info');
@@ -8544,7 +8583,7 @@ window.addToCart = function() {
       const fTotal = frameCost + sleeveTotal;
       const accDesc = accs.length ? ` [${accs.join('+')}]` : '';
       const mouldDesc = mouldItem ? `${mouldItem.code}-${mouldItem.name}` : mouldSize+'"';
-      parts.push(`Frame ${mouldSize}" ${mouldDesc} ${mnt==='Yes'?'+Mount '+mountSize+'"':'NoMount'}${accDesc}${sleeveDesc} Rs.${fTotal}`);
+      parts.push(`Frame ${l}×${b}" · ${mouldSize}" ${mouldDesc} ${mnt==='Yes'?'+Mount '+mountSize+'"':'NoMount'}${accDesc}${sleeveDesc} Rs.${fTotal}`);
       totalP += fTotal;
     }
     price=totalP; label=parts.join(' · ');
@@ -8646,35 +8685,47 @@ window.removeFromCart = function(idx) {
 window.editCartItem = function(idx) {
   const item = window.cart[idx];
   if (!item) return;
-  document.getElementById('_edit-cart-modal')?.remove();
-  const modal = document.createElement('div');
-  modal.id = '_edit-cart-modal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
-  const svcName = (item.svcs||[item.svc||'Item']).join('+');
-  modal.innerHTML = '<div style="background:#fff;border-radius:16px;padding:22px;width:100%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.2);">'
-    + '<div style="font-weight:800;font-size:16px;margin-bottom:16px;">✏️ Edit — ' + svcName + '</div>'
-    + '<label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;display:block;margin-bottom:4px;">DESCRIPTION / LABEL</label>'
-    + '<input id="_ec-label" value="' + (item.label||'').replace(/"/g,'&quot;') + '" style="width:100%;padding:10px;border:1.5px solid #ede8df;border-radius:10px;font-size:14px;font-family:inherit;margin-bottom:12px;">'
-    + '<label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;display:block;margin-bottom:4px;">PRICE (Rs.)</label>'
-    + '<input id="_ec-price" type="number" min="0" value="' + (+item.price||0) + '" style="width:100%;padding:10px;border:1.5px solid #ede8df;border-radius:10px;font-size:16px;font-family:inherit;margin-bottom:16px;">'
-    + '<div style="display:flex;gap:10px;">'
-    + '<button onclick="closeModal(&quot;_edit-cart-modal&quot;)" style="flex:1;background:#f5f5f5;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;">Cancel</button>'
-    + '<button onclick="saveEditCartItem(' + idx + ')" style="flex:2;background:linear-gradient(135deg,#8a6520,#C9973A);color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;">💾 Save</button>'
-    + '</div></div>';
-  document.body.appendChild(modal);
-  setTimeout(function(){ document.getElementById('_ec-price')?.select(); }, 80);
+  const svcs = item.svcs || [item.svc].filter(Boolean);
+  const primary = svcs[0] || '';
+  const groupA = ['Photo Editing','Printing','Framing'];
+
+  // Scroll to the service selection area
+  const formTop = document.getElementById('pg-form') || document.body;
+
+  // Re-check the correct service checkbox/radio and open its panel
+  if (groupA.includes(primary)) {
+    // Group A service (checkbox)
+    document.querySelectorAll('input[name="groupA"]').forEach(cb => {
+      cb.checked = svcs.includes(cb.value);
+    });
+    if (typeof onGroupA === 'function') onGroupA();
+  } else {
+    // Group B service (radio)
+    const radio = document.querySelector('input[name="groupB"][value="' + primary + '"]');
+    if (radio) {
+      radio.checked = true;
+      if (typeof onGroupB === 'function') onGroupB(radio);
+    }
+  }
+
+  // Remove the old item so the re-added one replaces it
+  window.cart.splice(idx, 1);
+  renderCart();
+  updateCartPanel();
+
+  // Scroll up to the form so user can edit
+  setTimeout(function() {
+    const svcSection = document.getElementById('service-selection') || document.querySelector('.svc-panel') || formTop;
+    svcSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+
+  toast('✏️ Edit the selections and tap Add to Cart to save', 'info');
 };
 
 window.saveEditCartItem = function(idx) {
-  const label = document.getElementById('_ec-label')?.value.trim() || '';
-  const price = +(document.getElementById('_ec-price')?.value) || 0;
-  if (window.cart[idx]) {
-    window.cart[idx].label = label;
-    window.cart[idx].price = price;
-  }
+  // Legacy fallback — kept for compatibility
   closeModal('_edit-cart-modal');
   renderCart();
-  if(typeof toast==='function') toast('✅ Cart item updated');
 };
 
 window.duplicateCartItem = function(idx) {
