@@ -204,7 +204,7 @@
   </div>
   <div style="padding:16px;max-width:700px;margin:0 auto;">
     <div id="staff-dayreports-list">
-      <div style="text-align:center;padding:40px;color:var(--ink3);">Tap to load...</div>
+      <div id="staff-dayreports-list" onclick="renderStaffDayReports()" style="text-align:center;padding:40px;color:var(--ink3);cursor:pointer;">📋 Tap to load reports</div>
     </div>
   </div>
 </div>
@@ -1368,6 +1368,7 @@ let lastReadyIds = new Set();
 window.showPage = window._realShowPage = function(p) {
   try {
     currentPage=p;
+    if(p==='dayreports'&&typeof window.renderStaffDayReports==='function'){setTimeout(window.renderStaffDayReports,200);}
     ['dashboard','orders','framer','form','bookings','expenses','dayend','readymade-stock','moulding-stock','mouldings','estimates','purchases','production'].forEach(x=>document.getElementById('pg-'+x)?.classList.add('hidden'));
     document.getElementById('pg-'+p)?.classList.remove('hidden');
     document.querySelectorAll('.hdr-nav-btn, .tab-btn').forEach(b=>b.classList.remove('act'));
