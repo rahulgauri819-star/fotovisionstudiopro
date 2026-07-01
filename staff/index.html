@@ -76,7 +76,6 @@
     <button onclick="showPage('framer');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">🖼️</span>Framing</button>
     <button onclick="showPage('estimates');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">💰</span>Estimates</button>
     <button onclick="showPage('purchases');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">🛒</span>Purchases</button>
-    <button onclick="showPage('dayreports');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">📋</span>Day Reports</button>
     <button onclick="showPage('production');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">🏭</span>Production</button>
   </div>
   <button onclick="staffCloseMore()" style="width:100%;padding:12px;border:none;background:#f0ede6;border-radius:10px;font-size:14px;font-weight:700;color:#666;cursor:pointer;">✕ Close</button>
@@ -199,12 +198,12 @@
 
 <div id="pg-dayreports" class="hidden">
   <div class="page-header">
-    <button class="back-btn" onclick="showPage('dashboard')">←</button>
-    <div class="page-title">📋 Day End Reports</div>
+    <button class="back-btn" onclick="showPage('dashboard')">&#8592;</button>
+    <div class="page-title">&#128203; Day End Reports</div>
   </div>
   <div style="padding:16px;max-width:700px;margin:0 auto;">
     <div id="staff-dayreports-list">
-      <div style="text-align:center;padding:40px;color:var(--ink3);">Loading reports...</div>
+      <div style="text-align:center;padding:40px;color:var(--ink3);">Tap to load...</div>
     </div>
   </div>
 </div>
@@ -548,7 +547,7 @@ const SVC_ICONS = {
   'Photo Editing':'🎨','Printing':'🖨️','Framing':'🖼️','Sunboard':'🟫',
   'MDF Board':'🪵','Passport Photos':'📷','Visa Photos':'🛂',
   'Album Printing':'📚','Portfolio Shoot':'📸','Video Editing':'🎬',
-  'Video Converting':'📼','Doorstep Passport':'🏠📷','Doorstep Visa':'🏠🛂','Doorstep Service':'🏠📷'
+  'Video Converting':'📼','Doorstep Passport':'🏠📷','Doorstep Visa':'🏠🛂'
 };
 
 const FRAMING_SVCS = ['Framing','Sunboard','MDF Board'];
@@ -1692,7 +1691,7 @@ window.saveOrder=async function(){
   }
   const advance=otype==='Instant'?finalTotal:(+(document.getElementById('f-advance')?.value)||0);
   const billNo=window.editId?(orders.find(x=>x.id===window.editId)?.billNo||''):await getNextBillNumber();
-  const data={name,phone:document.getElementById('f-phone')?.value||'',address:document.getElementById('f-address')?.value||'',staff:document.getElementById('f-staff')?.value||'',status:window.editId?(orders.find(x=>x.id===window.editId)?.status||'Pending'):(otype==='Instant'?'Delivered':'Pending'),orderType:otype,delivery:otype==='Booking'?delivery:'',date:window.editId?(orders.find(x=>x.id===window.editId)?.date||todayStr()):todayStr(),notes:document.getElementById('f-notes')?.value||'',cartItems:JSON.parse(JSON.stringify(window.cart)),cartTotal,discountPct:discPct,discountAmt:discAmt,total:finalTotal,advance,payMode,splitCash:payMode==='Cash+UPI'?splitCash:0,splitUPI:payMode==='Cash+UPI'?splitUPI:0,bookedBy:'staff',billNo};
+  const data={name,phone:document.getElementById('f-phone')?.value||'',address:document.getElementById('f-address')?.value||'',staff:document.getElementById('f-staff')?.value||'',status:window.editId?(orders.find(x=>x.id===window.editId)?.status||'Pending'):'Pending',orderType:otype,delivery:otype==='Booking'?delivery:'',date:window.editId?(orders.find(x=>x.id===window.editId)?.date||todayStr()):todayStr(),notes:document.getElementById('f-notes')?.value||'',cartItems:JSON.parse(JSON.stringify(window.cart)),cartTotal,discountPct:discPct,discountAmt:discAmt,total:finalTotal,advance,payMode,splitCash:payMode==='Cash+UPI'?splitCash:0,splitUPI:payMode==='Cash+UPI'?splitUPI:0,bookedBy:'staff',billNo};
   if(useLocal){if(window.editId){orders=orders.map(o=>o.id===window.editId?{...o,...data}:o);}else{data.id=billNo||('FV-'+String(Date.now()).slice(-6));data.created=Date.now();orders=[data,...orders];}saveLocal();}
   else{if(window.editId)await updateDoc(doc(db,'orders',window.editId),data);else{data.created=serverTimestamp();await addDoc(collection(db,'orders'),data);}}
   const isF=cart.some(i=>(i.svcs||[]).some(s=>FRAMING_SVCS.includes(s)));
@@ -2039,7 +2038,15 @@ window.staffConfirmQty = function() {
   if(typeof staffRenderReadymadeStock==='function')staffRenderReadymadeStock();
   if(typeof toast==='function')toast('✅ Added '+n+' units','success');
 };
-
+window._staffAddReadymadeQtyLegacy = function(id) {
+  const n=0;
+  if(!n||isNaN(+n))return;
+  const item=window.stockItems.find(x=>x.id===id);if(!item)return;
+  item.qty=(+item.qty||0)+(+n);
+  updateStockQty(id,item.qty);
+  renderStaffReadymadeList();
+  toast(`✅ Added ${n} units`,'success');
+};
 
 window.staffPrintLabels = function(id) {
   const item=window.stockItems.find(x=>x.id===id);if(!item)return;
@@ -2264,10 +2271,6 @@ window.staffEditMoulding = function(size, index) {
   document.body.appendChild(modal);
 };
 
-window.staffEditVendorChange = function(sel) {
-  const txt = document.getElementById('_se-vendor-txt');
-  if(txt) txt.style.display = sel.value==='__other__' ? 'block' : 'none';
-};
 window.staffSaveEditMoulding = async function(size, index) {
   const vendorSel = document.getElementById('_se-vendor');
   const vendorTxt = document.getElementById('_se-vendor-txt');
@@ -2598,9 +2601,7 @@ function staffRenderPurchaseForm() {
 
   if(type === 'moulding') {
     const sizes = ['0.5','0.75','1','1.5','2','2.5','3','3.5','4','5'];
-    const vendorSet = new Set(Object.keys(safeVendors));
-    Object.values(window.mouldingsCache||{}).forEach(arr=>(arr||[]).forEach(m=>{if(m.vendor&&m.vendor.trim())vendorSet.add(m.vendor.trim());}));
-    const vendorKeys = Array.from(vendorSet);
+    const vendorKeys = Object.keys(safeVendors);
     // Check which mouldings already have a selling price set
     formHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
@@ -2624,8 +2625,7 @@ function staffRenderPurchaseForm() {
           <datalist id="pur-name-list"></datalist>
         </div>
         <div class="form-group"><label class="form-label">Code</label>
-          <input class="form-input" id="pur-code" placeholder="e.g. M2, G-883" list="pur-code-list">
-          <datalist id="pur-code-list"></datalist>
+          <input class="form-input" id="pur-code" placeholder="e.g. M2, G-883">
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
@@ -2640,13 +2640,8 @@ function staffRenderPurchaseForm() {
         <div class="form-group"><label class="form-label">Total Cost (Rs.)</label>
           <input class="form-input" id="pur-total" type="number" placeholder="Auto" oninput="staffCalcPurTotal()">
         </div>
-        <div class="form-group"><label class="form-label">📷 Invoice Photo <span style="font-weight:400;color:var(--ink3);">(optional)</span></label>
-          <input type="file" id="pur-invoice-photo" accept="image/*" capture="environment" style="display:none;" onchange="staffPreviewInvoicePhoto(this)">
-          <button type="button" onclick="document.getElementById('pur-invoice-photo').click()" style="width:100%;padding:10px;border:1.5px dashed var(--gold);border-radius:10px;background:var(--gold-bg);color:var(--gold-dk);font-size:13px;font-weight:700;cursor:pointer;">📷 Take / Upload Invoice Photo</button>
-          <div id="pur-invoice-preview" style="margin-top:8px;display:none;">
-            <img id="pur-invoice-img" src="" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;border:1px solid var(--paper3);">
-            <button type="button" onclick="staffClearInvoicePhoto()" style="margin-top:4px;font-size:11px;color:#e53935;background:none;border:none;cursor:pointer;">✕ Remove photo</button>
-          </div>
+        <div class="form-group"><label class="form-label">Invoice No.</label>
+          <input class="form-input" id="pur-invoice" placeholder="INV-001">
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
@@ -2749,15 +2744,9 @@ function staffRenderPurchaseForm() {
 window.staffPurMsizeChange = function() {
   const size = document.getElementById('pur-msize')?.value;
   const dl = document.getElementById('pur-name-list');
-  const codeDl = document.getElementById('pur-code-list');
-  if (!size) return;
+  if (!dl || !size) return;
   const items = (window.mouldingsCache && window.mouldingsCache[size]) || DEFAULT_MOULDINGS?.[size] || [];
-  if (dl) dl.innerHTML = items.map(m => `<option value="${(m.code?m.code+' · ':'')+m.name}">`).join('');
-  // Populate code datalist with unique codes for this size
-  if (codeDl) {
-    const codes = [...new Set(items.map(m=>m.code).filter(Boolean))];
-    codeDl.innerHTML = codes.map(c => `<option value="${c}">`).join('');
-  }
+  dl.innerHTML = items.map(m => `<option value="${(m.code?m.code+' · ':'')+m.name}">`).join('');
 };
 
 window.staffPurNameChange = function() {
@@ -2768,20 +2757,6 @@ window.staffPurNameChange = function() {
     const parts = val.split(' · ');
     codeEl.value = parts[0];
     document.getElementById('pur-name').value = parts[1] || parts[0];
-  }
-  // Auto-fill vendor from the matching moulding (if found)
-  const szForVendor = document.getElementById('pur-msize')?.value;
-  const nmForVendor = document.getElementById('pur-name')?.value?.trim().toLowerCase();
-  if (szForVendor && nmForVendor) {
-    const its = (window.mouldingsCache && window.mouldingsCache[szForVendor]) || [];
-    const match = its.find(m => (m.name||'').toLowerCase() === nmForVendor);
-    if (match) {
-      if (match.vendor) {
-        const vSel = document.getElementById('pur-vendor');
-        if (vSel && [...vSel.options].some(o=>o.value===match.vendor)) vSel.value = match.vendor;
-      }
-      if (match.code && codeEl && !codeEl.value) codeEl.value = match.code;
-    }
   }
   // Check if this moulding already has a selling price — if so, hide the sell price field
   const size = document.getElementById('pur-msize')?.value;
@@ -2854,7 +2829,7 @@ window.staffAddToPurchaseList = function() {
 
     size,
     sellPrice: isMoulding ? sellPrice : 0,
-    invoice: '',  // photo stored in invoicePhotoURL
+    invoice: document.getElementById('pur-invoice')?.value.trim() || '',
     subcategory: document.getElementById('pur-subcategory')?.value || '',
     date: document.getElementById('pur-date')?.value || (typeof todayStr === 'function' ? todayStr() : new Date().toISOString().slice(0,10)),
     addedBy: window._staffName || (typeof staffNames !== 'undefined' && staffNames[0]) || 'Staff',
@@ -3225,45 +3200,6 @@ window.renderStaffDayEnd = function() {
 };
 
 // buildNav removed - tab nav is hardcoded in HTML
-
-
-window._staffInvoiceFile = null;
-
-window.staffPreviewInvoicePhoto = function(input) {
-  const file = input.files[0];
-  if (!file) return;
-  window._staffInvoiceFile = file;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const img = document.getElementById('pur-invoice-img');
-    const prev = document.getElementById('pur-invoice-preview');
-    if (img) img.src = e.target.result;
-    if (prev) prev.style.display = 'block';
-  };
-  reader.readAsDataURL(file);
-};
-
-window.staffClearInvoicePhoto = function() {
-  window._staffInvoiceFile = null;
-  const img = document.getElementById('pur-invoice-img');
-  const prev = document.getElementById('pur-invoice-preview');
-  const input = document.getElementById('pur-invoice-photo');
-  if (img) img.src = '';
-  if (prev) prev.style.display = 'none';
-  if (input) input.value = '';
-};
-
-window.staffUpdateDiff = function(netCash) {
-  const counted = +(document.getElementById('staff-cash-count')?.value) || 0;
-  const diff = counted - (+netCash || 0);
-  const el = document.getElementById('staff-diff-display');
-  if (!el) return;
-  if (!document.getElementById('staff-cash-count')?.value) { el.innerHTML = ''; return; }
-  const color = Math.abs(diff) < 50 ? '#2e7d32' : '#c62828';
-  const sign = diff >= 0 ? '+' : '';
-  el.innerHTML = '<span style="color:' + color + ';font-weight:700;">Difference: ' + sign + 'Rs.' + diff.toLocaleString('en-IN') + '</span>';
-};
-
 window.staffShowDayEndConfirm = function(sales,exp,cashS,upiS,cashE,upiE,netCash,ordCount) {
   const cashCount = +(document.getElementById('staff-cash-count')?.value)||0;
   const remarks = document.getElementById('staff-dayend-remarks')?.value||'';
@@ -3306,61 +3242,52 @@ window.staffShowDayEndConfirm = function(sales,exp,cashS,upiS,cashE,upiE,netCash
 };
 
 
-window.renderStaffDayReports = async function() {
+window.renderStaffDayReports = function() {
   const el = document.getElementById('staff-dayreports-list');
   if (!el) return;
-  el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink3);">Loading reports...</div>';
+  el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--ink3);">Fetching...</div>';
 
-  // Fetch from Firebase directly — no orderBy to avoid index errors, sort client-side
-  let all = [];
-  try {
-    if (window.db) {
-      const snap = await window.db.collection('dayReports').get();
-      snap.forEach(doc => all.push({ id: doc.id, ...doc.data() }));
-      all.sort((a,b) => (b.date||'') > (a.date||'') ? 1 : -1);
-      all = all.slice(0, 10);
+  function showReports(all) {
+    all = (all||[]).slice().sort(function(a,b){
+      return (b.date||b.closedAt||'') > (a.date||a.closedAt||'') ? 1 : -1;
+    }).slice(0,10);
+    if (!all.length) {
+      el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink3);font-size:14px;">No day reports yet.<br>Reports appear after staff submit Day End.</div>';
+      return;
     }
-  } catch(e) {
-    console.error('Day reports fetch error:', e);
-    // Fallback to cached window.dayReports
-    all = (window.dayReports || []).slice().sort((a,b) => (b.date||'') > (a.date||'') ? 1 : -1).slice(0, 10);
+    el.innerHTML = all.map(function(r) {
+      var diff = (+r.cashCounted||+r.cashCount||0) - (+r.netCashExpected||0);
+      var dc = Math.abs(diff)<50 ? '#2e7d32' : '#c62828';
+      var sign = diff>=0 ? '+' : '';
+      return '<div style="background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,.07);">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'
+        +'<div style="font-weight:800;font-size:15px;">'+(r.date||'?')+'</div>'
+        +'<div style="font-size:12px;color:var(--ink3);">'+(r.closedBy||'Staff')+'</div></div>'
+        +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">'
+        +'<div style="background:var(--paper);border-radius:10px;padding:8px;text-align:center;"><div style="font-size:10px;color:var(--ink3);text-transform:uppercase;">Sales</div><div style="font-size:15px;font-weight:800;color:var(--gold-dk);">Rs.'+(+r.totalSales||0).toLocaleString('en-IN')+'</div></div>'
+        +'<div style="background:var(--paper);border-radius:10px;padding:8px;text-align:center;"><div style="font-size:10px;color:var(--ink3);text-transform:uppercase;">Orders</div><div style="font-size:15px;font-weight:800;">'+(r.ordersCount||0)+'</div></div>'
+        +'<div style="background:var(--paper);border-radius:10px;padding:8px;text-align:center;"><div style="font-size:10px;color:var(--ink3);text-transform:uppercase;">Expenses</div><div style="font-size:15px;font-weight:800;color:#e53935;">Rs.'+(+r.totalExpenses||0).toLocaleString('en-IN')+'</div></div>'
+        +'</div>'
+        +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">'
+        +'<div style="background:#e8f5e9;border-radius:10px;padding:8px;text-align:center;"><div style="font-size:10px;color:#555;text-transform:uppercase;">Expected Cash</div><div style="font-size:14px;font-weight:700;color:#2e7d32;">Rs.'+(+r.netCashExpected||0).toLocaleString('en-IN')+'</div></div>'
+        +'<div style="background:'+(Math.abs(diff)<50?'#e8f5e9':'#fce4ec')+';border-radius:10px;padding:8px;text-align:center;"><div style="font-size:10px;color:#555;text-transform:uppercase;">Difference</div><div style="font-size:14px;font-weight:700;color:'+dc+';">'+sign+'Rs.'+Math.abs(diff).toLocaleString('en-IN')+'</div></div>'
+        +'</div>'
+        +(r.remarks?'<div style="font-size:12px;color:var(--ink3);font-style:italic;border-top:1px solid var(--paper3);padding-top:8px;">'+r.remarks+'</div>':'')
+        +'</div>';
+    }).join('');
   }
 
-  if (!all.length) {
-    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink3);">No day reports submitted yet</div>';
+  if (!window.db) {
+    el.innerHTML = '<div style="color:#c62828;text-align:center;padding:20px;">Firebase not ready. Refresh the page.</div>';
     return;
   }
-  el.innerHTML = all.map(r => {
-    const diff = (+r.cashCount||0) - (+r.netCashExpected||0);
-    const diffColor = Math.abs(diff) < 50 ? '#2e7d32' : '#c62828';
-    const sign = diff >= 0 ? '+' : '';
-    return '<div style="background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,.07);">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'
-      + '<div style="font-weight:800;font-size:15px;">' + (r.date||'—') + '</div>'
-      + '<div style="font-size:13px;color:var(--ink3);">by ' + (r.staffName||'Staff') + '</div>'
-      + '</div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">'
-      + '<div style="background:var(--paper);border-radius:10px;padding:8px;text-align:center;">'
-        + '<div style="font-size:10px;color:var(--ink3);text-transform:uppercase;margin-bottom:2px;">Sales</div>'
-        + '<div style="font-size:16px;font-weight:800;color:var(--gold-dk);">Rs.' + ((+r.totalSales||0).toLocaleString('en-IN')) + '</div></div>'
-      + '<div style="background:var(--paper);border-radius:10px;padding:8px;text-align:center;">'
-        + '<div style="font-size:10px;color:var(--ink3);text-transform:uppercase;margin-bottom:2px;">Orders</div>'
-        + '<div style="font-size:16px;font-weight:800;">' + (r.ordersCount||0) + '</div></div>'
-      + '<div style="background:var(--paper);border-radius:10px;padding:8px;text-align:center;">'
-        + '<div style="font-size:10px;color:var(--ink3);text-transform:uppercase;margin-bottom:2px;">Expenses</div>'
-        + '<div style="font-size:16px;font-weight:800;color:#e53935;">Rs.' + ((+r.totalExpenses||0).toLocaleString('en-IN')) + '</div></div>'
-      + '</div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">'
-      + '<div style="background:#e8f5e9;border-radius:10px;padding:8px;text-align:center;">'
-        + '<div style="font-size:10px;color:#555;text-transform:uppercase;margin-bottom:2px;">Net Cash Expected</div>'
-        + '<div style="font-size:15px;font-weight:700;color:#2e7d32;">Rs.' + ((+r.netCashExpected||0).toLocaleString('en-IN')) + '</div></div>'
-      + '<div style="background:' + (Math.abs(diff)<50?'#e8f5e9':'#fce4ec') + ';border-radius:10px;padding:8px;text-align:center;">'
-        + '<div style="font-size:10px;color:#555;text-transform:uppercase;margin-bottom:2px;">Cash Difference</div>'
-        + '<div style="font-size:15px;font-weight:700;color:' + diffColor + ';">' + sign + 'Rs.' + diff.toLocaleString('en-IN') + '</div></div>'
-      + '</div>'
-      + (r.remarks ? '<div style="font-size:12px;color:var(--ink3);font-style:italic;border-top:1px solid var(--paper3);padding-top:8px;">📝 ' + r.remarks + '</div>' : '')
-      + '</div>';
-  }).join('');
+  window.db.collection('dayReports').get().then(function(snap) {
+    var all = [];
+    snap.forEach(function(doc){ var d=doc.data(); d.id=doc.id; all.push(d); });
+    showReports(all);
+  }).catch(function(e) {
+    el.innerHTML = '<div style="color:#c62828;text-align:center;padding:20px;">Error: '+e.message+'</div>';
+  });
 };
 
 window.staffSubmitDayEnd = async function(sales,exp,cashS,upiS,cashE,upiE,netCash,ordCount) {
@@ -3476,7 +3403,8 @@ function getFormHTML(existing, role) {
       <label class="pill-option"><input type="radio" name="groupB" value="Portfolio Shoot" onchange="onGroupB(this)"><span>📸 Portfolio Shoot</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Video Editing" onchange="onGroupB(this)"><span>🎬 Video Editing</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Video Converting" onchange="onGroupB(this)"><span>📼 Video Converting</span></label>
-      <label class="pill-option"><input type="radio" name="groupB" value="Doorstep Service" onchange="onGroupB(this)"><span>🏠📷 Doorstep Service</span></label>
+      <label class="pill-option"><input type="radio" name="groupB" value="Doorstep Passport" onchange="onGroupB(this)"><span>🏠📷 Doorstep Passport</span></label>
+      <label class="pill-option"><input type="radio" name="groupB" value="Doorstep Visa" onchange="onGroupB(this)"><span>🏠🛂 Doorstep Visa</span></label>
     </div>
   </div>
 
@@ -3799,36 +3727,16 @@ window.calcFrame = function calcFrame() {
 
   if (!sizeKey || !mouldStr) { if (costTag) costTag.textContent = ''; return; }
 
-  let dims;
-  if (sizeKey === 'custom') {
-    const cw = parseFloat(document.getElementById('frm-L-custom')?.value || 0);
-    const ch = parseFloat(document.getElementById('frm-B-custom')?.value || 0);
-    dims = { w: cw, h: ch };
-    if (!cw || !ch) { if (costTag) costTag.textContent = ''; return; }
-  } else {
-    dims = (typeof SIZE_DIMS !== 'undefined' ? SIZE_DIMS : {})[sizeKey] || (() => {
-      const m = sizeKey.match(/(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i);
-      return m ? {w:+m[1],h:+m[2]} : {w:0,h:0};
-    })();
-  }
+  const dims = (typeof SIZE_DIMS !== 'undefined' ? SIZE_DIMS : {})[sizeKey] || (() => {
+    const m = sizeKey.match(/(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i);
+    return m ? {w:+m[1],h:+m[2]} : {w:0,h:0};
+  })();
 
   const L = dims.w + mountSz * 2;
   const B = dims.h + mountSz * 2;
-  // mouldStr is the index into mouldingsCache[selectedSize]; look up real size + price
-  const selSize = document.querySelector('input[name="ms"]:checked')?.value;
-  let mouldSize = parseFloat(selSize || 1.5);
-  let pricePerLength = 10;
-  if (selSize) {
-    const items = (window.mouldingsCache && window.mouldingsCache[selSize]) || (typeof DEFAULT_MOULDINGS!=='undefined'?DEFAULT_MOULDINGS[selSize]:[]) || [];
-    let mItem;
-    if (mouldStr && mouldStr.includes('|')) {
-      const p = mouldStr.split('|');
-      pricePerLength = parseFloat(p[2]) || 10;
-    } else {
-      mItem = items[+mouldStr];
-      if (mItem) pricePerLength = parseFloat(mItem.price) || 10;
-    }
-  }
+  const parts = mouldStr.split('|');
+  const mouldSize = parseFloat(parts[0] || 1.5);
+  const pricePerLength = parseFloat(parts[2] || 10);
 
   const mw = mouldSize;
   const cornerWaste = mw <= 1 ? 8 : 8 * mw;
@@ -3839,20 +3747,17 @@ window.calcFrame = function calcFrame() {
   const totalCost = mouldCost + matCost + labour;
 
   if (costTag) costTag.innerHTML =
-    '<div style="font-size:11px;color:#fff;margin-bottom:4px;opacity:.95;">' +
+    '<div style="font-size:11px;color:var(--ink3);margin-bottom:4px;">' +
     '🪵 Moulding: <b>Rs.' + mouldCost + '</b> &nbsp;|&nbsp; ' +
     '🔲 Material: <b>Rs.' + matCost + '</b>' +
     (labour ? ' &nbsp;|&nbsp; 👷 Labour: <b>Rs.' + labour + '</b>' : '') +
     '</div>' +
-    '<div style="font-size:15px;font-weight:800;color:#fff;">Total: Rs.' + totalCost + '</div>';
+    '<div style="font-size:15px;font-weight:800;color:var(--gold-dk);">Total: Rs.' + totalCost + '</div>';
   if (totalTag) totalTag.textContent = 'Rs.' + totalCost;
   if (mountYes) {
     const sizeInfo = document.getElementById('frm-size-info');
     if (sizeInfo) sizeInfo.textContent = L + '×' + B + '" with mount';
   }
-  // Live preview in Order Summary panel (right side) before adding to cart
-  window._framingLivePreview = { total: totalCost, mouldCost, matCost, labour, label: 'Frame ' + sizeKey };
-  if (typeof updateCartPanel === 'function') updateCartPanel();
 };
 
 window.onFrameCustomInput = function onFrameCustomInput() {
@@ -3875,23 +3780,10 @@ window.onMountChange = function onMountChange() {
 window.onFrameSizeSelect = function onFrameSizeSelect() {
   const sizeEl = document.getElementById('frm-size-select');
   const customBox = document.getElementById('frm-custom-size');
-  if (customBox) {
-    if (sizeEl?.value === 'custom') {
-      customBox.style.display = 'block';
-      // Focus first input
-      setTimeout(function(){ document.getElementById('frm-L-custom')?.focus(); }, 100);
-    } else {
-      customBox.style.display = 'none';
-    }
-  }
-  // Show moulding section + mount + accessories when size selected
+  if (customBox) customBox.classList.toggle('hidden', sizeEl?.value !== 'custom');
+  // Show moulding section
   const mouldSection = document.getElementById('frm-mould-type-section');
   if (mouldSection && sizeEl?.value) mouldSection.classList.remove('hidden');
-  if (sizeEl?.value) {
-    document.getElementById('frm-mount-section')?.classList.remove('hidden');
-    document.getElementById('frm-accessories')?.classList.remove('hidden');
-    document.getElementById('frm-cost-tag')?.classList.remove('hidden');
-  }
   // Populate hidden frm-L / frm-B from SIZE_DIMS lookup
   if (sizeEl && sizeEl.value && sizeEl.value !== 'custom' && typeof SIZE_DIMS !== 'undefined' && SIZE_DIMS[sizeEl.value]) {
     const d = SIZE_DIMS[sizeEl.value];
@@ -4464,43 +4356,23 @@ function getBPanelHTML(svc) {
     <div class="section-head" style="font-size:15px;">📼 Video Converting</div>
     <div class="form-group" style="max-width:250px;"><label class="form-label">Converting Charge (Rs.)</label><input class="form-input" id="vid-conv-charge" type="number" min="0" placeholder="Enter charge"></div></div>`;
 
-  if(svc==='Doorstep Service') return `<div class="svc-panel" id="panel-b">
-    <div class="section-head" style="font-size:15px;">🏠📷 Doorstep Service</div>
-    <div class="price-info" style="margin-bottom:12px;">Select price package and number of copies</div>
-    <div style="margin-bottom:14px;">
-      <label class="form-label" style="margin-bottom:8px;display:block;">PRICE PACKAGE</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <label class="toggle-option" style="flex-direction:column;padding:12px;gap:4px;">
-          <input type="radio" name="ds-price" value="500" onchange="calcDoorService()">
-          <span style="font-size:18px;font-weight:800;color:var(--gold-dk);">Rs.500</span>
-        </label>
-        <label class="toggle-option" style="flex-direction:column;padding:12px;gap:4px;">
-          <input type="radio" name="ds-price" value="1000" onchange="calcDoorService()">
-          <span style="font-size:18px;font-weight:800;color:var(--gold-dk);">Rs.1,000</span>
-        </label>
-        <label class="toggle-option" style="flex-direction:column;padding:12px;gap:4px;">
-          <input type="radio" name="ds-price" value="1500" onchange="calcDoorService()">
-          <span style="font-size:18px;font-weight:800;color:var(--gold-dk);">Rs.1,500</span>
-        </label>
-        <label class="toggle-option" style="flex-direction:column;padding:12px;gap:4px;">
-          <input type="radio" name="ds-price" value="2000" onchange="calcDoorService()">
-          <span style="font-size:18px;font-weight:800;color:var(--gold-dk);">Rs.2,000</span>
-        </label>
-      </div>
+  if(svc==='Doorstep Passport') return `<div class="svc-panel" id="panel-b">
+    <div class="section-head" style="font-size:15px;">🏠📷 Doorstep Passport Photos</div>
+    <div class="price-info" style="margin-bottom:10px;"><b>Fixed:</b> Rs.500 for 8 copies · Rs.100 per extra 8 copies</div>
+    <div class="form-grid-2" style="margin-bottom:10px;">
+      <div class="form-group"><label class="form-label">Number of Copies</label><input class="form-input" id="dpp-copies" type="number" min="8" step="8" value="8" inputmode="numeric" oninput="calcDoorPassport()"></div>
+      <div class="form-group"><label class="form-label">Charge</label><input class="form-input" id="dpp-total" readonly style="background:#f0f0f0;font-weight:700;color:var(--gold-dk);"></div>
     </div>
-    <div style="margin-bottom:12px;">
-      <label class="form-label" style="margin-bottom:8px;display:block;">NUMBER OF COPIES</label>
-      <div class="toggle-group">
-        <label class="toggle-option"><input type="radio" name="ds-copies" value="6" onchange="calcDoorService()"><span>6 Copies</span></label>
-        <label class="toggle-option"><input type="radio" name="ds-copies" value="8" checked onchange="calcDoorService()"><span>8 Copies</span></label>
-      </div>
+    <div class="form-group"><label class="form-label">Doorstep Address</label><input class="form-input" id="ds-addr" placeholder="Customer address for visit"></div></div>`;
+
+  if(svc==='Doorstep Visa') return `<div class="svc-panel" id="panel-b">
+    <div class="section-head" style="font-size:15px;">🏠🛂 Doorstep Visa Photos</div>
+    <div class="price-info" style="margin-bottom:10px;"><b>Fixed:</b> Rs.500 for 8 copies · Rs.100 per extra 8 copies</div>
+    <div class="form-grid-2" style="margin-bottom:10px;">
+      <div class="form-group"><label class="form-label">Number of Copies</label><input class="form-input" id="dvp-copies" type="number" min="8" step="8" value="8" inputmode="numeric" oninput="calcDoorVisa()"></div>
+      <div class="form-group"><label class="form-label">Charge</label><input class="form-input" id="dvp-total" readonly style="background:#f0f0f0;font-weight:700;color:var(--gold-dk);"></div>
     </div>
-    <div class="form-group" style="margin-bottom:12px;">
-      <label class="form-label">Doorstep Address</label>
-      <input class="form-input" id="ds-addr" placeholder="Customer address for visit">
-    </div>
-    <div id="ds-cost-tag" class="price-tag hidden"></div>
-  </div>`;
+    <div class="form-group"><label class="form-label">Doorstep Address</label><input class="form-input" id="dvs-addr" placeholder="Customer address for visit"></div></div>`;
 
   return '';
 }
@@ -4977,28 +4849,6 @@ window.calcVisa = () => {
   if(ct) ct.textContent = soft ? `Total: Rs.${total} (Print Rs.${base} + Soft Copy Rs.${soft})` : `Total: Rs.${base}`;
   updateCartPanel(); // FIX 3: live panel update for visa
 };
-window.calcVideoEdit = function() {
-  const hrs = +(document.getElementById('vid-hours')?.value)||0;
-  const rate = +(document.getElementById('vid-rate')?.value)||0;
-  const total = hrs * rate;
-  const tag = document.getElementById('vid-edit-tag');
-  if (tag) {
-    if (hrs && rate) { tag.textContent = hrs + ' hr' + (hrs>1?'s':'') + ' × Rs.' + rate + '/hr = Rs.' + total; tag.classList.remove('hidden'); }
-    else { tag.classList.add('hidden'); }
-  }
-  if(typeof updateCartPanel==='function') updateCartPanel();
-};
-
-window.calcDoorService = function() {
-  const price = +(document.querySelector('input[name="ds-price"]:checked')?.value) || 0;
-  const copies = +(document.querySelector('input[name="ds-copies"]:checked')?.value) || 8;
-  const tag = document.getElementById('ds-cost-tag');
-  if (tag) {
-    if (price) { tag.textContent = copies + ' copies · Rs.' + price; tag.classList.remove('hidden'); }
-    else tag.classList.add('hidden');
-  }
-  if (typeof updateCartPanel === 'function') updateCartPanel();
-};
 window.calcScanning = () => {
   // Show/hide sub-rows based on checkbox state
   const checks = {};
@@ -5229,7 +5079,7 @@ window.addToCart = function() {
       const fTotal = frameCost + sleeveTotal;
       const accDesc = accs.length ? ` [${accs.join('+')}]` : '';
       const mouldDesc = mouldItem ? `${mouldItem.code}-${mouldItem.name}` : mouldSize+'"';
-      parts.push(`Frame ${l}×${b}" · ${mouldSize}" ${mouldDesc} ${mnt==='Yes'?'+Mount '+mountSize+'"':'NoMount'}${accDesc}${sleeveDesc} Rs.${fTotal}`);
+      parts.push(`Frame ${mouldSize}" ${mouldDesc} ${mnt==='Yes'?'+Mount '+mountSize+'"':'NoMount'}${accDesc}${sleeveDesc} Rs.${fTotal}`);
       totalP += fTotal;
     }
     price=totalP; label=parts.join(' · ');
@@ -5260,15 +5110,10 @@ window.addToCart = function() {
       if(fileNo) details = (details||'') + ' | FileNo:'+fileNo;
     }
 
-    else if(groupBsel==='Reprint & Scanning'){
-      const chks={};document.querySelectorAll('input[name="scan-svc"]').forEach(cb=>{chks[cb.value]=cb.checked;});
-      if(!Object.values(chks).some(Boolean)){toast('⚠️ Select at least one service','error');return;}
-      let total=0;const parts=[];
-      if(chks.reprint){const q=+(document.getElementById('scan-reprint-qty')?.value)||1;total+=q*70;parts.push(`${q}× 4×6 Reprint`);}
-      if(chks.paper){const q=+(document.getElementById('scan-paper-qty')?.value)||1;total+=q*30;parts.push(`${q}× 4×6 Paper`);}
-      if(chks.hiscan){total+=200;parts.push('Hi-Res Scan');}
-      if(chks.custom){const p=+(document.getElementById('scan-custom-price')?.value)||0;const d=document.getElementById('scan-custom-desc')?.value.trim()||'Custom';total+=p;parts.push(`${d} Rs.${p}`);}
-      price=total;label=parts.join(' + ');
+    else if(groupBsel==='Scanning'){
+      const q=+(document.getElementById('scan-qty')?.value)||0;
+      if(!q){toast('⚠️ Enter number of pictures','error');return;}
+      price=q*50; label=`${q} pictures × Rs.50`;
     }
     else if(['Readymade Frames','Slip In Albums','Gift Items'].includes(groupBsel)){
       const cat = groupBsel==='Readymade Frames'?'frames':groupBsel==='Slip In Albums'?'albums':'gifts';
@@ -5301,13 +5146,8 @@ window.addToCart = function() {
       price=hrs*rate;label=`${hrs} hr${hrs>1?'s':''} × Rs.${rate}/hr`;
     }
     else if(groupBsel==='Video Converting'){price=+(document.getElementById('vid-conv-charge')?.value)||0;label=`Charge Rs.${price}`;}
-    else if(groupBsel==='Doorstep Service'){
-      const pkg=+(document.querySelector('input[name="ds-price"]:checked')?.value)||0;
-      const copies=+(document.querySelector('input[name="ds-copies"]:checked')?.value)||8;
-      const addr=document.getElementById('ds-addr')?.value.trim()||'';
-      if(!pkg){toast('⚠️ Select a price package','error');return;}
-      price=pkg;label=`${copies} copies · Rs.${pkg}${addr?' · '+addr.slice(0,25):''}`;
-    }
+    else if(groupBsel==='Doorstep Passport'){const c=+(document.getElementById('dpp-copies')?.value)||8;const s=Math.ceil(c/8);price=500+Math.max(0,s-1)*100;const addr=document.getElementById('ds-addr')?.value||'';label=`${c} copies${addr?' · '+addr.slice(0,20):''}`;}
+    else if(groupBsel==='Doorstep Visa'){const c=+(document.getElementById('dvp-copies')?.value)||8;const s=Math.ceil(c/8);price=500+Math.max(0,s-1)*100;const addr=document.getElementById('dvs-addr')?.value||'';label=`${c} copies${addr?' · '+addr.slice(0,20):''}`;}
     else { toast('⚠️ Select a service first','error'); return; }
   } else {
     toast('⚠️ Select a service first','error'); return;
@@ -5335,43 +5175,35 @@ window.removeFromCart = function(idx) {
 window.editCartItem = function(idx) {
   const item = window.cart[idx];
   if (!item) return;
-  const svcs = item.svcs || [item.svc].filter(Boolean);
-  const primary = svcs[0] || '';
-  const groupA = ['Photo Editing','Printing','Framing'];
+  document.getElementById('_edit-cart-modal')?.remove();
+  const modal = document.createElement('div');
+  modal.id = '_edit-cart-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  const svcName = (item.svcs||[item.svc||'Item']).join('+');
+  modal.innerHTML = '<div style="background:#fff;border-radius:16px;padding:22px;width:100%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.2);">'
+    + '<div style="font-weight:800;font-size:16px;margin-bottom:16px;">✏️ Edit — ' + svcName + '</div>'
+    + '<label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;display:block;margin-bottom:4px;">DESCRIPTION / LABEL</label>'
+    + '<input id="_ec-label" value="' + (item.label||'').replace(/"/g,'&quot;') + '" style="width:100%;padding:10px;border:1.5px solid #ede8df;border-radius:10px;font-size:14px;font-family:inherit;margin-bottom:12px;">'
+    + '<label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;display:block;margin-bottom:4px;">PRICE (Rs.)</label>'
+    + '<input id="_ec-price" type="number" min="0" value="' + (+item.price||0) + '" style="width:100%;padding:10px;border:1.5px solid #ede8df;border-radius:10px;font-size:16px;font-family:inherit;margin-bottom:16px;">'
+    + '<div style="display:flex;gap:10px;">'
+    + '<button onclick="closeModal(&quot;_edit-cart-modal&quot;)" style="flex:1;background:#f5f5f5;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;">Cancel</button>'
+    + '<button onclick="saveEditCartItem(' + idx + ')" style="flex:2;background:linear-gradient(135deg,#8a6520,#C9973A);color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;">💾 Save</button>'
+    + '</div></div>';
+  document.body.appendChild(modal);
+  setTimeout(function(){ document.getElementById('_ec-price')?.select(); }, 80);
+};
 
-  // Remove item from cart first so re-adding replaces it
-  window.cart.splice(idx, 1);
-  renderCart();
-  updateCartPanel();
-
-  if (groupA.includes(primary)) {
-    // Check all groupA services that were in this item
-    document.querySelectorAll('input[name="groupA"]').forEach(cb => {
-      cb.checked = svcs.includes(cb.value);
-    });
-    // Clear groupB
-    document.querySelectorAll('input[name="groupB"]').forEach(r => r.checked = false);
-    // Render the panel
-    if (typeof onGroupA === 'function') onGroupA();
-  } else {
-    // Find and check the groupB radio
-    const radio = document.querySelector('input[name="groupB"][value="' + primary + '"]');
-    if (radio) {
-      radio.checked = true;
-      // Clear groupA
-      document.querySelectorAll('input[name="groupA"]').forEach(cb => cb.checked = false);
-      // Render the panel — must pass the radio element
-      if (typeof onGroupB === 'function') onGroupB(radio);
-    }
+window.saveEditCartItem = function(idx) {
+  const label = document.getElementById('_ec-label')?.value.trim() || '';
+  const price = +(document.getElementById('_ec-price')?.value) || 0;
+  if (window.cart[idx]) {
+    window.cart[idx].label = label;
+    window.cart[idx].price = price;
   }
-
-  // Scroll to the panel after it renders
-  setTimeout(function() {
-    const panel = document.getElementById('svc-panel-area') || document.querySelector('.svc-panel');
-    if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 150);
-
-  toast('✏️ Service panel re-opened — make changes and tap Add to Cart', 'info');
+  closeModal('_edit-cart-modal');
+  renderCart();
+  if(typeof toast==='function') toast('✅ Cart item updated');
 };
 
 window.duplicateCartItem = function(idx) {
@@ -5586,11 +5418,7 @@ function renderCart() {
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
         <div class="cart-price">${inr(item.price||0)}</div>
-        <div style="display:flex;gap:6px;margin-top:2px;">
-          <button onclick="editCartItem(${i})" style="padding:4px 8px;border-radius:6px;background:var(--gold-bg);color:var(--gold-dk);border:1.5px solid var(--gold);font-size:11px;cursor:pointer;font-weight:700;" title="Edit">✏️</button>
-          <button onclick="duplicateCartItem(${i})" style="padding:4px 8px;border-radius:6px;background:#f3f4f6;color:#555;border:1px solid #ddd;font-size:11px;cursor:pointer;" title="Duplicate">📋</button>
-          <button onclick="removeFromCart(${i})" style="padding:4px 8px;border-radius:6px;background:var(--red-bg);color:var(--red);border:1px solid rgba(214,69,69,.2);font-size:11px;cursor:pointer;" title="Remove">❌</button>
-        </div>
+        <button onclick="removeFromCart(${i})" style="padding:4px 10px;border-radius:6px;background:var(--red-bg);color:var(--red);border:1px solid rgba(214,69,69,.2);font-size:11px;cursor:pointer;">✕ Remove</button>
       </div>
     </div>`).join('');
   tb?.classList.remove('hidden');

@@ -887,7 +887,7 @@ const SVC_ICONS = {
   'Photo Editing':'🎨','Printing':'🖨️','Framing':'🖼️','Sunboard':'🟫',
   'MDF Board':'🪵','Passport Photos':'📷','Visa Photos':'🛂',
   'Album Printing':'📚','Portfolio Shoot':'📸','Video Editing':'🎬',
-  'Video Converting':'📼','Doorstep Passport':'🏠📷','Doorstep Visa':'🏠🛂','Doorstep Service':'🏠📷'
+  'Video Converting':'📼','Doorstep Passport':'🏠📷','Doorstep Visa':'🏠🛂'
 };
 
 const FRAMING_SVCS = ['Framing','Sunboard','MDF Board'];
@@ -2887,7 +2887,7 @@ window.saveOrder = async function() {
     email: document.getElementById('f-email')?.value||'',
     address: document.getElementById('f-address')?.value||'',
     staff: document.getElementById('f-staff')?.value||'',
-    status: window.editId?(orders.find(x=>x.id===window.editId)?.status||'Pending'):(otype==='Instant'?'Delivered':'Pending'),
+    status: window.editId?(orders.find(x=>x.id===window.editId)?.status||'Pending'):'Pending',
     orderType: otype, delivery: otype==='Booking'?delivery:'',
     date: window.editId?(orders.find(x=>x.id===window.editId)?.date||todayStr()):todayStr(),
     notes: document.getElementById('f-notes')?.value||'',
@@ -3007,38 +3007,9 @@ window.ownerPurMsizeChange = function() {
   const sizeEl = document.getElementById('pur-msize');
   const size = sizeEl ? sizeEl.value.replace('"','') : '';
   const dl = document.getElementById('owner-pur-mtype-list');
-  const codeDl = document.getElementById('owner-pur-code-list');
-  if (size && window.mouldingsCache) {
+  if (dl && size && window.mouldingsCache) {
     const items = window.mouldingsCache[size] || [];
-    if (dl) dl.innerHTML = items.map(m => `<option value="${(m.code?m.code+' · ':'')+m.name}">`).join('');
-    if (codeDl) {
-      const codes = [...new Set(items.map(m=>m.code).filter(Boolean))];
-      codeDl.innerHTML = codes.map(cc => `<option value="${cc}">`).join('');
-    }
-  }
-};
-
-window.ownerPurMtypeChange = function() {
-  const val = document.getElementById('pur-mtype')?.value || '';
-  const codeEl = document.getElementById('pur-code-mould');
-  if (codeEl && val.includes(' · ')) {
-    const parts = val.split(' · ');
-    codeEl.value = parts[0];
-    document.getElementById('pur-mtype').value = parts[1] || parts[0];
-  }
-  // Auto-fill vendor + code from matching moulding
-  const size = document.getElementById('pur-msize')?.value.replace('"','') || '';
-  const nm = document.getElementById('pur-mtype')?.value?.trim().toLowerCase();
-  if (size && nm && window.mouldingsCache) {
-    const its = window.mouldingsCache[size] || [];
-    const match = its.find(m => (m.name||'').toLowerCase() === nm);
-    if (match) {
-      if (match.code && codeEl && !codeEl.value) codeEl.value = match.code;
-      if (match.vendor) {
-        const btn = document.getElementById('purv-'+match.vendor.replace(/\s/g,'_'));
-        if (btn) selectPurchaseVendor(match.vendor);
-      }
-    }
+    dl.innerHTML = items.map(m => `<option value="${(m.code?m.code+' · ':'')+m.name}">`).join('');
   }
 };
 
@@ -3177,10 +3148,6 @@ window.ownerEditMoulding = function(size, index) {
   document.body.appendChild(modal);
 };
 
-window.ownerEditVendorChange = function(sel) {
-  const txt = document.getElementById('_oe-vendor-txt');
-  if(txt) txt.style.display = sel.value==='__other__' ? 'block' : 'none';
-};
 window.ownerSaveEditMoulding = async function(size, index) {
   const vendorSel = document.getElementById('_oe-vendor');
   const vendorTxt = document.getElementById('_oe-vendor-txt');
@@ -3378,11 +3345,11 @@ function renderPurchaseForm() {
             <option>0.5"</option><option>0.75"</option><option selected>1"</option><option>1.25"</option><option>1.5"</option><option>1.75"</option><option>2"</option><option>2.5"</option><option>3"</option>
           </select>
         </div>
-        <div><label class="form-label">Code</label><input class="form-input" id="pur-code-mould" placeholder="e.g. M2, G-883" list="owner-pur-code-list"><datalist id="owner-pur-code-list"></datalist></div>
+        <div><label class="form-label">Code</label><input class="form-input" id="pur-code-mould" placeholder="e.g. M2, G-883"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
         <div><label class="form-label">Type/Color</label>
-          <input class="form-input" id="pur-mtype" placeholder="e.g. Golden Oak" list="owner-pur-mtype-list" onchange="ownerPurMtypeChange()">
+          <input class="form-input" id="pur-mtype" placeholder="e.g. Golden Oak" list="owner-pur-mtype-list">
           <datalist id="owner-pur-mtype-list"></datalist>
         </div>
         <div><label class="form-label">Invoice No.</label><input class="form-input" id="pur-invoice-mould" placeholder="INV-001"></div>
@@ -3619,18 +3586,7 @@ async function _saveSinglePurchase(item) {
   }
   purchases.unshift(purchase);
   localStorage.setItem('fv_purchases',JSON.stringify(purchases));
-  try{if(window.db)await (async () => {
-    if (window._ownerInvoiceFile) {
-      try {
-        const sRef = firebase.storage().ref('invoices/' + Date.now() + '_' + window._ownerInvoiceFile.name);
-        const snap = await sRef.put(window._ownerInvoiceFile);
-        purchase.invoicePhotoURL = await snap.ref.getDownloadURL();
-        window._ownerInvoiceFile = null;
-        if(typeof ownerClearInvoicePhoto==='function') ownerClearInvoicePhoto();
-      } catch(e) { console.warn('Invoice upload failed:', e); }
-    }
-  })();
-  await window.db.collection('purchases').add(purchase);}catch(e){}
+  try{if(window.db)await window.db.collection('purchases').add(purchase);}catch(e){}
   // WhatsApp notification for purchases > Rs.500
   if (typeof window.waNewPurchase === 'function') {
     window.waNewPurchase(purchase).catch(()=>{});
@@ -3640,9 +3596,7 @@ async function _saveSinglePurchase(item) {
 function renderPurchaseVendorPills() {
   const el = document.getElementById('pur-vendor-pills');
   if(!el) return;
-  const vSet = new Set(Object.keys(vendors||{}));
-  Object.values(window.mouldingsCache||{}).forEach(arr=>(arr||[]).forEach(m=>{if(m.vendor&&m.vendor.trim())vSet.add(m.vendor.trim());}));
-  const vendorNames = [...vSet, 'Others'];
+  const vendorNames = [...Object.keys(vendors||{}), 'Others'];
   el.innerHTML = vendorNames.map(v=>`
     <button onclick="selectPurchaseVendor('${v}')" id="purv-${v.replace(/\s/g,'_')}"
       style="padding:6px 12px;border:2px solid var(--paper3);border-radius:100px;font-size:12px;font-weight:600;cursor:pointer;background:#fff;color:var(--ink2);">
@@ -3848,7 +3802,7 @@ function renderReadymadeList() {
             </div>
           </div>
           <div style="display:flex;flex-direction:column;gap:6px;">
-            <button onclick="addReadymadeQty('${item.id}')" class="btn-outline" style="font-size:12px;padding:5px 10px;">+ Qty</button>
+            <button onclick="staffAddReadymadeQty('${item.id}')" class="btn-outline" style="font-size:12px;padding:5px 10px;">+ Qty</button>
             <button onclick="deleteReadymadeItem('${item.id}')" style="background:#e53935;color:#fff;border:none;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px;">🗑️</button>
           </div>
         </div>
@@ -5699,7 +5653,15 @@ window.ownerConfirmQty = function() {
     if(typeof ownerQtyCallback==='function')ownerQtyCallback(id,n);
   }
 };
-
+window._addReadymadeQtyOld = function(id) {
+  const n=0;
+  if(!n||isNaN(+n))return;
+  const item=window.stockItems.find(x=>x.id===id);if(!item)return;
+  item.qty=(+item.qty||0)+(+n);
+  updateStockQty(id,item.qty);
+  renderReadymadeStock();
+  toast(`✅ Added ${n} units`,'success');
+};
 
 window.deleteReadymadeItem = async function(id) {
   if(!confirm('Delete this item?'))return;
@@ -6123,7 +6085,15 @@ window.ownerAddQty = function(id) {
   document.body.appendChild(modal);
   setTimeout(function(){var el=document.getElementById('_qty-inp');if(el){el.focus();el.select();}},80);
 };
-
+window._ownerAddQtyLegacy = function(id) {
+  const n=0;
+  if(!n||isNaN(+n))return;
+  const item=window.stockItems.find(x=>x.id===id);if(!item)return;
+  item.qty=(+item.qty||0)+(+n);
+  updateStockQty(id,item.qty);
+  renderStock();
+  toast(`✅ Added ${n} units`,'success');
+};
 
 window.ownerDeleteStock = async function(id) {
   if(!confirm('Delete this stock item?'))return;
@@ -6910,7 +6880,8 @@ function getFormHTML(existing, role) {
       <label class="pill-option"><input type="radio" name="groupB" value="Portfolio Shoot" onchange="onGroupB(this)"><span>📸 Portfolio Shoot</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Video Editing" onchange="onGroupB(this)"><span>🎬 Video Editing</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Video Converting" onchange="onGroupB(this)"><span>📼 Video Converting</span></label>
-      <label class="pill-option"><input type="radio" name="groupB" value="Doorstep Service" onchange="onGroupB(this)"><span>🏠📷 Doorstep Service</span></label>
+      <label class="pill-option"><input type="radio" name="groupB" value="Doorstep Passport" onchange="onGroupB(this)"><span>🏠📷 Doorstep Passport</span></label>
+      <label class="pill-option"><input type="radio" name="groupB" value="Doorstep Visa" onchange="onGroupB(this)"><span>🏠🛂 Doorstep Visa</span></label>
     </div>
   </div>
 
@@ -7207,36 +7178,16 @@ window.calcFrame = function calcFrame() {
 
   if (!sizeKey || !mouldStr) { if (costTag) costTag.textContent = ''; return; }
 
-  let dims;
-  if (sizeKey === 'custom') {
-    const cw = parseFloat(document.getElementById('frm-L-custom')?.value || 0);
-    const ch = parseFloat(document.getElementById('frm-B-custom')?.value || 0);
-    dims = { w: cw, h: ch };
-    if (!cw || !ch) { if (costTag) costTag.textContent = ''; return; }
-  } else {
-    dims = (typeof SIZE_DIMS !== 'undefined' ? SIZE_DIMS : {})[sizeKey] || (() => {
-      const m = sizeKey.match(/(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i);
-      return m ? {w:+m[1],h:+m[2]} : {w:0,h:0};
-    })();
-  }
+  const dims = (typeof SIZE_DIMS !== 'undefined' ? SIZE_DIMS : {})[sizeKey] || (() => {
+    const m = sizeKey.match(/(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i);
+    return m ? {w:+m[1],h:+m[2]} : {w:0,h:0};
+  })();
 
   const L = dims.w + mountSz * 2;
   const B = dims.h + mountSz * 2;
-  // mouldStr is the index into mouldingsCache[selectedSize]; look up real size + price
-  const selSize = document.querySelector('input[name="ms"]:checked')?.value;
-  let mouldSize = parseFloat(selSize || 1.5);
-  let pricePerLength = 10;
-  if (selSize) {
-    const items = (window.mouldingsCache && window.mouldingsCache[selSize]) || (typeof DEFAULT_MOULDINGS!=='undefined'?DEFAULT_MOULDINGS[selSize]:[]) || [];
-    let mItem;
-    if (mouldStr && mouldStr.includes('|')) {
-      const p = mouldStr.split('|');
-      pricePerLength = parseFloat(p[2]) || 10;
-    } else {
-      mItem = items[+mouldStr];
-      if (mItem) pricePerLength = parseFloat(mItem.price) || 10;
-    }
-  }
+  const parts = mouldStr.split('|');
+  const mouldSize = parseFloat(parts[0] || 1.5);
+  const pricePerLength = parseFloat(parts[2] || 10);
 
   const mw = mouldSize;
   const cornerWaste = mw <= 1 ? 8 : 8 * mw;
@@ -7247,20 +7198,17 @@ window.calcFrame = function calcFrame() {
   const totalCost = mouldCost + matCost + labour;
 
   if (costTag) costTag.innerHTML =
-    '<div style="font-size:11px;color:#fff;margin-bottom:4px;opacity:.95;">' +
+    '<div style="font-size:11px;color:var(--ink3);margin-bottom:4px;">' +
     '🪵 Moulding: <b>Rs.' + mouldCost + '</b> &nbsp;|&nbsp; ' +
     '🔲 Material: <b>Rs.' + matCost + '</b>' +
     (labour ? ' &nbsp;|&nbsp; 👷 Labour: <b>Rs.' + labour + '</b>' : '') +
     '</div>' +
-    '<div style="font-size:15px;font-weight:800;color:#fff;">Total: Rs.' + totalCost + '</div>';
+    '<div style="font-size:15px;font-weight:800;color:var(--gold-dk);">Total: Rs.' + totalCost + '</div>';
   if (totalTag) totalTag.textContent = 'Rs.' + totalCost;
   if (mountYes) {
     const sizeInfo = document.getElementById('frm-size-info');
     if (sizeInfo) sizeInfo.textContent = L + '×' + B + '" with mount';
   }
-  // Live preview in Order Summary panel (right side) before adding to cart
-  window._framingLivePreview = { total: totalCost, mouldCost, matCost, labour, label: 'Frame ' + sizeKey };
-  if (typeof updateCartPanel === 'function') updateCartPanel();
 };
 
 window.onFrameCustomInput = function onFrameCustomInput() {
@@ -7283,23 +7231,10 @@ window.onMountChange = function onMountChange() {
 window.onFrameSizeSelect = function onFrameSizeSelect() {
   const sizeEl = document.getElementById('frm-size-select');
   const customBox = document.getElementById('frm-custom-size');
-  if (customBox) {
-    if (sizeEl?.value === 'custom') {
-      customBox.style.display = 'block';
-      // Focus first input
-      setTimeout(function(){ document.getElementById('frm-L-custom')?.focus(); }, 100);
-    } else {
-      customBox.style.display = 'none';
-    }
-  }
-  // Show moulding section + mount + accessories when size selected
+  if (customBox) customBox.classList.toggle('hidden', sizeEl?.value !== 'custom');
+  // Show moulding section
   const mouldSection = document.getElementById('frm-mould-type-section');
   if (mouldSection && sizeEl?.value) mouldSection.classList.remove('hidden');
-  if (sizeEl?.value) {
-    document.getElementById('frm-mount-section')?.classList.remove('hidden');
-    document.getElementById('frm-accessories')?.classList.remove('hidden');
-    document.getElementById('frm-cost-tag')?.classList.remove('hidden');
-  }
   // Populate hidden frm-L / frm-B from SIZE_DIMS lookup
   if (sizeEl && sizeEl.value && sizeEl.value !== 'custom' && typeof SIZE_DIMS !== 'undefined' && SIZE_DIMS[sizeEl.value]) {
     const d = SIZE_DIMS[sizeEl.value];
@@ -7876,28 +7811,23 @@ function getBPanelHTML(svc) {
     <div class="section-head" style="font-size:15px;">📼 Video Converting</div>
     <div class="form-group" style="max-width:250px;"><label class="form-label">Converting Charge (Rs.)</label><input class="form-input" id="vid-conv-charge" type="number" min="0" placeholder="Enter charge"></div></div>`;
 
-    if(svc==='Doorstep Service') return `<div class="svc-panel" id="panel-b">
-    <div class="section-head" style="font-size:15px;">🏠📷 Doorstep Service</div>
-    <div class="price-info" style="margin-bottom:12px;">Select price package and number of copies</div>
-    <div style="margin-bottom:14px;">
-      <label class="form-label" style="margin-bottom:8px;display:block;">PRICE PACKAGE</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <label class="toggle-option" style="flex-direction:column;padding:12px;gap:4px;"><input type="radio" name="ds-price" value="500" onchange="calcDoorService()"><span style="font-size:18px;font-weight:800;color:var(--gold-dk);">Rs.500</span></label>
-        <label class="toggle-option" style="flex-direction:column;padding:12px;gap:4px;"><input type="radio" name="ds-price" value="1000" onchange="calcDoorService()"><span style="font-size:18px;font-weight:800;color:var(--gold-dk);">Rs.1,000</span></label>
-        <label class="toggle-option" style="flex-direction:column;padding:12px;gap:4px;"><input type="radio" name="ds-price" value="1500" onchange="calcDoorService()"><span style="font-size:18px;font-weight:800;color:var(--gold-dk);">Rs.1,500</span></label>
-        <label class="toggle-option" style="flex-direction:column;padding:12px;gap:4px;"><input type="radio" name="ds-price" value="2000" onchange="calcDoorService()"><span style="font-size:18px;font-weight:800;color:var(--gold-dk);">Rs.2,000</span></label>
-      </div>
+  if(svc==='Doorstep Passport') return `<div class="svc-panel" id="panel-b">
+    <div class="section-head" style="font-size:15px;">🏠📷 Doorstep Passport Photos</div>
+    <div class="price-info" style="margin-bottom:10px;"><b>Fixed:</b> Rs.500 for 8 copies · Rs.100 per extra 8 copies</div>
+    <div class="form-grid-2" style="margin-bottom:10px;">
+      <div class="form-group"><label class="form-label">Number of Copies</label><input class="form-input" id="dpp-copies" type="number" min="8" step="8" value="8" inputmode="numeric" oninput="calcDoorPassport()"></div>
+      <div class="form-group"><label class="form-label">Charge</label><input class="form-input" id="dpp-total" readonly style="background:#f0f0f0;font-weight:700;color:var(--gold-dk);"></div>
     </div>
-    <div style="margin-bottom:12px;">
-      <label class="form-label" style="margin-bottom:8px;display:block;">NUMBER OF COPIES</label>
-      <div class="toggle-group">
-        <label class="toggle-option"><input type="radio" name="ds-copies" value="6" onchange="calcDoorService()"><span>6 Copies</span></label>
-        <label class="toggle-option"><input type="radio" name="ds-copies" value="8" checked onchange="calcDoorService()"><span>8 Copies</span></label>
-      </div>
+    <div class="form-group"><label class="form-label">Doorstep Address</label><input class="form-input" id="ds-addr" placeholder="Customer address for visit"></div></div>`;
+
+  if(svc==='Doorstep Visa') return `<div class="svc-panel" id="panel-b">
+    <div class="section-head" style="font-size:15px;">🏠🛂 Doorstep Visa Photos</div>
+    <div class="price-info" style="margin-bottom:10px;"><b>Fixed:</b> Rs.500 for 8 copies · Rs.100 per extra 8 copies</div>
+    <div class="form-grid-2" style="margin-bottom:10px;">
+      <div class="form-group"><label class="form-label">Number of Copies</label><input class="form-input" id="dvp-copies" type="number" min="8" step="8" value="8" inputmode="numeric" oninput="calcDoorVisa()"></div>
+      <div class="form-group"><label class="form-label">Charge</label><input class="form-input" id="dvp-total" readonly style="background:#f0f0f0;font-weight:700;color:var(--gold-dk);"></div>
     </div>
-    <div class="form-group" style="margin-bottom:12px;"><label class="form-label">Doorstep Address</label><input class="form-input" id="ds-addr" placeholder="Customer address for visit"></div>
-    <div id="ds-cost-tag" class="price-tag hidden"></div>
-  </div>`;
+    <div class="form-group"><label class="form-label">Doorstep Address</label><input class="form-input" id="dvs-addr" placeholder="Customer address for visit"></div></div>`;
 
   return '';
 }
@@ -8374,28 +8304,6 @@ window.calcVisa = () => {
   if(ct) ct.textContent = soft ? `Total: Rs.${total} (Print Rs.${base} + Soft Copy Rs.${soft})` : `Total: Rs.${base}`;
   updateCartPanel(); // FIX 3: live panel update for visa
 };
-window.calcVideoEdit = function() {
-  const hrs = +(document.getElementById('vid-hours')?.value)||0;
-  const rate = +(document.getElementById('vid-rate')?.value)||0;
-  const total = hrs * rate;
-  const tag = document.getElementById('vid-edit-tag');
-  if (tag) {
-    if (hrs && rate) { tag.textContent = hrs + ' hr' + (hrs>1?'s':'') + ' × Rs.' + rate + '/hr = Rs.' + total; tag.classList.remove('hidden'); }
-    else { tag.classList.add('hidden'); }
-  }
-  if(typeof updateCartPanel==='function') updateCartPanel();
-};
-
-window.calcDoorService = function() {
-  const price = +(document.querySelector('input[name="ds-price"]:checked')?.value) || 0;
-  const copies = +(document.querySelector('input[name="ds-copies"]:checked')?.value) || 8;
-  const tag = document.getElementById('ds-cost-tag');
-  if (tag) {
-    if (price) { tag.textContent = copies + ' copies · Rs.' + price; tag.classList.remove('hidden'); }
-    else tag.classList.add('hidden');
-  }
-  if (typeof updateCartPanel === 'function') updateCartPanel();
-};
 window.calcScanning = () => {
   // Show/hide sub-rows based on checkbox state
   const checks = {};
@@ -8628,7 +8536,7 @@ window.addToCart = function() {
       const fTotal = frameCost + sleeveTotal;
       const accDesc = accs.length ? ` [${accs.join('+')}]` : '';
       const mouldDesc = mouldItem ? `${mouldItem.code}-${mouldItem.name}` : mouldSize+'"';
-      parts.push(`Frame ${l}×${b}" · ${mouldSize}" ${mouldDesc} ${mnt==='Yes'?'+Mount '+mountSize+'"':'NoMount'}${accDesc}${sleeveDesc} Rs.${fTotal}`);
+      parts.push(`Frame ${mouldSize}" ${mouldDesc} ${mnt==='Yes'?'+Mount '+mountSize+'"':'NoMount'}${accDesc}${sleeveDesc} Rs.${fTotal}`);
       totalP += fTotal;
     }
     price=totalP; label=parts.join(' · ');
@@ -8730,43 +8638,35 @@ window.removeFromCart = function(idx) {
 window.editCartItem = function(idx) {
   const item = window.cart[idx];
   if (!item) return;
-  const svcs = item.svcs || [item.svc].filter(Boolean);
-  const primary = svcs[0] || '';
-  const groupA = ['Photo Editing','Printing','Framing'];
+  document.getElementById('_edit-cart-modal')?.remove();
+  const modal = document.createElement('div');
+  modal.id = '_edit-cart-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  const svcName = (item.svcs||[item.svc||'Item']).join('+');
+  modal.innerHTML = '<div style="background:#fff;border-radius:16px;padding:22px;width:100%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.2);">'
+    + '<div style="font-weight:800;font-size:16px;margin-bottom:16px;">✏️ Edit — ' + svcName + '</div>'
+    + '<label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;display:block;margin-bottom:4px;">DESCRIPTION / LABEL</label>'
+    + '<input id="_ec-label" value="' + (item.label||'').replace(/"/g,'&quot;') + '" style="width:100%;padding:10px;border:1.5px solid #ede8df;border-radius:10px;font-size:14px;font-family:inherit;margin-bottom:12px;">'
+    + '<label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;display:block;margin-bottom:4px;">PRICE (Rs.)</label>'
+    + '<input id="_ec-price" type="number" min="0" value="' + (+item.price||0) + '" style="width:100%;padding:10px;border:1.5px solid #ede8df;border-radius:10px;font-size:16px;font-family:inherit;margin-bottom:16px;">'
+    + '<div style="display:flex;gap:10px;">'
+    + '<button onclick="closeModal(&quot;_edit-cart-modal&quot;)" style="flex:1;background:#f5f5f5;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;">Cancel</button>'
+    + '<button onclick="saveEditCartItem(' + idx + ')" style="flex:2;background:linear-gradient(135deg,#8a6520,#C9973A);color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;">💾 Save</button>'
+    + '</div></div>';
+  document.body.appendChild(modal);
+  setTimeout(function(){ document.getElementById('_ec-price')?.select(); }, 80);
+};
 
-  // Remove item from cart first so re-adding replaces it
-  window.cart.splice(idx, 1);
-  renderCart();
-  updateCartPanel();
-
-  if (groupA.includes(primary)) {
-    // Check all groupA services that were in this item
-    document.querySelectorAll('input[name="groupA"]').forEach(cb => {
-      cb.checked = svcs.includes(cb.value);
-    });
-    // Clear groupB
-    document.querySelectorAll('input[name="groupB"]').forEach(r => r.checked = false);
-    // Render the panel
-    if (typeof onGroupA === 'function') onGroupA();
-  } else {
-    // Find and check the groupB radio
-    const radio = document.querySelector('input[name="groupB"][value="' + primary + '"]');
-    if (radio) {
-      radio.checked = true;
-      // Clear groupA
-      document.querySelectorAll('input[name="groupA"]').forEach(cb => cb.checked = false);
-      // Render the panel — must pass the radio element
-      if (typeof onGroupB === 'function') onGroupB(radio);
-    }
+window.saveEditCartItem = function(idx) {
+  const label = document.getElementById('_ec-label')?.value.trim() || '';
+  const price = +(document.getElementById('_ec-price')?.value) || 0;
+  if (window.cart[idx]) {
+    window.cart[idx].label = label;
+    window.cart[idx].price = price;
   }
-
-  // Scroll to the panel after it renders
-  setTimeout(function() {
-    const panel = document.getElementById('svc-panel-area') || document.querySelector('.svc-panel');
-    if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 150);
-
-  toast('✏️ Service panel re-opened — make changes and tap Add to Cart', 'info');
+  closeModal('_edit-cart-modal');
+  renderCart();
+  if(typeof toast==='function') toast('✅ Cart item updated');
 };
 
 window.duplicateCartItem = function(idx) {
@@ -8981,11 +8881,7 @@ function renderCart() {
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
         <div class="cart-price">${inr(item.price||0)}</div>
-        <div style="display:flex;gap:6px;margin-top:2px;">
-          <button onclick="editCartItem(${i})" style="padding:4px 8px;border-radius:6px;background:var(--gold-bg);color:var(--gold-dk);border:1.5px solid var(--gold);font-size:11px;cursor:pointer;font-weight:700;" title="Edit">✏️</button>
-          <button onclick="duplicateCartItem(${i})" style="padding:4px 8px;border-radius:6px;background:#f3f4f6;color:#555;border:1px solid #ddd;font-size:11px;cursor:pointer;" title="Duplicate">📋</button>
-          <button onclick="removeFromCart(${i})" style="padding:4px 8px;border-radius:6px;background:var(--red-bg);color:var(--red);border:1px solid rgba(214,69,69,.2);font-size:11px;cursor:pointer;" title="Remove">❌</button>
-        </div>
+        <button onclick="removeFromCart(${i})" style="padding:4px 10px;border-radius:6px;background:var(--red-bg);color:var(--red);border:1px solid rgba(214,69,69,.2);font-size:11px;cursor:pointer;">✕ Remove</button>
       </div>
     </div>`).join('');
   tb?.classList.remove('hidden');
