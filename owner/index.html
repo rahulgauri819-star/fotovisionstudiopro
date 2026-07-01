@@ -887,7 +887,7 @@ const SVC_ICONS = {
   'Photo Editing':'🎨','Printing':'🖨️','Framing':'🖼️','Sunboard':'🟫',
   'MDF Board':'🪵','Passport Photos':'📷','Visa Photos':'🛂',
   'Album Printing':'📚','Portfolio Shoot':'📸','Video Editing':'🎬',
-  'Video Converting':'📼','Doorstep Passport':'🏠📷','Doorstep Visa':'🏠🛂'
+  'Video Converting':'📼','Doorstep Passport':'🏠📷','Doorstep Visa':'🏠🛂','Doorstep Service':'🏠📷'
 };
 
 const FRAMING_SVCS = ['Framing','Sunboard','MDF Board'];
@@ -3619,7 +3619,18 @@ async function _saveSinglePurchase(item) {
   }
   purchases.unshift(purchase);
   localStorage.setItem('fv_purchases',JSON.stringify(purchases));
-  try{if(window.db)await window.db.collection('purchases').add(purchase);}catch(e){}
+  try{if(window.db)await (async () => {
+    if (window._ownerInvoiceFile) {
+      try {
+        const sRef = firebase.storage().ref('invoices/' + Date.now() + '_' + window._ownerInvoiceFile.name);
+        const snap = await sRef.put(window._ownerInvoiceFile);
+        purchase.invoicePhotoURL = await snap.ref.getDownloadURL();
+        window._ownerInvoiceFile = null;
+        if(typeof ownerClearInvoicePhoto==='function') ownerClearInvoicePhoto();
+      } catch(e) { console.warn('Invoice upload failed:', e); }
+    }
+  })();
+  await window.db.collection('purchases').add(purchase);}catch(e){}
   // WhatsApp notification for purchases > Rs.500
   if (typeof window.waNewPurchase === 'function') {
     window.waNewPurchase(purchase).catch(()=>{});
@@ -6899,8 +6910,7 @@ function getFormHTML(existing, role) {
       <label class="pill-option"><input type="radio" name="groupB" value="Portfolio Shoot" onchange="onGroupB(this)"><span>📸 Portfolio Shoot</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Video Editing" onchange="onGroupB(this)"><span>🎬 Video Editing</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Video Converting" onchange="onGroupB(this)"><span>📼 Video Converting</span></label>
-      <label class="pill-option"><input type="radio" name="groupB" value="Doorstep Passport" onchange="onGroupB(this)"><span>🏠📷 Doorstep Passport</span></label>
-      <label class="pill-option"><input type="radio" name="groupB" value="Doorstep Visa" onchange="onGroupB(this)"><span>🏠🛂 Doorstep Visa</span></label>
+      <label class="pill-option"><input type="radio" name="groupB" value="Doorstep Service" onchange="onGroupB(this)"><span>🏠📷 Doorstep Service</span></label>
     </div>
   </div>
 
@@ -7866,23 +7876,28 @@ function getBPanelHTML(svc) {
     <div class="section-head" style="font-size:15px;">📼 Video Converting</div>
     <div class="form-group" style="max-width:250px;"><label class="form-label">Converting Charge (Rs.)</label><input class="form-input" id="vid-conv-charge" type="number" min="0" placeholder="Enter charge"></div></div>`;
 
-  if(svc==='Doorstep Passport') return `<div class="svc-panel" id="panel-b">
-    <div class="section-head" style="font-size:15px;">🏠📷 Doorstep Passport Photos</div>
-    <div class="price-info" style="margin-bottom:10px;"><b>Fixed:</b> Rs.500 for 8 copies · Rs.100 per extra 8 copies</div>
-    <div class="form-grid-2" style="margin-bottom:10px;">
-      <div class="form-group"><label class="form-label">Number of Copies</label><input class="form-input" id="dpp-copies" type="number" min="8" step="8" value="8" inputmode="numeric" oninput="calcDoorPassport()"></div>
-      <div class="form-group"><label class="form-label">Charge</label><input class="form-input" id="dpp-total" readonly style="background:#f0f0f0;font-weight:700;color:var(--gold-dk);"></div>
+    if(svc==='Doorstep Service') return `<div class="svc-panel" id="panel-b">
+    <div class="section-head" style="font-size:15px;">🏠📷 Doorstep Service</div>
+    <div class="price-info" style="margin-bottom:12px;">Select price package and number of copies</div>
+    <div style="margin-bottom:14px;">
+      <label class="form-label" style="margin-bottom:8px;display:block;">PRICE PACKAGE</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <label class="toggle-option" style="flex-direction:column;padding:12px;gap:4px;"><input type="radio" name="ds-price" value="500" onchange="calcDoorService()"><span style="font-size:18px;font-weight:800;color:var(--gold-dk);">Rs.500</span></label>
+        <label class="toggle-option" style="flex-direction:column;padding:12px;gap:4px;"><input type="radio" name="ds-price" value="1000" onchange="calcDoorService()"><span style="font-size:18px;font-weight:800;color:var(--gold-dk);">Rs.1,000</span></label>
+        <label class="toggle-option" style="flex-direction:column;padding:12px;gap:4px;"><input type="radio" name="ds-price" value="1500" onchange="calcDoorService()"><span style="font-size:18px;font-weight:800;color:var(--gold-dk);">Rs.1,500</span></label>
+        <label class="toggle-option" style="flex-direction:column;padding:12px;gap:4px;"><input type="radio" name="ds-price" value="2000" onchange="calcDoorService()"><span style="font-size:18px;font-weight:800;color:var(--gold-dk);">Rs.2,000</span></label>
+      </div>
     </div>
-    <div class="form-group"><label class="form-label">Doorstep Address</label><input class="form-input" id="ds-addr" placeholder="Customer address for visit"></div></div>`;
-
-  if(svc==='Doorstep Visa') return `<div class="svc-panel" id="panel-b">
-    <div class="section-head" style="font-size:15px;">🏠🛂 Doorstep Visa Photos</div>
-    <div class="price-info" style="margin-bottom:10px;"><b>Fixed:</b> Rs.500 for 8 copies · Rs.100 per extra 8 copies</div>
-    <div class="form-grid-2" style="margin-bottom:10px;">
-      <div class="form-group"><label class="form-label">Number of Copies</label><input class="form-input" id="dvp-copies" type="number" min="8" step="8" value="8" inputmode="numeric" oninput="calcDoorVisa()"></div>
-      <div class="form-group"><label class="form-label">Charge</label><input class="form-input" id="dvp-total" readonly style="background:#f0f0f0;font-weight:700;color:var(--gold-dk);"></div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label" style="margin-bottom:8px;display:block;">NUMBER OF COPIES</label>
+      <div class="toggle-group">
+        <label class="toggle-option"><input type="radio" name="ds-copies" value="6" onchange="calcDoorService()"><span>6 Copies</span></label>
+        <label class="toggle-option"><input type="radio" name="ds-copies" value="8" checked onchange="calcDoorService()"><span>8 Copies</span></label>
+      </div>
     </div>
-    <div class="form-group"><label class="form-label">Doorstep Address</label><input class="form-input" id="dvs-addr" placeholder="Customer address for visit"></div></div>`;
+    <div class="form-group" style="margin-bottom:12px;"><label class="form-label">Doorstep Address</label><input class="form-input" id="ds-addr" placeholder="Customer address for visit"></div>
+    <div id="ds-cost-tag" class="price-tag hidden"></div>
+  </div>`;
 
   return '';
 }
@@ -8371,6 +8386,16 @@ window.calcVideoEdit = function() {
   if(typeof updateCartPanel==='function') updateCartPanel();
 };
 
+window.calcDoorService = function() {
+  const price = +(document.querySelector('input[name="ds-price"]:checked')?.value) || 0;
+  const copies = +(document.querySelector('input[name="ds-copies"]:checked')?.value) || 8;
+  const tag = document.getElementById('ds-cost-tag');
+  if (tag) {
+    if (price) { tag.textContent = copies + ' copies · Rs.' + price; tag.classList.remove('hidden'); }
+    else tag.classList.add('hidden');
+  }
+  if (typeof updateCartPanel === 'function') updateCartPanel();
+};
 window.calcScanning = () => {
   // Show/hide sub-rows based on checkbox state
   const checks = {};

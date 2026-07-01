@@ -76,6 +76,7 @@
     <button onclick="showPage('framer');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">🖼️</span>Framing</button>
     <button onclick="showPage('estimates');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">💰</span>Estimates</button>
     <button onclick="showPage('purchases');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">🛒</span>Purchases</button>
+    <button onclick="showPage('dayreports');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">📋</span>Day Reports</button>
     <button onclick="showPage('production');staffCloseMore();" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border:none;background:#f9f8f5;border-radius:12px;cursor:pointer;font-size:11px;font-weight:600;color:#333;"><span style="font-size:22px;">🏭</span>Production</button>
   </div>
   <button onclick="staffCloseMore()" style="width:100%;padding:12px;border:none;background:#f0ede6;border-radius:10px;font-size:14px;font-weight:700;color:#666;cursor:pointer;">✕ Close</button>
@@ -195,6 +196,19 @@
 </div>
 
 <!-- MOULDING STOCK -->
+
+<div id="pg-dayreports" class="hidden">
+  <div class="page-header">
+    <button class="back-btn" onclick="showPage('dashboard')">←</button>
+    <div class="page-title">📋 Day End Reports</div>
+  </div>
+  <div style="padding:16px;max-width:700px;margin:0 auto;">
+    <div id="staff-dayreports-list">
+      <div style="text-align:center;padding:40px;color:var(--ink3);">Loading reports...</div>
+    </div>
+  </div>
+</div>
+
 <div id="pg-mouldings" class="hidden">
   <div class="page-header">
     <div class="page-title">🖼️ Manage Mouldings</div>
@@ -534,7 +548,7 @@ const SVC_ICONS = {
   'Photo Editing':'🎨','Printing':'🖨️','Framing':'🖼️','Sunboard':'🟫',
   'MDF Board':'🪵','Passport Photos':'📷','Visa Photos':'🛂',
   'Album Printing':'📚','Portfolio Shoot':'📸','Video Editing':'🎬',
-  'Video Converting':'📼','Doorstep Passport':'🏠📷','Doorstep Visa':'🏠🛂'
+  'Video Converting':'📼','Doorstep Passport':'🏠📷','Doorstep Visa':'🏠🛂','Doorstep Service':'🏠📷'
 };
 
 const FRAMING_SVCS = ['Framing','Sunboard','MDF Board'];
@@ -2626,8 +2640,13 @@ function staffRenderPurchaseForm() {
         <div class="form-group"><label class="form-label">Total Cost (Rs.)</label>
           <input class="form-input" id="pur-total" type="number" placeholder="Auto" oninput="staffCalcPurTotal()">
         </div>
-        <div class="form-group"><label class="form-label">Invoice No.</label>
-          <input class="form-input" id="pur-invoice" placeholder="INV-001">
+        <div class="form-group"><label class="form-label">📷 Invoice Photo <span style="font-weight:400;color:var(--ink3);">(optional)</span></label>
+          <input type="file" id="pur-invoice-photo" accept="image/*" capture="environment" style="display:none;" onchange="staffPreviewInvoicePhoto(this)">
+          <button type="button" onclick="document.getElementById('pur-invoice-photo').click()" style="width:100%;padding:10px;border:1.5px dashed var(--gold);border-radius:10px;background:var(--gold-bg);color:var(--gold-dk);font-size:13px;font-weight:700;cursor:pointer;">📷 Take / Upload Invoice Photo</button>
+          <div id="pur-invoice-preview" style="margin-top:8px;display:none;">
+            <img id="pur-invoice-img" src="" style="width:100%;max-height:180px;object-fit:contain;border-radius:8px;border:1px solid var(--paper3);">
+            <button type="button" onclick="staffClearInvoicePhoto()" style="margin-top:4px;font-size:11px;color:#e53935;background:none;border:none;cursor:pointer;">✕ Remove photo</button>
+          </div>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
@@ -2835,7 +2854,7 @@ window.staffAddToPurchaseList = function() {
 
     size,
     sellPrice: isMoulding ? sellPrice : 0,
-    invoice: document.getElementById('pur-invoice')?.value.trim() || '',
+    invoice: '',  // photo stored in invoicePhotoURL
     subcategory: document.getElementById('pur-subcategory')?.value || '',
     date: document.getElementById('pur-date')?.value || (typeof todayStr === 'function' ? todayStr() : new Date().toISOString().slice(0,10)),
     addedBy: window._staffName || (typeof staffNames !== 'undefined' && staffNames[0]) || 'Staff',
@@ -3207,6 +3226,33 @@ window.renderStaffDayEnd = function() {
 
 // buildNav removed - tab nav is hardcoded in HTML
 
+
+window._staffInvoiceFile = null;
+
+window.staffPreviewInvoicePhoto = function(input) {
+  const file = input.files[0];
+  if (!file) return;
+  window._staffInvoiceFile = file;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = document.getElementById('pur-invoice-img');
+    const prev = document.getElementById('pur-invoice-preview');
+    if (img) img.src = e.target.result;
+    if (prev) prev.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+};
+
+window.staffClearInvoicePhoto = function() {
+  window._staffInvoiceFile = null;
+  const img = document.getElementById('pur-invoice-img');
+  const prev = document.getElementById('pur-invoice-preview');
+  const input = document.getElementById('pur-invoice-photo');
+  if (img) img.src = '';
+  if (prev) prev.style.display = 'none';
+  if (input) input.value = '';
+};
+
 window.staffUpdateDiff = function(netCash) {
   const counted = +(document.getElementById('staff-cash-count')?.value) || 0;
   const diff = counted - (+netCash || 0);
@@ -3257,6 +3303,48 @@ window.staffShowDayEndConfirm = function(sales,exp,cashS,upiS,cashE,upiE,netCash
     + '</div>'
     + '</div>';
   document.body.appendChild(modal);
+};
+
+
+window.renderStaffDayReports = function() {
+  const el = document.getElementById('staff-dayreports-list');
+  if (!el) return;
+  const all = (window.dayReports || []).slice().sort((a,b) => b.date > a.date ? 1 : -1).slice(0, 10);
+  if (!all.length) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink3);">No day reports yet</div>';
+    return;
+  }
+  el.innerHTML = all.map(r => {
+    const diff = (+r.cashCount||0) - (+r.netCashExpected||0);
+    const diffColor = Math.abs(diff) < 50 ? '#2e7d32' : '#c62828';
+    const sign = diff >= 0 ? '+' : '';
+    return '<div style="background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,.07);">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'
+      + '<div style="font-weight:800;font-size:15px;">' + (r.date||'—') + '</div>'
+      + '<div style="font-size:13px;color:var(--ink3);">by ' + (r.staffName||'Staff') + '</div>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">'
+      + '<div style="background:var(--paper);border-radius:10px;padding:8px;text-align:center;">'
+        + '<div style="font-size:10px;color:var(--ink3);text-transform:uppercase;margin-bottom:2px;">Sales</div>'
+        + '<div style="font-size:16px;font-weight:800;color:var(--gold-dk);">Rs.' + ((+r.totalSales||0).toLocaleString('en-IN')) + '</div></div>'
+      + '<div style="background:var(--paper);border-radius:10px;padding:8px;text-align:center;">'
+        + '<div style="font-size:10px;color:var(--ink3);text-transform:uppercase;margin-bottom:2px;">Orders</div>'
+        + '<div style="font-size:16px;font-weight:800;">' + (r.ordersCount||0) + '</div></div>'
+      + '<div style="background:var(--paper);border-radius:10px;padding:8px;text-align:center;">'
+        + '<div style="font-size:10px;color:var(--ink3);text-transform:uppercase;margin-bottom:2px;">Expenses</div>'
+        + '<div style="font-size:16px;font-weight:800;color:#e53935;">Rs.' + ((+r.totalExpenses||0).toLocaleString('en-IN')) + '</div></div>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">'
+      + '<div style="background:#e8f5e9;border-radius:10px;padding:8px;text-align:center;">'
+        + '<div style="font-size:10px;color:#555;text-transform:uppercase;margin-bottom:2px;">Net Cash Expected</div>'
+        + '<div style="font-size:15px;font-weight:700;color:#2e7d32;">Rs.' + ((+r.netCashExpected||0).toLocaleString('en-IN')) + '</div></div>'
+      + '<div style="background:' + (Math.abs(diff)<50?'#e8f5e9':'#fce4ec') + ';border-radius:10px;padding:8px;text-align:center;">'
+        + '<div style="font-size:10px;color:#555;text-transform:uppercase;margin-bottom:2px;">Cash Difference</div>'
+        + '<div style="font-size:15px;font-weight:700;color:' + diffColor + ';">' + sign + 'Rs.' + diff.toLocaleString('en-IN') + '</div></div>'
+      + '</div>'
+      + (r.remarks ? '<div style="font-size:12px;color:var(--ink3);font-style:italic;border-top:1px solid var(--paper3);padding-top:8px;">📝 ' + r.remarks + '</div>' : '')
+      + '</div>';
+  }).join('');
 };
 
 window.staffSubmitDayEnd = async function(sales,exp,cashS,upiS,cashE,upiE,netCash,ordCount) {
@@ -3372,8 +3460,7 @@ function getFormHTML(existing, role) {
       <label class="pill-option"><input type="radio" name="groupB" value="Portfolio Shoot" onchange="onGroupB(this)"><span>📸 Portfolio Shoot</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Video Editing" onchange="onGroupB(this)"><span>🎬 Video Editing</span></label>
       <label class="pill-option"><input type="radio" name="groupB" value="Video Converting" onchange="onGroupB(this)"><span>📼 Video Converting</span></label>
-      <label class="pill-option"><input type="radio" name="groupB" value="Doorstep Passport" onchange="onGroupB(this)"><span>🏠📷 Doorstep Passport</span></label>
-      <label class="pill-option"><input type="radio" name="groupB" value="Doorstep Visa" onchange="onGroupB(this)"><span>🏠🛂 Doorstep Visa</span></label>
+      <label class="pill-option"><input type="radio" name="groupB" value="Doorstep Service" onchange="onGroupB(this)"><span>🏠📷 Doorstep Service</span></label>
     </div>
   </div>
 
@@ -4361,23 +4448,43 @@ function getBPanelHTML(svc) {
     <div class="section-head" style="font-size:15px;">📼 Video Converting</div>
     <div class="form-group" style="max-width:250px;"><label class="form-label">Converting Charge (Rs.)</label><input class="form-input" id="vid-conv-charge" type="number" min="0" placeholder="Enter charge"></div></div>`;
 
-  if(svc==='Doorstep Passport') return `<div class="svc-panel" id="panel-b">
-    <div class="section-head" style="font-size:15px;">🏠📷 Doorstep Passport Photos</div>
-    <div class="price-info" style="margin-bottom:10px;"><b>Fixed:</b> Rs.500 for 8 copies · Rs.100 per extra 8 copies</div>
-    <div class="form-grid-2" style="margin-bottom:10px;">
-      <div class="form-group"><label class="form-label">Number of Copies</label><input class="form-input" id="dpp-copies" type="number" min="8" step="8" value="8" inputmode="numeric" oninput="calcDoorPassport()"></div>
-      <div class="form-group"><label class="form-label">Charge</label><input class="form-input" id="dpp-total" readonly style="background:#f0f0f0;font-weight:700;color:var(--gold-dk);"></div>
+  if(svc==='Doorstep Service') return `<div class="svc-panel" id="panel-b">
+    <div class="section-head" style="font-size:15px;">🏠📷 Doorstep Service</div>
+    <div class="price-info" style="margin-bottom:12px;">Select price package and number of copies</div>
+    <div style="margin-bottom:14px;">
+      <label class="form-label" style="margin-bottom:8px;display:block;">PRICE PACKAGE</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <label class="toggle-option" style="flex-direction:column;padding:12px;gap:4px;">
+          <input type="radio" name="ds-price" value="500" onchange="calcDoorService()">
+          <span style="font-size:18px;font-weight:800;color:var(--gold-dk);">Rs.500</span>
+        </label>
+        <label class="toggle-option" style="flex-direction:column;padding:12px;gap:4px;">
+          <input type="radio" name="ds-price" value="1000" onchange="calcDoorService()">
+          <span style="font-size:18px;font-weight:800;color:var(--gold-dk);">Rs.1,000</span>
+        </label>
+        <label class="toggle-option" style="flex-direction:column;padding:12px;gap:4px;">
+          <input type="radio" name="ds-price" value="1500" onchange="calcDoorService()">
+          <span style="font-size:18px;font-weight:800;color:var(--gold-dk);">Rs.1,500</span>
+        </label>
+        <label class="toggle-option" style="flex-direction:column;padding:12px;gap:4px;">
+          <input type="radio" name="ds-price" value="2000" onchange="calcDoorService()">
+          <span style="font-size:18px;font-weight:800;color:var(--gold-dk);">Rs.2,000</span>
+        </label>
+      </div>
     </div>
-    <div class="form-group"><label class="form-label">Doorstep Address</label><input class="form-input" id="ds-addr" placeholder="Customer address for visit"></div></div>`;
-
-  if(svc==='Doorstep Visa') return `<div class="svc-panel" id="panel-b">
-    <div class="section-head" style="font-size:15px;">🏠🛂 Doorstep Visa Photos</div>
-    <div class="price-info" style="margin-bottom:10px;"><b>Fixed:</b> Rs.500 for 8 copies · Rs.100 per extra 8 copies</div>
-    <div class="form-grid-2" style="margin-bottom:10px;">
-      <div class="form-group"><label class="form-label">Number of Copies</label><input class="form-input" id="dvp-copies" type="number" min="8" step="8" value="8" inputmode="numeric" oninput="calcDoorVisa()"></div>
-      <div class="form-group"><label class="form-label">Charge</label><input class="form-input" id="dvp-total" readonly style="background:#f0f0f0;font-weight:700;color:var(--gold-dk);"></div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label" style="margin-bottom:8px;display:block;">NUMBER OF COPIES</label>
+      <div class="toggle-group">
+        <label class="toggle-option"><input type="radio" name="ds-copies" value="6" onchange="calcDoorService()"><span>6 Copies</span></label>
+        <label class="toggle-option"><input type="radio" name="ds-copies" value="8" checked onchange="calcDoorService()"><span>8 Copies</span></label>
+      </div>
     </div>
-    <div class="form-group"><label class="form-label">Doorstep Address</label><input class="form-input" id="dvs-addr" placeholder="Customer address for visit"></div></div>`;
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label">Doorstep Address</label>
+      <input class="form-input" id="ds-addr" placeholder="Customer address for visit">
+    </div>
+    <div id="ds-cost-tag" class="price-tag hidden"></div>
+  </div>`;
 
   return '';
 }
@@ -4866,6 +4973,16 @@ window.calcVideoEdit = function() {
   if(typeof updateCartPanel==='function') updateCartPanel();
 };
 
+window.calcDoorService = function() {
+  const price = +(document.querySelector('input[name="ds-price"]:checked')?.value) || 0;
+  const copies = +(document.querySelector('input[name="ds-copies"]:checked')?.value) || 8;
+  const tag = document.getElementById('ds-cost-tag');
+  if (tag) {
+    if (price) { tag.textContent = copies + ' copies · Rs.' + price; tag.classList.remove('hidden'); }
+    else tag.classList.add('hidden');
+  }
+  if (typeof updateCartPanel === 'function') updateCartPanel();
+};
 window.calcScanning = () => {
   // Show/hide sub-rows based on checkbox state
   const checks = {};
@@ -5168,8 +5285,13 @@ window.addToCart = function() {
       price=hrs*rate;label=`${hrs} hr${hrs>1?'s':''} × Rs.${rate}/hr`;
     }
     else if(groupBsel==='Video Converting'){price=+(document.getElementById('vid-conv-charge')?.value)||0;label=`Charge Rs.${price}`;}
-    else if(groupBsel==='Doorstep Passport'){const c=+(document.getElementById('dpp-copies')?.value)||8;const s=Math.ceil(c/8);price=500+Math.max(0,s-1)*100;const addr=document.getElementById('ds-addr')?.value||'';label=`${c} copies${addr?' · '+addr.slice(0,20):''}`;}
-    else if(groupBsel==='Doorstep Visa'){const c=+(document.getElementById('dvp-copies')?.value)||8;const s=Math.ceil(c/8);price=500+Math.max(0,s-1)*100;const addr=document.getElementById('dvs-addr')?.value||'';label=`${c} copies${addr?' · '+addr.slice(0,20):''}`;}
+    else if(groupBsel==='Doorstep Service'){
+      const pkg=+(document.querySelector('input[name="ds-price"]:checked')?.value)||0;
+      const copies=+(document.querySelector('input[name="ds-copies"]:checked')?.value)||8;
+      const addr=document.getElementById('ds-addr')?.value.trim()||'';
+      if(!pkg){toast('⚠️ Select a price package','error');return;}
+      price=pkg;label=`${copies} copies · Rs.${pkg}${addr?' · '+addr.slice(0,25):''}`;
+    }
     else { toast('⚠️ Select a service first','error'); return; }
   } else {
     toast('⚠️ Select a service first','error'); return;
