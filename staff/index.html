@@ -3311,16 +3311,19 @@ window.renderStaffDayReports = async function() {
   if (!el) return;
   el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink3);">Loading reports...</div>';
 
-  // Fetch from Firebase directly
+  // Fetch from Firebase directly — no orderBy to avoid index errors, sort client-side
   let all = [];
   try {
     if (window.db) {
-      const snap = await window.db.collection('dayReports').orderBy('date','desc').limit(10).get();
+      const snap = await window.db.collection('dayReports').get();
       snap.forEach(doc => all.push({ id: doc.id, ...doc.data() }));
+      all.sort((a,b) => (b.date||'') > (a.date||'') ? 1 : -1);
+      all = all.slice(0, 10);
     }
   } catch(e) {
-    // Fallback to cached
-    all = (window.dayReports || []).slice().sort((a,b) => b.date > a.date ? 1 : -1).slice(0, 10);
+    console.error('Day reports fetch error:', e);
+    // Fallback to cached window.dayReports
+    all = (window.dayReports || []).slice().sort((a,b) => (b.date||'') > (a.date||'') ? 1 : -1).slice(0, 10);
   }
 
   if (!all.length) {
