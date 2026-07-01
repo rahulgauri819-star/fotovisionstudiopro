@@ -3306,12 +3306,25 @@ window.staffShowDayEndConfirm = function(sales,exp,cashS,upiS,cashE,upiE,netCash
 };
 
 
-window.renderStaffDayReports = function() {
+window.renderStaffDayReports = async function() {
   const el = document.getElementById('staff-dayreports-list');
   if (!el) return;
-  const all = (window.dayReports || []).slice().sort((a,b) => b.date > a.date ? 1 : -1).slice(0, 10);
+  el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink3);">Loading reports...</div>';
+
+  // Fetch from Firebase directly
+  let all = [];
+  try {
+    if (window.db) {
+      const snap = await window.db.collection('dayReports').orderBy('date','desc').limit(10).get();
+      snap.forEach(doc => all.push({ id: doc.id, ...doc.data() }));
+    }
+  } catch(e) {
+    // Fallback to cached
+    all = (window.dayReports || []).slice().sort((a,b) => b.date > a.date ? 1 : -1).slice(0, 10);
+  }
+
   if (!all.length) {
-    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink3);">No day reports yet</div>';
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink3);">No day reports submitted yet</div>';
     return;
   }
   el.innerHTML = all.map(r => {
